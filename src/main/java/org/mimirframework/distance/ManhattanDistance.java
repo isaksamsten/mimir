@@ -28,11 +28,11 @@ import org.briljantframework.data.vector.Vector;
  * <p>
  * Created by Isak Karlsson on 01/09/14.
  */
-public class Manhattan implements Distance {
+public class ManhattanDistance implements Distance {
 
-  private static Distance instance = new Manhattan();
+  private static Distance instance = new ManhattanDistance();
 
-  private Manhattan() {
+  private ManhattanDistance() {
 
   }
 

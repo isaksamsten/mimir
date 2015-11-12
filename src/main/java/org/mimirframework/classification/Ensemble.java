@@ -257,7 +257,7 @@ public class Ensemble extends AbstractClassifier {
     }
 
     // @Override
-    // public void evaluate(EvaluationContext<? super P> ctx) {
+    // public void acceptEvaluators(EvaluationContext<? super P> ctx) {
     // ctx.getPredictor().
     // }
 

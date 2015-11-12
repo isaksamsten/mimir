@@ -26,9 +26,9 @@ import org.briljantframework.data.vector.Vector;
 /**
  * Created by isak on 16/04/15.
  */
-public class DerivetiveShapelet extends IndexSortedNormalizedShapelet {
+public class DerivativeShapelet extends IndexSortedNormalizedShapelet {
 
-  public DerivetiveShapelet(int start, int length, Vector build) {
+  public DerivativeShapelet(int start, int length, Vector build) {
     super(start, length, build);
   }
 }

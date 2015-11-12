@@ -48,8 +48,8 @@ public class RandomShapeletForest extends Ensemble {
   }
 
   // @Override
-  // public void evaluate(EvaluationContext<?> ctx) {
-  // super.evaluate(ctx);
+  // public void acceptEvaluators(EvaluationContext<?> ctx) {
+  // super.acceptEvaluators(ctx);
   // ctx.getOrDefault(Depth.class, Depth.Builder::new).add(Sample.OUT, getAverageDepth());
   // }
 

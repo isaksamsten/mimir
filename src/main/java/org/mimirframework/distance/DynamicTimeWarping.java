@@ -58,7 +58,7 @@ public class DynamicTimeWarping implements Distance {
   }
 
   public DynamicTimeWarping(int constraint) {
-    this(Euclidean.getInstance(), constraint);
+    this(EuclideanDistance.getInstance(), constraint);
   }
 
   /**

@@ -29,18 +29,18 @@ import org.briljantframework.data.vector.Vector;
  * <p>
  * Created by Isak Karlsson on 01/09/14.
  */
-public class Euclidean implements Distance {
+public class EuclideanDistance implements Distance {
 
-  private static final Euclidean instance = new Euclidean();
+  private static final EuclideanDistance instance = new EuclideanDistance();
 
-  private Euclidean() {
+  private EuclideanDistance() {
 
   }
 
   /**
    * The constant instance.
    */
-  public static Euclidean getInstance() {
+  public static EuclideanDistance getInstance() {
     return instance;
   }
 

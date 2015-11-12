@@ -1,10 +1,10 @@
-package org.mimirframework.classifier.conformal.evaluation;
+package org.mimirframework.classification.conformal.evaluation;
 
 import java.util.List;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.mimirframework.classifier.conformal.ConformalClassifier;
+import org.mimirframework.classification.conformal.ConformalClassifier;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 
@@ -36,7 +36,7 @@ public final class ConformalClassifierValidator<P extends ConformalClassifier>
       evaluationContext.getMeasureCollection().add("significance", confidence);
       evaluationContext.getMeasureCollection().add("fold", fold);
       new ConformalClassifierEvaluator(confidence).accept(evaluationContext);
-      evaluate(evaluationContext);
+      acceptEvaluators(evaluationContext);
     }
   }
 
@@ -63,7 +63,7 @@ public final class ConformalClassifierValidator<P extends ConformalClassifier>
    *
    * @param folds the number of folds
    * @param calibrationSize the calibration set size (in each fold)
-   * @param significance the confidence for which to evaluate the
+   * @param significance the confidence for which to acceptEvaluators the
    * @param <T> the type of validator
    * @return a new validator for evaluating conformal classifiers of the specified type
    */

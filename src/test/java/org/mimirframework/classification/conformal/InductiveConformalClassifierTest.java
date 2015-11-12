@@ -1,9 +1,9 @@
-package org.mimirframework.classifier.conformal;
+package org.mimirframework.classification.conformal;
 
 import org.briljantframework.array.ArrayPrinter;
 import org.briljantframework.array.Arrays;
 import org.mimirframework.classification.Classifier;
-import org.mimirframework.classifier.conformal.evaluation.ConformalClassifierValidator;
+import org.mimirframework.classification.conformal.evaluation.ConformalClassifierValidator;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.SortOrder;
 import org.briljantframework.data.dataframe.DataFrame;

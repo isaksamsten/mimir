@@ -72,7 +72,7 @@ import org.mimirframework.evaluation.partition.SplitPartitioner;
  * type: double
  * </pre>
  * <p>
- * The above specified validator can be used to evaluate any classifier (i.e. any class implementing
+ * The above specified validator can be used to acceptEvaluators any classifier (i.e. any class implementing
  * the {@link Classifier} interface).
  */
 public abstract class Validator<P extends org.mimirframework.supervised.Predictor> {
@@ -147,17 +147,15 @@ public abstract class Validator<P extends org.mimirframework.supervised.Predicto
         predictions.build(), avgTrainingSize, avgValidationSize, avgFitTime, avgPredictTime);
   }
 
-
-
   /**
    * Evaluate the model using the given context
    *
-   * @param evaluationContext
-   * @param fold
+   * @param evaluationContext the evaluation context
+   * @param fold the current partition number
    */
   protected void evaluate(EvaluationContext<P> evaluationContext, int fold) {
     evaluationContext.getMeasureCollection().add("fold", fold);
-    evaluate(evaluationContext);
+    acceptEvaluators(evaluationContext);
   }
 
   /**
@@ -171,7 +169,7 @@ public abstract class Validator<P extends org.mimirframework.supervised.Predicto
 
   protected abstract void predict(MutableEvaluationContext<? extends P> ctx);
 
-  protected void evaluate(EvaluationContext<P> context) {
+  protected void acceptEvaluators(EvaluationContext<P> context) {
     evaluators.forEach(evaluator -> evaluator.accept(context));
   }
 

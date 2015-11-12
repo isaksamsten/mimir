@@ -23,14 +23,14 @@ package org.mimirframework.classification.tree;
 
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.classification.AbstractClassifier;
 
 /**
- * Represents a Tree based predictor. Uses a
- * {@link TreeVisitor} to make predictions.
+ * Represents a Tree based predictor. Uses a {@link TreeVisitor} to make predictions.
  * 
  * @author Isak Karlsson
  */
-public class TreeClassifier<T> extends org.mimirframework.classification.AbstractClassifier {
+public class TreeClassifier<T> extends AbstractClassifier {
 
   private final TreeVisitor<T> predictionVisitor;
   private final TreeNode<T> node;

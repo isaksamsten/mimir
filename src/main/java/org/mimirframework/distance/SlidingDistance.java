@@ -25,7 +25,7 @@ import org.briljantframework.data.vector.Vector;
 import org.mimirframework.shapelet.Shapelet;
 
 /**
- * Created by isak on 24/03/15.
+ * @author Isak Karlsson
  */
 public class SlidingDistance implements Distance {
 

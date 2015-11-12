@@ -27,7 +27,7 @@ import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.Datasets;
 import org.mimirframework.distance.DynamicTimeWarping;
-import org.mimirframework.distance.Euclidean;
+import org.mimirframework.distance.EuclideanDistance;
 import org.junit.Test;
 
 public class KNearestNeighborsTest {
@@ -35,7 +35,7 @@ public class KNearestNeighborsTest {
   @Test
   public void testClassifier() throws Exception {
     NearestNeighbours.Learner oneNearestNeighbours =
-        new NearestNeighbours.Learner(1, new DynamicTimeWarping(Euclidean.getInstance(), 3));
+        new NearestNeighbours.Learner(1, new DynamicTimeWarping(EuclideanDistance.getInstance(), 3));
 
     DataFrame iris = DataFrames.dropIncompleteCases(Datasets.loadIris());
     Vector y = iris.get(4);

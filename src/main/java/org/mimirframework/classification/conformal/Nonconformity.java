@@ -1,4 +1,4 @@
-package org.mimirframework.classifier.conformal;
+package org.mimirframework.classification.conformal;
 
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;

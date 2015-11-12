@@ -23,6 +23,8 @@ import org.briljantframework.data.dataseries.MeanAggregator;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
 import org.mimirframework.distance.Distance;
+import org.mimirframework.distance.EuclideanDistance;
+import org.mimirframework.shapelet.DerivativeShapelet;
 import org.mimirframework.shapelet.IndexSortedNormalizedShapelet;
 import org.mimirframework.shapelet.Shapelet;
 import org.briljantframework.statistics.FastStatistics;
@@ -376,7 +378,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         derivative.loc().set(j,
             timeSeries.loc().getAsDouble(j) - timeSeries.loc().getAsDouble(j - 1));
       }
-      return new org.mimirframework.shapelet.DerivetiveShapelet(start, length, derivative.build());
+      return new DerivativeShapelet(start, length, derivative.build());
     }
 
     private Shapelet getRandomizedShapelet(org.mimirframework.classification.tree.ClassSet classSet, DataFrame x, int length, int start) {
@@ -836,7 +838,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
     private static class OneNnVisitor implements TreeVisitor<ShapeletThreshold> {
 
-      public static final org.mimirframework.distance.Euclidean EUCLIDEAN = org.mimirframework.distance.Euclidean.getInstance();
+      public static final EuclideanDistance EUCLIDEAN = EuclideanDistance.getInstance();
       private final Distance distanceMeasure;
       private final DataFrame x;
       private final Vector y;
@@ -1021,7 +1023,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
     public Learner.Assessment assessment = Learner.Assessment.FSTAT;
     public double minSplit = 1;
-    public Distance metric = org.mimirframework.distance.EarlyAbandonSlidingDistance.create(org.mimirframework.distance.Euclidean.getInstance());
+    public Distance metric = org.mimirframework.distance.EarlyAbandonSlidingDistance.create(EuclideanDistance.getInstance());
     public int inspectedShapelets = 100;
     public double aggregateFraction = 1;
     public Learner.SampleMode sampleMode = Learner.SampleMode.NORMAL;

@@ -1,4 +1,4 @@
-package org.mimirframework.classifier.conformal;
+package org.mimirframework.classification.conformal;
 
 import java.util.stream.IntStream;
 
@@ -8,6 +8,7 @@ import org.briljantframework.array.IntArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.distance.EuclideanDistance;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -83,7 +84,7 @@ public class DistanceNonconformity implements Nonconformity {
     private final int k;
 
     public Learner(int k) {
-      this(k, org.mimirframework.distance.Euclidean.getInstance());
+      this(k, EuclideanDistance.getInstance());
     }
 
     public Learner(int k, org.mimirframework.distance.Distance distance) {

@@ -55,7 +55,7 @@ public class FoldPartitionerTest {
     // RandomForest tree = RandomForest.withSize(100).build();
     //
     // long start = System.currentTimeMillis();
-    // System.out.println(ClassificationEvaluators.crossValidation(10).evaluate(tree, irisX,
+    // System.out.println(ClassificationEvaluators.crossValidation(10).acceptEvaluators(tree, irisX,
     // irisY));
     // System.out.println(System.currentTimeMillis() - start);
 
@@ -65,7 +65,7 @@ public class FoldPartitionerTest {
     //
     // RandomShapeletForest forest =
     // RandomShapeletForest.withSize(10).withInspectedShapelets(100).create();
-    // System.out.println(Evaluators.crossValidation(10).evaluate(forest, x, y));
+    // System.out.println(Evaluators.crossValidation(10).acceptEvaluators(forest, x, y));
     //
     assertTrue(true);
   }

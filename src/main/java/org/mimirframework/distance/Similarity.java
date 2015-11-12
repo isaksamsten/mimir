@@ -24,7 +24,7 @@ package org.mimirframework.distance;
 import org.briljantframework.data.vector.Vector;
 
 /**
- * Created by isak on 10/03/15.
+ *
  */
 public interface Similarity {
   double compute(Vector a, Vector b);

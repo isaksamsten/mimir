@@ -93,7 +93,7 @@ public class TunerTest {
     // System.out.println(rm);
     //
     // RemoteClassifier bestRandomForest = rm.best().getClassifier();
-    // System.out.println(CrossValidation.withFolds(10).evaluate(bestRandomForest, storage));
+    // System.out.println(CrossValidation.withFolds(10).acceptEvaluators(bestRandomForest, storage));
 
     // DataFrame x = null;
     // Vector y = null;

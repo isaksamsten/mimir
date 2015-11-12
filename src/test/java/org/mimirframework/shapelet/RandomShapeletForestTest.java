@@ -37,9 +37,9 @@ import org.briljantframework.array.IntArray;
 import org.mimirframework.classification.Classifier;
 import org.mimirframework.classification.RandomForest;
 import org.mimirframework.classification.RandomShapeletForest;
-import org.mimirframework.classifier.conformal.ConformalClassifier;
-import org.mimirframework.classifier.conformal.DistanceNonconformity;
-import org.mimirframework.classifier.conformal.InductiveConformalClassifier;
+import org.mimirframework.classification.conformal.ConformalClassifier;
+import org.mimirframework.classification.conformal.DistanceNonconformity;
+import org.mimirframework.classification.conformal.InductiveConformalClassifier;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
@@ -52,6 +52,7 @@ import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.dataset.io.MatlabDatasetReader;
 import org.briljantframework.dataset.io.SequenceDatasetReader;
+import org.mimirframework.classification.conformal.Nonconformity;
 import org.mimirframework.evaluation.Evaluator;
 import org.mimirframework.evaluation.Result;
 import org.mimirframework.evaluation.Validator;
@@ -268,7 +269,7 @@ public class RandomShapeletForestTest {
     Partition trainPart =
         new org.mimirframework.evaluation.partition.SplitPartitioner(0.1).partition(train.drop(0), train.get(0)).iterator().next();
 
-    org.mimirframework.classifier.conformal.Nonconformity.Learner nc = new DistanceNonconformity.Learner(1);
+    Nonconformity.Learner nc = new DistanceNonconformity.Learner(1);
     // Nonconformity.Learner nc =
     // new ProbabilityEstimateNonconformity.Learner(
     // new

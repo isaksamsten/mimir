@@ -1,4 +1,4 @@
-package org.mimirframework.classifier.conformal;
+package org.mimirframework.classification.conformal;
 
 import java.util.Collections;
 import java.util.HashSet;

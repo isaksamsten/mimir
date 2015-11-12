@@ -78,7 +78,7 @@ public class EarlyAbandonSlidingDistance implements Distance {
       if (!(vector instanceof NormalizedShapelet)) {
         vector = new NormalizedShapelet(0, vector.size(), vector);
       }
-      return new SlidingDistance(org.mimirframework.distance.Euclidean.getInstance()).compute(vector, new NormalizedShapelet(0,
+      return new SlidingDistance(EuclideanDistance.getInstance()).compute(vector, new NormalizedShapelet(0,
                                                                                                  candidate
                                                                                                      .size(),
                                                                                                  candidate));

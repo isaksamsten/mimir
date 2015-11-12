@@ -1,4 +1,4 @@
-package org.mimirframework.classifier.conformal.evaluation;
+package org.mimirframework.classification.conformal.evaluation;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;

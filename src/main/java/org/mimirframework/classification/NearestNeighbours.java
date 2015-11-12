@@ -9,6 +9,7 @@ import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
+import org.mimirframework.distance.EuclideanDistance;
 
 /**
  * In pattern recognition, the k-Nearest Neighbors algorithm (or k-NN for short) is a non-parametric
@@ -117,7 +118,7 @@ public class NearestNeighbours extends AbstractClassifier {
     }
 
     public Learner(int k) {
-      this(k, org.mimirframework.distance.Euclidean.getInstance());
+      this(k, EuclideanDistance.getInstance());
     }
 
     public Learner(int k, org.mimirframework.distance.Distance distance) {
@@ -141,7 +142,7 @@ public class NearestNeighbours extends AbstractClassifier {
   public static class Configurator implements org.mimirframework.supervised.Predictor.Configurator<Learner> {
 
     public int neighbors;
-    private org.mimirframework.distance.Distance distance = org.mimirframework.distance.Euclidean.getInstance();
+    private org.mimirframework.distance.Distance distance = EuclideanDistance.getInstance();
 
     public Configurator(int neighbors) {
       this.neighbors = neighbors;
