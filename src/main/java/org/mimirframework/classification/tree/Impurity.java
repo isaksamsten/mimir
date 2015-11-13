@@ -40,7 +40,7 @@ public interface Impurity {
   /**
    * @param split the split
    * @return the double
-   * @see #impurity(org.briljantframework.array.DoubleArray)
+   * @see #impurity(DoubleArray)
    */
   default double impurity(ClassSet split) {
     return impurity(split.getRelativeFrequencies());

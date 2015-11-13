@@ -23,6 +23,10 @@ import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.evaluation.EvaluationContext;
+import org.mimirframework.evaluation.MeasureCollection;
+import org.mimirframework.supervised.Characteristic;
+import org.mimirframework.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -52,7 +56,7 @@ public class Ensemble extends AbstractClassifier {
     return Collections.unmodifiableList(members);
   }
 
-  private static void computeOOBCorrelation(org.mimirframework.evaluation.EvaluationContext<? extends Ensemble> ctx) {
+  private static void computeOOBCorrelation(EvaluationContext<? extends Ensemble> ctx) {
     Ensemble ensemble = ctx.getPredictor();
     Vector classes = ensemble.getClasses();
     DataFrame x = ctx.getPartition().getTrainingData();
@@ -60,7 +64,7 @@ public class Ensemble extends AbstractClassifier {
 
     BooleanArray oobIndicator = ensemble.getOobIndicator();
     List<Classifier> members = ensemble.getEnsembleMembers();
-    org.mimirframework.evaluation.MeasureCollection measureCollection = ctx.getMeasureCollection();
+    MeasureCollection measureCollection = ctx.getMeasureCollection();
 
     // Store the out-of-bag and in-bag probability estimates
     DoubleArray oobEstimates = DoubleArray.zeros(x.rows(), classes.size());
@@ -133,7 +137,7 @@ public class Ensemble extends AbstractClassifier {
     measureCollection.add("ensembleErrorBound", errorBound);
   }
 
-  private static void computeMeanSquareError(org.mimirframework.evaluation.EvaluationContext<? extends Ensemble> ctx) {
+  private static void computeMeanSquareError(EvaluationContext<? extends Ensemble> ctx) {
     Ensemble ensemble = ctx.getPredictor();
     DataFrame x = ctx.getPartition().getValidationData();
     Vector y = ctx.getPartition().getValidationTarget();
@@ -185,7 +189,7 @@ public class Ensemble extends AbstractClassifier {
     double avgBias = meanBias.doubleValue() / x.rows();
     double avgMse = meanSquareError.doubleValue() / x.rows();
     double avgBaseAccuracy = baseAccuracy.doubleValue() / x.rows();
-    org.mimirframework.evaluation.MeasureCollection measureCollection = ctx.getMeasureCollection();
+    MeasureCollection measureCollection = ctx.getMeasureCollection();
     measureCollection.add("ensembleVariance", avgVariance);
     measureCollection.add("ensembleBias", avgBias);
     measureCollection.add("ensembleMse", avgMse);
@@ -203,7 +207,7 @@ public class Ensemble extends AbstractClassifier {
   }
 
   @Override
-  public Set<org.mimirframework.supervised.Characteristic> getCharacteristics() {
+  public Set<Characteristic> getCharacteristics() {
     return Collections.singleton(ClassifierCharacteristic.ESTIMATOR);
   }
 
@@ -223,7 +227,7 @@ public class Ensemble extends AbstractClassifier {
 
   public static class Evaluator implements org.mimirframework.evaluation.Evaluator<Ensemble> {
     @Override
-    public void accept(org.mimirframework.evaluation.EvaluationContext<? extends Ensemble> ctx) {
+    public void accept(EvaluationContext<? extends Ensemble> ctx) {
       computeMeanSquareError(ctx);
       computeOOBCorrelation(ctx);
     }
@@ -232,7 +236,7 @@ public class Ensemble extends AbstractClassifier {
   /**
    * @author Isak Karlsson
    */
-  public abstract static class Learner<P extends Ensemble> implements org.mimirframework.supervised.Predictor.Learner<P> {
+  public abstract static class Learner<P extends Ensemble> implements Predictor.Learner<P> {
 
     private final static ThreadPoolExecutor THREAD_POOL;
     private final static int CORES;

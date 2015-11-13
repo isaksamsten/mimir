@@ -21,13 +21,16 @@
 
 package org.mimirframework.classifier.evaluation;
 
-import org.mimirframework.classification.Classifier;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.classification.Classifier;
+import org.mimirframework.classification.ClassifierMeasure;
+import org.mimirframework.evaluation.EvaluationContext;
+import org.mimirframework.evaluation.Evaluator;
 
 /**
  * @author Isak Karlsson
  */
-public class ClassifierEvaluator implements org.mimirframework.evaluation.Evaluator<Classifier> {
+public class ClassifierEvaluator implements Evaluator<Classifier> {
 
   private static final ClassifierEvaluator INSTANCE = new ClassifierEvaluator();
 
@@ -38,10 +41,10 @@ public class ClassifierEvaluator implements org.mimirframework.evaluation.Evalua
   }
 
   @Override
-  public void accept(org.mimirframework.evaluation.EvaluationContext<? extends Classifier> ctx) {
+  public void accept(EvaluationContext<? extends Classifier> ctx) {
     Vector predictions = ctx.getPredictions();
     Vector truth = ctx.getPartition().getValidationTarget();
-    org.mimirframework.classification.ClassifierMeasure cm = new org.mimirframework.classification.ClassifierMeasure(predictions, truth, ctx.getEstimates(),
+    ClassifierMeasure cm = new ClassifierMeasure(predictions, truth, ctx.getEstimates(),
         ctx.getPredictor().getClasses());
 
     ctx.getMeasureCollection().add("accuracy", cm.getAccuracy());

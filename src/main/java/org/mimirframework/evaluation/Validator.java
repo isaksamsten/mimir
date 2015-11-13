@@ -28,18 +28,20 @@ import java.util.Set;
 
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
-import org.mimirframework.evaluation.partition.Partition;
 import org.mimirframework.classification.Classifier;
 import org.mimirframework.evaluation.partition.FoldPartitioner;
+import org.mimirframework.evaluation.partition.LeaveOneOutPartitioner;
+import org.mimirframework.evaluation.partition.Partition;
+import org.mimirframework.evaluation.partition.Partitioner;
 import org.mimirframework.evaluation.partition.SplitPartitioner;
+import org.mimirframework.supervised.Predictor;
 
 /**
- * A validator evaluates the performance of a given
- * {@linkplain org.mimirframework.supervised.Predictor.Learner learning algorithm} using a
- * specified data set. The dataset is partition using a specified {@link org.mimirframework.evaluation.partition.Partitioner} into
- * {@linkplain Partition partitions}. Finally, the validator can also be given a set of
- * {@linkplain Evaluator evaluators} responsible for measuring the performance of the given
- * predictor.
+ * A validator evaluates the performance of a given {@linkplain Predictor.Learner learning
+ * algorithm} using a specified data set. The dataset is partition using a specified
+ * {@link Partitioner} into {@linkplain Partition partitions}. Finally, the validator can also be
+ * given a set of {@linkplain Evaluator evaluators} responsible for measuring the performance of the
+ * given predictor.
  * <p>
  * <p>
  * 
@@ -72,25 +74,25 @@ import org.mimirframework.evaluation.partition.SplitPartitioner;
  * type: double
  * </pre>
  * <p>
- * The above specified validator can be used to acceptEvaluators any classifier (i.e. any class implementing
- * the {@link Classifier} interface).
+ * The above specified validator can be used to acceptEvaluators any classifier (i.e. any class
+ * implementing the {@link Classifier} interface).
  */
-public abstract class Validator<P extends org.mimirframework.supervised.Predictor> {
+public abstract class Validator<P extends Predictor> {
 
   /**
    * The leave one out partitioner
    */
-  protected static final org.mimirframework.evaluation.partition.LeaveOneOutPartitioner LOO_PARTITIONER = new org.mimirframework.evaluation.partition.LeaveOneOutPartitioner();
+  protected static final LeaveOneOutPartitioner LOO_PARTITIONER = new LeaveOneOutPartitioner();
 
   private final Set<Evaluator<? super P>> evaluators;
-  private final org.mimirframework.evaluation.partition.Partitioner partitioner;
+  private final Partitioner partitioner;
 
-  public Validator(Set<? extends Evaluator<? super P>> evaluators, org.mimirframework.evaluation.partition.Partitioner partitioner) {
+  public Validator(Set<? extends Evaluator<? super P>> evaluators, Partitioner partitioner) {
     this.evaluators = new HashSet<>(evaluators);
     this.partitioner = partitioner;
   }
 
-  public Validator(org.mimirframework.evaluation.partition.Partitioner partitioner) {
+  public Validator(Partitioner partitioner) {
     this(Collections.emptySet(), partitioner);
   }
 
@@ -102,7 +104,7 @@ public abstract class Validator<P extends org.mimirframework.supervised.Predicto
    * @param y the target to used during evaluation
    * @return a result
    */
-  public Result test(org.mimirframework.supervised.Predictor.Learner<? extends P> learner, DataFrame x, Vector y) {
+  public Result test(Predictor.Learner<? extends P> learner, DataFrame x, Vector y) {
     Collection<Partition> partitions = getPartitioner().partition(x, y);
     MutableEvaluationContext<P> ctx = new MutableEvaluationContext<>();
     Vector.Builder actual = y.newBuilder();
@@ -165,7 +167,7 @@ public abstract class Validator<P extends org.mimirframework.supervised.Predicto
    * @param x the input features
    * @param y the input label
    */
-  protected abstract P fit(org.mimirframework.supervised.Predictor.Learner<? extends P> learner, DataFrame x, Vector y);
+  protected abstract P fit(Predictor.Learner<? extends P> learner, DataFrame x, Vector y);
 
   protected abstract void predict(MutableEvaluationContext<? extends P> ctx);
 
@@ -226,7 +228,7 @@ public abstract class Validator<P extends org.mimirframework.supervised.Predicto
    *
    * @return the partitioner used by this validator
    */
-  public final org.mimirframework.evaluation.partition.Partitioner getPartitioner() {
+  public final Partitioner getPartitioner() {
     return partitioner;
   }
 }

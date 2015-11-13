@@ -46,5 +46,5 @@ public abstract class ShapeletSplitter {
     return gain;
   }
 
-  public abstract org.mimirframework.classification.tree.TreeSplit<ShapeletThreshold> find(ClassSet classSet, DataFrame x, Vector y);
+  public abstract TreeSplit<ShapeletThreshold> find(ClassSet classSet, DataFrame x, Vector y);
 }

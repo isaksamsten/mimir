@@ -20,6 +20,7 @@ import org.briljantframework.optimize.NonlinearOptimizer;
 import org.mimirframework.classification.optimization.BinaryLogisticFunction;
 import org.mimirframework.classification.optimization.MultiClassLogisticFunction;
 import org.mimirframework.evaluation.EvaluationContext;
+import org.mimirframework.evaluation.MeasureSample;
 import org.mimirframework.supervised.Characteristic;
 import org.mimirframework.supervised.Predictor;
 
@@ -114,7 +115,7 @@ public class LogisticRegression extends AbstractClassifier {
   @Override
   public Set<Characteristic> getCharacteristics() {
     return Collections
-        .singleton(org.mimirframework.classification.ClassifierCharacteristic.ESTIMATOR);
+.singleton(ClassifierCharacteristic.ESTIMATOR);
   }
 
   @Override
@@ -123,7 +124,7 @@ public class LogisticRegression extends AbstractClassifier {
   }
 
   public static final class Configurator
-      implements org.mimirframework.classification.Classifier.Configurator<Learner> {
+ implements Classifier.Configurator<Learner> {
 
     private int iterations = 100;
     private double regularization = 0.01;
@@ -166,7 +167,8 @@ public class LogisticRegression extends AbstractClassifier {
     @Override
     public void accept(EvaluationContext<? extends LogisticRegression> ctx) {
       ctx.getMeasureCollection().add("logLoss",
-          org.mimirframework.evaluation.MeasureSample.IN_SAMPLE, ctx.getPredictor().getLogLoss());
+ MeasureSample.IN_SAMPLE,
+          ctx.getPredictor().getLogLoss());
 
       // TODO: compute log-loss out-sample
     }

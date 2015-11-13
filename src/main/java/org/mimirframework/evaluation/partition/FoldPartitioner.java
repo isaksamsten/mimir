@@ -49,7 +49,7 @@ public class FoldPartitioner implements Partitioner {
     return new AbstractCollection<Partition>() {
       @Override
       public Iterator<Partition> iterator() {
-        return new org.mimirframework.evaluation.partition.FoldIterator(x, y, folds);
+        return new FoldIterator(x, y, folds);
       }
 
       @Override

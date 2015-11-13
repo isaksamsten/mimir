@@ -25,18 +25,19 @@ import java.util.List;
 
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.evaluation.Validator;
 import org.mimirframework.supervised.Predictor;
 
 /**
  * @author Isak Karlsson
  */
-public interface Tuner<P extends org.mimirframework.supervised.Predictor, O extends org.mimirframework.supervised.Predictor.Configurator<? extends Predictor.Learner<? extends P>>> {
+public interface Tuner<P extends Predictor, O extends Predictor.Configurator<? extends Predictor.Learner<? extends P>>> {
 
   Tuner<P, O> setParameter(String name, UpdatableParameter<O> updater);
 
-  Tuner<P, O> setValidator(org.mimirframework.evaluation.Validator<P> validator);
+  Tuner<P, O> setValidator(Validator<P> validator);
 
-  org.mimirframework.evaluation.Validator<P> getValidator();
+  Validator<P> getValidator();
 
   /**
    * Optimize the paramters of the specified classifier over the specified data frame and labels

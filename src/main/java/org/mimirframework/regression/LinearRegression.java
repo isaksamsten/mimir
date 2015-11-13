@@ -7,6 +7,7 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.supervised.Characteristic;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -34,7 +35,7 @@ public final class LinearRegression implements Regression {
   }
 
   @Override
-  public Set<org.mimirframework.supervised.Characteristic> getCharacteristics() {
+  public Set<Characteristic> getCharacteristics() {
     return Collections.emptySet();
   }
 

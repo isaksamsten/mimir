@@ -26,8 +26,10 @@ import static org.junit.Assert.assertTrue;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.Datasets;
-import org.mimirframework.evaluation.partition.Partition;
 import org.junit.Test;
+import org.mimirframework.evaluation.partition.FoldPartitioner;
+import org.mimirframework.evaluation.partition.Partition;
+import org.mimirframework.evaluation.partition.Partitioner;
 
 public class FoldPartitionerTest {
 
@@ -39,7 +41,7 @@ public class FoldPartitionerTest {
 
     System.out.println(x);
 
-    org.mimirframework.evaluation.partition.Partitioner strategy = new org.mimirframework.evaluation.partition.FoldPartitioner(10);
+    Partitioner strategy = new FoldPartitioner(10);
     Iterable<Partition> partitionIterator = strategy.partition(x, y);
     int i = 0;
     for (Partition partition : partitionIterator) {

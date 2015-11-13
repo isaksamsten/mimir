@@ -21,10 +21,16 @@ import org.mimirframework.classification.tree.ClassSet;
 import org.mimirframework.classification.tree.Example;
 import org.mimirframework.classification.tree.Gain;
 import org.mimirframework.classification.tree.ShapeletThreshold;
+import org.mimirframework.classification.tree.TreeBranch;
 import org.mimirframework.classification.tree.TreeClassifier;
+import org.mimirframework.classification.tree.TreeLeaf;
+import org.mimirframework.classification.tree.TreeNode;
+import org.mimirframework.classification.tree.TreeSplit;
 import org.mimirframework.classification.tree.TreeVisitor;
 import org.mimirframework.distance.Distance;
+import org.mimirframework.distance.EarlyAbandonSlidingDistance;
 import org.mimirframework.distance.EuclideanDistance;
+import org.mimirframework.shapelet.ChannelShapelet;
 import org.mimirframework.shapelet.DerivativeShapelet;
 import org.mimirframework.shapelet.IndexSortedNormalizedShapelet;
 import org.mimirframework.shapelet.Shapelet;
@@ -49,7 +55,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
   private final DoubleArray positionImportance;
 
   private ShapeletTree(Vector classes,
-      org.mimirframework.classification.tree.TreeNode<ShapeletThreshold> node,
+ TreeNode<ShapeletThreshold> node,
       TreeVisitor<ShapeletThreshold> predictionVisitor, DoubleArray lengthImportance,
       DoubleArray positionImportance, int depth, ClassSet classSet) {
     super(classes, node, predictionVisitor);
@@ -179,7 +185,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       params.lengthImportance = DoubleArray.zeros(x.columns());
       params.positionImportance = DoubleArray.zeros(x.columns());
       params.originalData = x;
-      org.mimirframework.classification.tree.TreeNode<ShapeletThreshold> node =
+      TreeNode<ShapeletThreshold> node =
           build(dataFrame, y, classSet, params);
       /* new ShapletTreeVisitor(size, getDistanceMetric()) */
       // return new Classifier(
@@ -196,26 +202,26 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       // );
     }
 
-    protected org.mimirframework.classification.tree.TreeNode<ShapeletThreshold> build(DataFrame x,
+    protected TreeNode<ShapeletThreshold> build(DataFrame x,
         Vector y, ClassSet classSet, Params params) {
       if (classSet.getTotalWeight() <= minSplit || classSet.getTargetCount() == 1) {
-        return org.mimirframework.classification.tree.TreeLeaf.fromExamples(classSet,
+        return TreeLeaf.fromExamples(classSet,
             classSet.getTotalWeight() / params.noExamples);
       }
       params.depth += 1;
-      org.mimirframework.classification.tree.TreeSplit<ShapeletThreshold> maxSplit =
+      TreeSplit<ShapeletThreshold> maxSplit =
           find(classSet, x, y, params);
       if (maxSplit == null) {
-        return org.mimirframework.classification.tree.TreeLeaf.fromExamples(classSet,
+        return TreeLeaf.fromExamples(classSet,
             classSet.getTotalWeight() / params.noExamples);
       } else {
         ClassSet left = maxSplit.getLeft();
         ClassSet right = maxSplit.getRight();
         if (left.isEmpty()) {
-          return org.mimirframework.classification.tree.TreeLeaf.fromExamples(right,
+          return TreeLeaf.fromExamples(right,
               right.getTotalWeight() / params.noExamples);
         } else if (right.isEmpty()) {
-          return org.mimirframework.classification.tree.TreeLeaf.fromExamples(left,
+          return TreeLeaf.fromExamples(left,
               left.getTotalWeight() / params.noExamples);
         } else {
           // Shapelet shapelet = maxSplit.getThreshold().getShapelet();
@@ -232,28 +238,28 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
           // params.positionImportance.set(i, params.positionImportance.get(i) + (weight / length));
           // }
 
-          org.mimirframework.classification.tree.TreeNode<ShapeletThreshold> leftNode =
+          TreeNode<ShapeletThreshold> leftNode =
               build(x, y, left, params);
-          org.mimirframework.classification.tree.TreeNode<ShapeletThreshold> rightNode =
+          TreeNode<ShapeletThreshold> rightNode =
               build(x, y, right, params);
           Vector.Builder classDist = Vector.Builder.of(double.class);
           for (Object target : classSet.getTargets()) {
             classDist.set(target, classSet.get(target).getWeight());
           }
 
-          return new org.mimirframework.classification.tree.TreeBranch<>(leftNode, rightNode,
+          return new TreeBranch<>(leftNode, rightNode,
               classes, classDist.build(), maxSplit.getThreshold(),
               classSet.getTotalWeight() / params.noExamples);
         }
       }
     }
 
-    public org.mimirframework.classification.tree.TreeSplit<ShapeletThreshold> find(
+    public TreeSplit<ShapeletThreshold> find(
         ClassSet classSet, DataFrame x, Vector y, Params params) {
       return getUnivariateShapeletThreshold(classSet, x, y, params);
     }
 
-    protected org.mimirframework.classification.tree.TreeSplit<ShapeletThreshold> getUnivariateShapeletThreshold(
+    protected TreeSplit<ShapeletThreshold> getUnivariateShapeletThreshold(
         ClassSet classSet, DataFrame x, Vector y, Params params) {
       int maxShapelets = this.inspectedShapelets;
       if (maxShapelets < 0) {
@@ -300,7 +306,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
             Shapelet univariateShapelet = getUnivariateShapelet(classSet, x, index, channel);
             if (univariateShapelet != null) {
               shapelet =
-                  new org.mimirframework.shapelet.ChannelShapelet(channelIndex, univariateShapelet);
+ new ChannelShapelet(channelIndex, univariateShapelet);
             } else {
               shapelet = null;
             }
@@ -326,7 +332,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         return null;
       }
 
-      org.mimirframework.classification.tree.TreeSplit<ShapeletThreshold> bestSplit;
+      TreeSplit<ShapeletThreshold> bestSplit;
       if (assessment == Assessment.IG) {
         bestSplit = findBestSplit(classSet, x, y, shapelets);
       } else {
@@ -415,9 +421,9 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       return new DownsampledShapelet(index, start, length, downStart, downLength, timeSeries);
     }
 
-    protected org.mimirframework.classification.tree.TreeSplit<ShapeletThreshold> findBestSplit(
+    protected TreeSplit<ShapeletThreshold> findBestSplit(
         ClassSet classSet, DataFrame x, Vector y, List<Shapelet> shapelets) {
-      org.mimirframework.classification.tree.TreeSplit<ShapeletThreshold> bestSplit = null;
+      TreeSplit<ShapeletThreshold> bestSplit = null;
       Threshold bestThreshold = Threshold.inf();
       IntDoubleMap bestDistanceMap = null;
       for (Shapelet shapelet : shapelets) {
@@ -468,9 +474,9 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       for (Example example : classSet) {
         Vector record = x.loc().getRecord(example.getIndex());
         double distance;
-        if (shapelet instanceof org.mimirframework.shapelet.ChannelShapelet) {
+        if (shapelet instanceof ChannelShapelet) {
           Vector channel = record.loc().get(Vector.class,
-              ((org.mimirframework.shapelet.ChannelShapelet) shapelet).getChannel());
+ ((ChannelShapelet) shapelet).getChannel());
           distance = distanceMetric.compute(channel, shapelet);
         } else {
           distance = distanceMetric.compute(record, shapelet);
@@ -484,7 +490,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       return findBestThreshold(distances, classSet, y, sum);
     }
 
-    protected org.mimirframework.classification.tree.TreeSplit<ShapeletThreshold> findBestSplitFstat(
+    protected TreeSplit<ShapeletThreshold> findBestSplitFstat(
         ClassSet classSet, DataFrame x, Vector y, List<Shapelet> shapelets) {
       IntDoubleMap bestDistanceMap = null;
       List<ExampleDistance> bestDistances = null;
@@ -500,9 +506,9 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         for (Example example : classSet) {
           Vector record = x.loc().getRecord(example.getIndex());
           double dist;
-          if (shapelet instanceof org.mimirframework.shapelet.ChannelShapelet) {
+          if (shapelet instanceof ChannelShapelet) {
             Vector channel = record.loc().get(Vector.class,
-                ((org.mimirframework.shapelet.ChannelShapelet) shapelet).getChannel());
+ ((ChannelShapelet) shapelet).getChannel());
             dist = metric.compute(channel, shapelet);
           } else {
             dist = metric.compute(record, shapelet);
@@ -525,7 +531,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       }
 
       Threshold t = findBestThreshold(bestDistances, classSet, y, bestSum);
-      org.mimirframework.classification.tree.TreeSplit<ShapeletThreshold> split =
+      TreeSplit<ShapeletThreshold> split =
           split(bestDistanceMap, classSet, t.threshold, bestShapelet);
       split.setImpurity(t.impurity);
       return split;
@@ -659,7 +665,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       return new Threshold(threshold, lowestImpurity, largestGap, minimumMargin);
     }
 
-    protected org.mimirframework.classification.tree.TreeSplit<ShapeletThreshold> split(
+    protected TreeSplit<ShapeletThreshold> split(
         IntDoubleMap distanceMap, ClassSet classSet, double threshold, Shapelet shapelet) {
       ClassSet left = new ClassSet(classSet.getDomain());
       ClassSet right = new ClassSet(classSet.getDomain());
@@ -692,7 +698,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         }
       }
 
-      return new org.mimirframework.classification.tree.TreeSplit<>(left, right,
+      return new TreeSplit<>(left, right,
           new ShapeletThreshold(shapelet, threshold, classSet));
     }
 
@@ -782,13 +788,13 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
       @Override
       public DoubleArray visitLeaf(
-          org.mimirframework.classification.tree.TreeLeaf<ShapeletThreshold> leaf, Vector example) {
+TreeLeaf<ShapeletThreshold> leaf, Vector example) {
         return leaf.getProbabilities();
       }
 
       @Override
       public DoubleArray visitBranch(
-          org.mimirframework.classification.tree.TreeBranch<ShapeletThreshold> node,
+TreeBranch<ShapeletThreshold> node,
           Vector example) {
         Shapelet shapelet = node.getThreshold().getShapelet();
         double threshold = node.getThreshold().getDistance();
@@ -831,9 +837,9 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
           // return doubleArray;
         } else {
           double computedDistance;
-          if (shapelet instanceof org.mimirframework.shapelet.ChannelShapelet) {
+          if (shapelet instanceof ChannelShapelet) {
             int shapeletChannel =
-                ((org.mimirframework.shapelet.ChannelShapelet) shapelet).getChannel();
+ ((ChannelShapelet) shapelet).getChannel();
             Vector exampleChannel = example.loc().get(Vector.class, shapeletChannel);
             computedDistance = distanceMeasure.compute(exampleChannel, shapelet);
           } else {
@@ -864,13 +870,13 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
       @Override
       public DoubleArray visitLeaf(
-          org.mimirframework.classification.tree.TreeLeaf<ShapeletThreshold> leaf, Vector example) {
+TreeLeaf<ShapeletThreshold> leaf, Vector example) {
         return leaf.getProbabilities();
       }
 
       @Override
       public DoubleArray visitBranch(
-          org.mimirframework.classification.tree.TreeBranch<ShapeletThreshold> node,
+TreeBranch<ShapeletThreshold> node,
           Vector example) {
         Shapelet shapelet = node.getThreshold().getShapelet();
         double threshold = node.getThreshold().getDistance();
@@ -905,9 +911,9 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
           // return doubleArray;
         } else {
           double computedDistance;
-          if (shapelet instanceof org.mimirframework.shapelet.ChannelShapelet) {
+          if (shapelet instanceof ChannelShapelet) {
             int shapeletChannel =
-                ((org.mimirframework.shapelet.ChannelShapelet) shapelet).getChannel();
+ ((ChannelShapelet) shapelet).getChannel();
             Vector exampleChannel = example.loc().get(Vector.class, shapeletChannel);
             computedDistance = distanceMeasure.compute(exampleChannel, shapelet);
           } else {
@@ -939,13 +945,13 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
       @Override
       public DoubleArray visitLeaf(
-          org.mimirframework.classification.tree.TreeLeaf<ShapeletThreshold> leaf, Vector example) {
+TreeLeaf<ShapeletThreshold> leaf, Vector example) {
         return leaf.getProbabilities().times(weight);
       }
 
       @Override
       public DoubleArray visitBranch(
-          org.mimirframework.classification.tree.TreeBranch<ShapeletThreshold> node,
+TreeBranch<ShapeletThreshold> node,
           Vector example) {
         Shapelet shapelet = node.getThreshold().getShapelet();
         double threshold = node.getThreshold().getDistance();
@@ -976,9 +982,8 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         } else {
           WeightVisitor visitor = new WeightVisitor(distanceMeasure, weight);
           double computedDistance;
-          if (shapelet instanceof org.mimirframework.shapelet.ChannelShapelet) {
-            org.mimirframework.shapelet.ChannelShapelet channelShapelet =
-                (org.mimirframework.shapelet.ChannelShapelet) shapelet;
+          if (shapelet instanceof ChannelShapelet) {
+            ChannelShapelet channelShapelet = (ChannelShapelet) shapelet;
             Vector channel = example.loc().get(Vector.class, channelShapelet.getChannel());
             computedDistance = distanceMeasure.compute(channel, shapelet);
           } else {
@@ -1005,13 +1010,13 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
       @Override
       public DoubleArray visitLeaf(
-          org.mimirframework.classification.tree.TreeLeaf<ShapeletThreshold> leaf, Vector example) {
+TreeLeaf<ShapeletThreshold> leaf, Vector example) {
         return leaf.getProbabilities();
       }
 
       @Override
       public DoubleArray visitBranch(
-          org.mimirframework.classification.tree.TreeBranch<ShapeletThreshold> node,
+TreeBranch<ShapeletThreshold> node,
           Vector example) {
         Shapelet shapelet = node.getThreshold().getShapelet();
         double threshold = node.getThreshold().getDistance();
@@ -1025,9 +1030,9 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
           }
         } else {
           double computedDistance;
-          if (shapelet instanceof org.mimirframework.shapelet.ChannelShapelet) {
+          if (shapelet instanceof ChannelShapelet) {
             int shapeletChannel =
-                ((org.mimirframework.shapelet.ChannelShapelet) shapelet).getChannel();
+ ((ChannelShapelet) shapelet).getChannel();
             Vector exampleChannel = example.loc().get(Vector.class, shapeletChannel);
             computedDistance = distanceMeasure.compute(exampleChannel, shapelet);
           } else {
@@ -1047,7 +1052,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
     public Learner.Assessment assessment = Learner.Assessment.FSTAT;
     public double minSplit = 1;
-    public Distance metric = org.mimirframework.distance.EarlyAbandonSlidingDistance
+    public Distance metric = EarlyAbandonSlidingDistance
         .create(EuclideanDistance.getInstance());
     public int inspectedShapelets = 100;
     public double aggregateFraction = 1;

@@ -60,7 +60,7 @@ public interface Classifier extends Predictor {
   /**
    * The classes this predictor is able to predict, i.e. its co-domain. Note that the i:th element
    * of the returned vector is the label of the j:th column in the probability matrix returned by
-   * {@link #estimate(org.briljantframework.data.dataframe.DataFrame)}.
+   * {@link #estimate(DataFrame)}.
    *
    * @return the vector of classes.
    */
@@ -76,7 +76,7 @@ public interface Classifier extends Predictor {
   Vector predict(DataFrame x);
 
   /**
-   * Predict the class label of a specific {@link org.briljantframework.data.vector.Vector}
+   * Predict the class label of a specific {@link Vector}
    *
    * @param record to which the class label shall be assigned
    * @return the prediction

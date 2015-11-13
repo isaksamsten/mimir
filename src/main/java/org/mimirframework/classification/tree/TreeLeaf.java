@@ -21,7 +21,6 @@
 
 package org.mimirframework.classification.tree;
 
-import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.vector.Vector;
 
@@ -40,17 +39,17 @@ public final class TreeLeaf<T> implements TreeNode<T> {
     this.weight = weight;
   }
 
-  public static <T> TreeLeaf<T> fromExamples(org.mimirframework.classification.tree.ClassSet classSet) {
+  public static <T> TreeLeaf<T> fromExamples(ClassSet classSet) {
     return fromExamples(classSet, 1);
   }
 
-  public static <T> TreeLeaf<T> fromExamples(org.mimirframework.classification.tree.ClassSet classSet, double weight) {
+  public static <T> TreeLeaf<T> fromExamples(ClassSet classSet, double weight) {
     Vector domain = classSet.getDomain();
     DoubleArray prob = DoubleArray.zeros(domain.size());
     double totalWeight = classSet.getTotalWeight();
     for (int i = 0; i < domain.size(); i++) {
       Object label = domain.get(Object.class, i);
-      org.mimirframework.classification.tree.ClassSet.Sample sample = classSet.get(label);
+      ClassSet.Sample sample = classSet.get(label);
       if (sample == null) {
         prob.set(i, 0);
       } else {
@@ -83,7 +82,7 @@ public final class TreeLeaf<T> implements TreeNode<T> {
   }
 
   @Override
-  public final DoubleArray visit(org.mimirframework.classification.tree.TreeVisitor<T> visitor, Vector example) {
+  public final DoubleArray visit(TreeVisitor<T> visitor, Vector example) {
     return visitor.visitLeaf(this, example);
   }
 

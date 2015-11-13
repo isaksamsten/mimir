@@ -22,17 +22,19 @@
 package org.mimirframework.classification.tune;
 
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.evaluation.Result;
+import org.mimirframework.supervised.Predictor;
 
 /**
  * @author Isak Karlsson
  */
-public class Configuration<P extends org.mimirframework.supervised.Predictor> {
+public class Configuration<P extends Predictor> {
 
-  private final org.mimirframework.supervised.Predictor.Learner<? extends P> classifier;
-  private final org.mimirframework.evaluation.Result result;
+  private final Predictor.Learner<? extends P> classifier;
+  private final Result result;
   private final Vector parameters;
 
-  public Configuration(org.mimirframework.supervised.Predictor.Learner<? extends P> classifier, org.mimirframework.evaluation.Result result,
+  public Configuration(Predictor.Learner<? extends P> classifier, Result result,
                        Vector parameters) {
     this.classifier = classifier;
     this.result = result;
@@ -44,7 +46,7 @@ public class Configuration<P extends org.mimirframework.supervised.Predictor> {
    *
    * @return the classifier
    */
-  public org.mimirframework.supervised.Predictor.Learner<? extends P> getClassifier() {
+  public Predictor.Learner<? extends P> getClassifier() {
     return classifier;
   }
 
@@ -53,7 +55,7 @@ public class Configuration<P extends org.mimirframework.supervised.Predictor> {
    *
    * @return the result
    */
-  public org.mimirframework.evaluation.Result getResult() {
+  public Result getResult() {
     return result;
   }
 

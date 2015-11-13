@@ -21,6 +21,8 @@
 
 package org.mimirframework.shapelet;
 
+import static org.mimirframework.classification.ClassifierValidator.crossValidation;
+
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,12 +36,6 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
-import org.mimirframework.classification.Classifier;
-import org.mimirframework.classification.RandomForest;
-import org.mimirframework.classification.RandomShapeletForest;
-import org.mimirframework.classification.conformal.ConformalClassifier;
-import org.mimirframework.classification.conformal.DistanceNonconformity;
-import org.mimirframework.classification.conformal.InductiveConformalClassifier;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
@@ -52,12 +48,20 @@ import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.dataset.io.MatlabDatasetReader;
 import org.briljantframework.dataset.io.SequenceDatasetReader;
+import org.junit.Test;
+import org.mimirframework.classification.Classifier;
+import org.mimirframework.classification.RandomForest;
+import org.mimirframework.classification.RandomShapeletForest;
+import org.mimirframework.classification.conformal.ConformalClassifier;
+import org.mimirframework.classification.conformal.DistanceNonconformity;
+import org.mimirframework.classification.conformal.InductiveConformalClassifier;
 import org.mimirframework.classification.conformal.Nonconformity;
 import org.mimirframework.evaluation.Evaluator;
 import org.mimirframework.evaluation.Result;
 import org.mimirframework.evaluation.Validator;
 import org.mimirframework.evaluation.partition.Partition;
-import org.junit.Test;
+import org.mimirframework.evaluation.partition.SplitPartitioner;
+import org.mimirframework.supervised.Predictor;
 
 public class RandomShapeletForestTest {
 
@@ -235,15 +239,15 @@ public class RandomShapeletForestTest {
     String fileName = "synthetic_control";
     String path = "/Users/isak-kar/Downloads/dataset";
     DataFrame train =
-        DataFrames.permuteRecords(Datasets.load(
-            (i) -> new DataSeriesCollection.Builder(double.class),
-            new MatlabDatasetReader(new FileInputStream(String.format("%s/%s/%s_TRAIN", path,
-                fileName, fileName)))), new Random(123));
-    DataFrame test =
-        Datasets.load(
-            (i) -> new DataSeriesCollection.Builder(double.class),
-            new MatlabDatasetReader(new FileInputStream(String.format("%s/%s/%s_TEST", path,
-                fileName, fileName))));
+        DataFrames
+            .permuteRecords(
+                Datasets.load((i) -> new DataSeriesCollection.Builder(double.class),
+                    new MatlabDatasetReader(new FileInputStream(
+                        String.format("%s/%s/%s_TRAIN", path, fileName, fileName)))),
+        new Random(123));
+    DataFrame test = Datasets.load((i) -> new DataSeriesCollection.Builder(double.class),
+        new MatlabDatasetReader(
+            new FileInputStream(String.format("%s/%s/%s_TEST", path, fileName, fileName))));
 
     train.setColumnIndex(Index.range(train.columns()));
     test.setColumnIndex(Index.range(test.columns()));
@@ -267,7 +271,7 @@ public class RandomShapeletForestTest {
     // Gun_Point = 0.3
     // Mote_strain = 0.5
     Partition trainPart =
-        new org.mimirframework.evaluation.partition.SplitPartitioner(0.1).partition(train.drop(0), train.get(0)).iterator().next();
+        new SplitPartitioner(0.1).partition(train.drop(0), train.get(0)).iterator().next();
 
     Nonconformity.Learner nc = new DistanceNonconformity.Learner(1);
     // Nonconformity.Learner nc =
@@ -363,15 +367,15 @@ public class RandomShapeletForestTest {
     BooleanArray oob = predictor.getOobIndicator();
     for (int i = 0; i < x.rows(); i++) {
       Vector record = x.loc().getRecord(i);
-      List<org.mimirframework.classification.Classifier> oobMembers = getOobMembers(oob.getRow(i), predictor.getEnsembleMembers());
+      List<Classifier> oobMembers = getOobMembers(oob.getRow(i), predictor.getEnsembleMembers());
       DoubleArray estimate = predictOob(oobMembers, record);
 
     }
     return null;
   }
 
-  private List<org.mimirframework.classification.Classifier> getOobMembers(BooleanArray oob, List<org.mimirframework.classification.Classifier> classifiers) {
-    List<org.mimirframework.classification.Classifier> oobPredictors = new ArrayList<>();
+  private List<Classifier> getOobMembers(BooleanArray oob, List<Classifier> classifiers) {
+    List<Classifier> oobPredictors = new ArrayList<>();
     for (int i = 0; i < classifiers.size(); i++) {
       if (oob.get(i)) {
         oobPredictors.add(classifiers.get(i));
@@ -381,7 +385,7 @@ public class RandomShapeletForestTest {
     return oobPredictors;
   }
 
-  private DoubleArray predictOob(List<org.mimirframework.classification.Classifier> members, Vector record) {
+  private DoubleArray predictOob(List<Classifier> members, Vector record) {
 
     return null;
   }
@@ -412,16 +416,15 @@ public class RandomShapeletForestTest {
   @Test
   public void testSequences() throws Exception {
     String ade = "G444";
-    EntryReader in =
-        new SequenceDatasetReader(new FileInputStream("/Users/isak-kar/Desktop/sequences/" + ade
-            + ".seq"));
+    EntryReader in = new SequenceDatasetReader(
+        new FileInputStream("/Users/isak-kar/Desktop/sequences/" + ade + ".seq"));
 
     DataFrame frame = new DataSeriesCollection.Builder(VectorType.STRING).readAll(in).build();
     frame = vectorize(frame);
 
     // System.out.println(frame.rows() + ", " + frame.columns());
     // Utils.setRandomSeed(32);
-     frame = DataFrames.permuteRecords(frame);
+    frame = DataFrames.permuteRecords(frame);
     //
     Vector y = frame.get("Class");
     DataFrame x = frame.drop("Class");
@@ -432,7 +435,7 @@ public class RandomShapeletForestTest {
     int min = freq.values().stream().min(Integer::min).get();
     System.out.println(freq + " => " + ((double) min / sum));
     //
-    org.mimirframework.supervised.Predictor.Learner<? extends Classifier> forest =
+    Predictor.Learner<? extends Classifier> forest =
         new RandomForest.Configurator(100).setMaximumFeatures(100).configure();
     // new RandomShapeletForest.Configurator(100).setF.configure();
     // new RandomShapeletForest.Configurator(25).setDistance(
@@ -440,7 +443,7 @@ public class RandomShapeletForestTest {
     // new NearestNeighbours.Learner(1, new SimilarityDistance(
     // new SmithWatermanSimilarity(1, 0, 0)));
 
-    Validator<org.mimirframework.classification.Classifier> cv = org.mimirframework.classification.ClassifierValidator.crossValidation(10);
+    Validator<Classifier> cv = crossValidation(10);
     cv.add(Evaluator.foldOutput(fold -> System.out.printf("Completed fold %d\n", fold)));
     Result result = cv.test(forest, x, y);
     System.out.println(result.getMeasures().mean());

@@ -54,7 +54,7 @@ public class SplitPartitioner implements Partitioner {
     return new AbstractCollection<Partition>() {
       @Override
       public Iterator<Partition> iterator() {
-        return new org.mimirframework.evaluation.partition.SplitIterator(x, y, testFraction);
+        return new SplitIterator(x, y, testFraction);
       }
 
       @Override

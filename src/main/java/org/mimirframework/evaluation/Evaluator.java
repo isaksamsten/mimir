@@ -24,17 +24,19 @@ package org.mimirframework.evaluation;
 
 import java.util.function.IntConsumer;
 
+import org.mimirframework.supervised.Predictor;
+
 /**
  * @author Isak Karlsson
  */
-public interface Evaluator<P extends org.mimirframework.supervised.Predictor> {
+public interface Evaluator<P extends Predictor> {
 
-  static Evaluator<org.mimirframework.supervised.Predictor> foldOutput(IntConsumer consumer) {
-    return new Evaluator<org.mimirframework.supervised.Predictor>() {
+  static Evaluator<Predictor> foldOutput(IntConsumer consumer) {
+    return new Evaluator<Predictor>() {
       private int fold = 0;
 
       @Override
-      public void accept(EvaluationContext<? extends org.mimirframework.supervised.Predictor> ctx) {
+      public void accept(EvaluationContext<? extends Predictor> ctx) {
         consumer.accept(fold++);
       }
     };

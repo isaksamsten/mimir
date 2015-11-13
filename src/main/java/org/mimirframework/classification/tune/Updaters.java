@@ -34,7 +34,7 @@ public final class Updaters {
 
   private Updaters() {}
 
-  public static <T> org.mimirframework.classification.tune.UpdatableParameter<T> linspace(BiConsumer<? super T, Integer> consumer,
+  public static <T> UpdatableParameter<T> linspace(BiConsumer<? super T, Integer> consumer,
                                                                                           int start,
                                                                                           int end, int step) {
     Check.state(step > 0);
@@ -59,7 +59,7 @@ public final class Updaters {
     };
   }
 
-  public static <T> org.mimirframework.classification.tune.UpdatableParameter<T> linspace(BiConsumer<? super T, Double> consumer,
+  public static <T> UpdatableParameter<T> linspace(BiConsumer<? super T, Double> consumer,
                                                                                           double start, double end, int size) {
     Check.argument(size > 0, "Illegal step size");
     return () -> new ParameterUpdator<T>() {
@@ -84,9 +84,10 @@ public final class Updaters {
   }
 
   @SafeVarargs
-  public static <T, V> org.mimirframework.classification.tune.UpdatableParameter<T> enumeration(BiConsumer<T, V> updater, V... enumeration) {
+  public static <T, V> UpdatableParameter<T> enumeration(BiConsumer<T, V> updater,
+      V... enumeration) {
     Check.argument(enumeration.length > 0, "must enumerate value");
-    return new org.mimirframework.classification.tune.UpdatableEnumerationParameter<>(updater, enumeration);
+    return new UpdatableEnumerationParameter<>(updater, enumeration);
   }
 
 }

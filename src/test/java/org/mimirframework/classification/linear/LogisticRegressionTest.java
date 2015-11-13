@@ -32,6 +32,7 @@ import org.briljantframework.data.vector.Vectors;
 import org.junit.Test;
 import org.mimirframework.classification.Classifier;
 import org.mimirframework.classification.ClassifierValidator;
+import org.mimirframework.classification.LogisticRegression;
 import org.mimirframework.classification.RandomForest;
 import org.mimirframework.evaluation.Result;
 
@@ -111,9 +112,8 @@ public class LogisticRegressionTest {
     Vector y = Vector.of(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
     System.out.println(x);
 
-    org.mimirframework.classification.LogisticRegression.Learner regression =
-        new org.mimirframework.classification.LogisticRegression.Learner();
-    org.mimirframework.classification.LogisticRegression model = regression.fit(x, y);
+    LogisticRegression.Learner regression = new LogisticRegression.Learner();
+    LogisticRegression model = regression.fit(x, y);
     System.out.println(model);
 
     System.out.println("(Intercept) " + model.getOddsRatio("(Intercept)"));

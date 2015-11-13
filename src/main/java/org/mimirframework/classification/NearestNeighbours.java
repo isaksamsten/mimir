@@ -4,12 +4,14 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.briljantframework.Check;
-import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
+import org.mimirframework.distance.Distance;
 import org.mimirframework.distance.EuclideanDistance;
+import org.mimirframework.supervised.Characteristic;
+import org.mimirframework.supervised.Predictor;
 
 /**
  * In pattern recognition, the k-Nearest Neighbors algorithm (or k-NN for short) is a non-parametric
@@ -33,10 +35,10 @@ public class NearestNeighbours extends AbstractClassifier {
 
   private final DataFrame x;
   private final Vector y;
-  private final org.mimirframework.distance.Distance distance;
+  private final Distance distance;
   private final int k;
 
-  private NearestNeighbours(DataFrame x, Vector y, org.mimirframework.distance.Distance distance, int k, Vector classes) {
+  private NearestNeighbours(DataFrame x, Vector y, Distance distance, int k, Vector classes) {
     super(classes);
     this.x = x;
     this.y = y;
@@ -67,7 +69,7 @@ public class NearestNeighbours extends AbstractClassifier {
   }
 
   @Override
-  public Set<org.mimirframework.supervised.Characteristic> getCharacteristics() {
+  public Set<Characteristic> getCharacteristics() {
     return Collections.singleton(ClassifierCharacteristic.ESTIMATOR);
   }
 
@@ -107,10 +109,10 @@ public class NearestNeighbours extends AbstractClassifier {
   /**
    * A nearest neighbour learner learns a nearest neighbours classifier
    */
-  public static class Learner implements org.mimirframework.supervised.Predictor.Learner<NearestNeighbours> {
+  public static class Learner implements Predictor.Learner<NearestNeighbours> {
 
     private final int neighbors;
-    private final org.mimirframework.distance.Distance distance;
+    private final Distance distance;
 
     private Learner(Configurator builder) {
       this.neighbors = builder.neighbors;
@@ -121,7 +123,7 @@ public class NearestNeighbours extends AbstractClassifier {
       this(k, EuclideanDistance.getInstance());
     }
 
-    public Learner(int k, org.mimirframework.distance.Distance distance) {
+    public Learner(int k, Distance distance) {
       this.neighbors = k;
       this.distance = distance;
     }
@@ -139,21 +141,21 @@ public class NearestNeighbours extends AbstractClassifier {
     }
   }
 
-  public static class Configurator implements org.mimirframework.supervised.Predictor.Configurator<Learner> {
+  public static class Configurator implements Predictor.Configurator<Learner> {
 
     public int neighbors;
-    private org.mimirframework.distance.Distance distance = EuclideanDistance.getInstance();
+    private Distance distance = EuclideanDistance.getInstance();
 
     public Configurator(int neighbors) {
       this.neighbors = neighbors;
     }
 
-    public org.mimirframework.supervised.Predictor.Configurator setNeighbors(int k) {
+    public Predictor.Configurator setNeighbors(int k) {
       this.neighbors = k;
       return this;
     }
 
-    public org.mimirframework.supervised.Predictor.Configurator setDistance(org.mimirframework.distance.Distance distance) {
+    public Predictor.Configurator setDistance(Distance distance) {
       this.distance = distance;
       return this;
     }

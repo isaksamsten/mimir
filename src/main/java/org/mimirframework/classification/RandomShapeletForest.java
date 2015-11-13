@@ -12,6 +12,10 @@ import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
+import org.mimirframework.classification.tree.ClassSet;
+import org.mimirframework.classification.tree.Example;
+import org.mimirframework.distance.Distance;
+import org.mimirframework.evaluation.EvaluationContext;
 
 /**
  * <h1>Publications</h1>
@@ -113,7 +117,7 @@ public class RandomShapeletForest extends Ensemble {
       return this;
     }
 
-    public Configurator setDistance(org.mimirframework.distance.Distance distance) {
+    public Configurator setDistance(Distance distance) {
       shapeletTree.setDistance(distance);
       return this;
     }
@@ -144,7 +148,7 @@ public class RandomShapeletForest extends Ensemble {
 
     @Override
     public void accept(
-        org.mimirframework.evaluation.EvaluationContext<? extends RandomShapeletForest> ctx) {
+EvaluationContext<? extends RandomShapeletForest> ctx) {
       ctx.getMeasureCollection().add("depth", ctx.getPredictor().getAverageDepth());
     }
   }
@@ -171,8 +175,7 @@ public class RandomShapeletForest extends Ensemble {
     @Override
     public RandomShapeletForest fit(DataFrame x, Vector y) {
       Vector classes = Vectors.unique(y);
-      org.mimirframework.classification.tree.ClassSet classSet =
-          new org.mimirframework.classification.tree.ClassSet(y, classes);
+      ClassSet classSet = new ClassSet(y, classes);
       List<FitTask> tasks = new ArrayList<>();
       BooleanArray oobIndicator = Arrays.newBooleanArray(x.rows(), size());
       for (int i = 0; i < size(); i++) {
@@ -212,7 +215,7 @@ public class RandomShapeletForest extends Ensemble {
 
     private static final class FitTask implements Callable<ShapeletTree> {
 
-      private final org.mimirframework.classification.tree.ClassSet classSet;
+      private final ClassSet classSet;
       private final DataFrame x;
       private final Vector y;
       private final Vector classes;
@@ -220,7 +223,7 @@ public class RandomShapeletForest extends Ensemble {
       private final BooleanArray oobIndicator;
 
 
-      private FitTask(org.mimirframework.classification.tree.ClassSet classSet, DataFrame x,
+      private FitTask(ClassSet classSet, DataFrame x,
           Vector y, ShapeletTree.Configurator configurator, Vector classes,
           BooleanArray oobIndicator) {
         this.classSet = classSet;
@@ -234,21 +237,18 @@ public class RandomShapeletForest extends Ensemble {
       @Override
       public ShapeletTree call() throws Exception {
         Random random = new Random(Thread.currentThread().getId() * System.nanoTime());
-        org.mimirframework.classification.tree.ClassSet sample = sample(classSet, random);
+        ClassSet sample = sample(classSet, random);
         double low = configurator.lowerLength;
         double high = configurator.upperLength;
         return new ShapeletTree.Learner(low, high, configurator, sample, classes).fit(x, y);
       }
 
-      public org.mimirframework.classification.tree.ClassSet sample(
-          org.mimirframework.classification.tree.ClassSet classSet, Random random) {
-        org.mimirframework.classification.tree.ClassSet inBag =
-            new org.mimirframework.classification.tree.ClassSet(classSet.getDomain());
+      public ClassSet sample(ClassSet classSet, Random random) {
+        ClassSet inBag = new ClassSet(classSet.getDomain());
         int[] bootstrap = bootstrap(classSet, random);
-        for (org.mimirframework.classification.tree.ClassSet.Sample sample : classSet.samples()) {
-          org.mimirframework.classification.tree.ClassSet.Sample inSample =
-              org.mimirframework.classification.tree.ClassSet.Sample.create(sample.getTarget());
-          for (org.mimirframework.classification.tree.Example example : sample) {
+        for (ClassSet.Sample sample : classSet.samples()) {
+          ClassSet.Sample inSample = ClassSet.Sample.create(sample.getTarget());
+          for (Example example : sample) {
             int id = example.getIndex();
             if (bootstrap[id] > 0) {
               inSample.add(example.updateWeight(bootstrap[id]));
@@ -263,7 +263,7 @@ public class RandomShapeletForest extends Ensemble {
         return inBag;
       }
 
-      private int[] bootstrap(org.mimirframework.classification.tree.ClassSet sample,
+      private int[] bootstrap(ClassSet sample,
           Random random) {
         int[] bootstrap = new int[sample.size()];
         for (int i = 0; i < bootstrap.length; i++) {

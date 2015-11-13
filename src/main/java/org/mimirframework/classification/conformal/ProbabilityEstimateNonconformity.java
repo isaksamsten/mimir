@@ -4,19 +4,21 @@ import java.util.Objects;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
-import org.mimirframework.classification.Classifier;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.classification.Classifier;
+import org.mimirframework.classification.ClassifierCharacteristic;
+import org.mimirframework.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public class ProbabilityEstimateNonconformity implements Nonconformity {
 
-  private final org.mimirframework.classification.Classifier classifier;
+  private final Classifier classifier;
   private final ProbabilityCostFunction errorFunction;
 
-  ProbabilityEstimateNonconformity(org.mimirframework.classification.Classifier classifier, ProbabilityCostFunction errorFunction) {
+  ProbabilityEstimateNonconformity(Classifier classifier, ProbabilityCostFunction errorFunction) {
     this.classifier = classifier;
     this.errorFunction = errorFunction;
   }
@@ -42,10 +44,10 @@ public class ProbabilityEstimateNonconformity implements Nonconformity {
    */
   public static class Learner implements Nonconformity.Learner {
 
-    private final org.mimirframework.supervised.Predictor.Learner<? extends Classifier> classifier;
+    private final Predictor.Learner<? extends Classifier> classifier;
     private final ProbabilityCostFunction errorFunction;
 
-    public Learner(org.mimirframework.supervised.Predictor.Learner<? extends Classifier> classifier,
+    public Learner(Predictor.Learner<? extends Classifier> classifier,
                    ProbabilityCostFunction errorFunction) {
       this.classifier = Objects.requireNonNull(classifier, "A classifier is required.");
       this.errorFunction = Objects.requireNonNull(errorFunction, "An error function is required");
@@ -57,11 +59,11 @@ public class ProbabilityEstimateNonconformity implements Nonconformity {
       Objects.requireNonNull(x, "Input data is required.");
       Objects.requireNonNull(y, "Input target is required.");
       Check.argument(x.rows() == y.size(), "The size of input data and input target don't match");
-      org.mimirframework.classification.Classifier probabilityEstimator = classifier.fit(x, y);
+      Classifier probabilityEstimator = classifier.fit(x, y);
       Check.state(
           probabilityEstimator != null
               && probabilityEstimator.getCharacteristics().contains(
-                  org.mimirframework.classification.ClassifierCharacteristic.ESTIMATOR),
+ClassifierCharacteristic.ESTIMATOR),
           "The produced classifier can't estimate probabilities");
       return new ProbabilityEstimateNonconformity(probabilityEstimator, errorFunction);
     }

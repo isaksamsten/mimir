@@ -45,12 +45,12 @@ import org.briljantframework.data.vector.Vector;
 public class LeaveOneOutPartitioner implements Partitioner {
 
   @Override
-  public Collection<org.mimirframework.evaluation.partition.Partition> partition(DataFrame x, Vector y) {
+  public Collection<Partition> partition(DataFrame x, Vector y) {
     Check.size(x.rows(), y.size());
-    return new AbstractCollection<org.mimirframework.evaluation.partition.Partition>() {
+    return new AbstractCollection<Partition>() {
       @Override
-      public Iterator<org.mimirframework.evaluation.partition.Partition> iterator() {
-        return new org.mimirframework.evaluation.partition.FoldIterator(x, y, x.rows());
+      public Iterator<Partition> iterator() {
+        return new FoldIterator(x, y, x.rows());
       }
 
       @Override

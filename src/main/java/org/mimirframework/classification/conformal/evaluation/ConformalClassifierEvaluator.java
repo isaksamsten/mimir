@@ -2,13 +2,16 @@ package org.mimirframework.classification.conformal.evaluation;
 
 import org.apache.commons.math3.util.Precision;
 import org.briljantframework.array.DoubleArray;
-import org.mimirframework.classification.conformal.ConformalClassifier;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.classification.conformal.ConformalClassifier;
+import org.mimirframework.evaluation.EvaluationContext;
+import org.mimirframework.evaluation.Evaluator;
+import org.mimirframework.evaluation.MeasureCollection;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class ConformalClassifierEvaluator implements org.mimirframework.evaluation.Evaluator<ConformalClassifier> {
+public class ConformalClassifierEvaluator implements Evaluator<ConformalClassifier> {
 
   private final double significance;
 
@@ -17,7 +20,7 @@ public class ConformalClassifierEvaluator implements org.mimirframework.evaluati
   }
 
   @Override
-  public void accept(org.mimirframework.evaluation.EvaluationContext<? extends ConformalClassifier> ctx) {
+  public void accept(EvaluationContext<? extends ConformalClassifier> ctx) {
     Vector truth = ctx.getPartition().getValidationTarget();
     Vector classes = ctx.getPredictor().getClasses();
     DoubleArray scores = ctx.getEstimates();
@@ -25,7 +28,7 @@ public class ConformalClassifierEvaluator implements org.mimirframework.evaluati
     ConformalClassifierMeasure cm =
         new ConformalClassifierMeasure(truth, scores, significance, classes);
 
-    org.mimirframework.evaluation.MeasureCollection measureCollection = ctx.getMeasureCollection();
+    MeasureCollection measureCollection = ctx.getMeasureCollection();
     measureCollection.add("accuracy", cm.getAccuracy());
     measureCollection.add("error", cm.getError());
     measureCollection.add("confidence", cm.getConfidence());

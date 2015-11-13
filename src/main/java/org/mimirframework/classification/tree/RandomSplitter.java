@@ -35,16 +35,16 @@ public class RandomSplitter extends AbstractSplitter {
 
   private final int maxFeatures;
 
-  private final org.mimirframework.classification.tree.Gain criterion;
+  private final Gain criterion;
   private int[] features = null;
 
-  public RandomSplitter(int maxFeatures, org.mimirframework.classification.tree.Gain criterion) {
+  public RandomSplitter(int maxFeatures, Gain criterion) {
     this.maxFeatures = maxFeatures;
     this.criterion = criterion;
   }
 
   public RandomSplitter(int maxFeatures) {
-    this(maxFeatures, org.mimirframework.classification.tree.Gain.INFO);
+    this(maxFeatures, Gain.INFO);
   }
 
   public static Builder withMaximumFeatures(int maxFeatures) {
@@ -52,7 +52,7 @@ public class RandomSplitter extends AbstractSplitter {
   }
 
   @Override
-  public org.mimirframework.classification.tree.TreeSplit<ValueThreshold> find(org.mimirframework.classification.tree.ClassSet classSet, DataFrame dataFrame, Vector column) {
+  public TreeSplit<ValueThreshold> find(ClassSet classSet, DataFrame dataFrame, Vector column) {
     if (features == null) {
       initialize(dataFrame);
     }
@@ -66,7 +66,7 @@ public class RandomSplitter extends AbstractSplitter {
       ArrayAllocations.shuffle(features);
     }
 
-    org.mimirframework.classification.tree.TreeSplit<ValueThreshold> bestSplit = null;
+    TreeSplit<ValueThreshold> bestSplit = null;
     double bestImpurity = Double.POSITIVE_INFINITY;
     for (int i = 0; i < features.length && i < maxFeatures; i++) {
       int axis = features[i];
@@ -76,7 +76,7 @@ public class RandomSplitter extends AbstractSplitter {
         continue;
       }
 
-      org.mimirframework.classification.tree.TreeSplit<ValueThreshold> split = split(dataFrame, classSet, axis, threshold);
+      TreeSplit<ValueThreshold> split = split(dataFrame, classSet, axis, threshold);
       double impurity = criterion.compute(split);
       if (impurity < bestImpurity) {
         bestSplit = split;
@@ -104,7 +104,7 @@ public class RandomSplitter extends AbstractSplitter {
    * @param classSet the examples
    * @return the value
    */
-  protected Object search(Vector axis, org.mimirframework.classification.tree.ClassSet classSet) {
+  protected Object search(Vector axis, ClassSet classSet) {
     switch (axis.getType().getScale()) {
       case NOMINAL:
         return sampleCategoricValue(axis, classSet);
@@ -122,9 +122,9 @@ public class RandomSplitter extends AbstractSplitter {
    * @param classSet the examples
    * @return the value
    */
-  protected double sampleNumericValue(Vector vector, org.mimirframework.classification.tree.ClassSet classSet) {
-    org.mimirframework.classification.tree.Example a = classSet.getRandomSample().getRandomExample();
-    org.mimirframework.classification.tree.Example b = classSet.getRandomSample().getRandomExample();
+  protected double sampleNumericValue(Vector vector, ClassSet classSet) {
+    Example a = classSet.getRandomSample().getRandomExample();
+    Example b = classSet.getRandomSample().getRandomExample();
 
     double valueA = vector.loc().getAsDouble(a.getIndex());
     double valueB = vector.loc().getAsDouble(b.getIndex());
@@ -147,8 +147,8 @@ public class RandomSplitter extends AbstractSplitter {
    * @param classSet the examples
    * @return the value
    */
-  protected Object sampleCategoricValue(Vector axisVector, org.mimirframework.classification.tree.ClassSet classSet) {
-    org.mimirframework.classification.tree.Example example = classSet.getRandomSample().getRandomExample();
+  protected Object sampleCategoricValue(Vector axisVector, ClassSet classSet) {
+    Example example = classSet.getRandomSample().getRandomExample();
     return axisVector.get(Object.class, example.getIndex());
   }
 
@@ -158,7 +158,7 @@ public class RandomSplitter extends AbstractSplitter {
   public static class Builder {
 
     private int maxFeatures;
-    private org.mimirframework.classification.tree.Gain criterion = org.mimirframework.classification.tree.Gain.INFO;
+    private Gain criterion = Gain.INFO;
 
     private Builder(int maxFeatures) {
       this.maxFeatures = maxFeatures;
@@ -181,7 +181,7 @@ public class RandomSplitter extends AbstractSplitter {
      * @param criterion the withCriterion
      * @return the withCriterion
      */
-    public Builder withCriterion(org.mimirframework.classification.tree.Gain criterion) {
+    public Builder withCriterion(Gain criterion) {
       this.criterion = criterion;
       return this;
     }

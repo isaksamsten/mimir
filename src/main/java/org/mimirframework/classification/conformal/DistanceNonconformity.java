@@ -8,6 +8,8 @@ import org.briljantframework.array.IntArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.classification.NearestNeighbours;
+import org.mimirframework.distance.Distance;
 import org.mimirframework.distance.EuclideanDistance;
 
 /**
@@ -15,10 +17,10 @@ import org.mimirframework.distance.EuclideanDistance;
  */
 public class DistanceNonconformity implements Nonconformity {
 
-  private final org.mimirframework.classification.NearestNeighbours predictor;
+  private final NearestNeighbours predictor;
   private final int k;
 
-  public DistanceNonconformity(org.mimirframework.classification.NearestNeighbours predictor, int k) {
+  public DistanceNonconformity(NearestNeighbours predictor, int k) {
     this.predictor = predictor;
     this.k = k;
   }
@@ -63,32 +65,32 @@ public class DistanceNonconformity implements Nonconformity {
 
   /**
    * A nonconformity learner that produces a nonconformity scorer based on the {@code k} nearest
-   * neighbours according to the specified {@linkplain org.mimirframework.distance.Distance distance function}.
+   * neighbours according to the specified {@linkplain Distance distance function}.
    *
    * <p/>
    * The nonconformity score is computed by taking the difference of the distance of the {@code k}
-   * closest neighbours of the specified label and the distance of the {@code k} closest neighbours of
-   * instances with a different label.
+   * closest neighbours of the specified label and the distance of the {@code k} closest neighbours
+   * of instances with a different label.
    *
    * <h3>References</h3>
    * <ul>
-   * <li>Vovk, V., Gammerman, A., Shafer, G. (2005) Algorithmic Learning in a Random World. New York:
-   * Springer. See Chapter 3, p. 54.</li>
+   * <li>Vovk, V., Gammerman, A., Shafer, G. (2005) Algorithmic Learning in a Random World. New
+   * York: Springer. See Chapter 3, p. 54.</li>
    * </ul>
    *
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
   public static class Learner implements Nonconformity.Learner {
 
-    private final org.mimirframework.classification.NearestNeighbours.Learner nearestNeighbors;
+    private final NearestNeighbours.Learner nearestNeighbors;
     private final int k;
 
     public Learner(int k) {
       this(k, EuclideanDistance.getInstance());
     }
 
-    public Learner(int k, org.mimirframework.distance.Distance distance) {
-      this.nearestNeighbors = new org.mimirframework.classification.NearestNeighbours.Learner(k, distance);
+    public Learner(int k, Distance distance) {
+      this.nearestNeighbors = new NearestNeighbours.Learner(k, distance);
       this.k = k;
     }
 

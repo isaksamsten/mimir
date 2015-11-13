@@ -27,10 +27,10 @@ import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.Datasets;
+import org.junit.Test;
 import org.mimirframework.evaluation.Result;
 import org.mimirframework.evaluation.Validator;
 import org.mimirframework.evaluation.partition.FoldPartitioner;
-import org.junit.Test;
 
 public class RandomForestTest {
 
@@ -43,12 +43,12 @@ public class RandomForestTest {
 
     System.out.println(x);
     IntArray f = Arrays.newIntVector(10, 2, 3);
-    Validator<org.mimirframework.classification.RandomForest> classifierValidator =
+    Validator<RandomForest> classifierValidator =
         new ClassifierValidator<>(new FoldPartitioner(10));
-    classifierValidator.add(new org.mimirframework.classification.Ensemble.Evaluator());
+    classifierValidator.add(new Ensemble.Evaluator());
     for (int i = 0; i < f.size(); i++) {
-      org.mimirframework.classification.RandomForest.Learner forest =
-          new org.mimirframework.classification.RandomForest.Configurator(100).setMaximumFeatures(f.get(i)).configure();
+      RandomForest.Learner forest =
+          new RandomForest.Configurator(100).setMaximumFeatures(f.get(i)).configure();
       Result result = classifierValidator.test(forest, x, y);
       System.out.println(result.getMeasures());
     }

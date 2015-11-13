@@ -36,5 +36,5 @@ public interface Splitter {
    * @param dataset the container
    * @return the examples . split
    */
-  TreeSplit<ValueThreshold> find(org.mimirframework.classification.tree.ClassSet classSet, DataFrame dataset, Vector target);
+  TreeSplit<ValueThreshold> find(ClassSet classSet, DataFrame dataset, Vector target);
 }

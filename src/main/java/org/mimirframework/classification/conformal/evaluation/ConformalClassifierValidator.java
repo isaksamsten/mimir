@@ -4,34 +4,42 @@ import java.util.List;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.mimirframework.classification.conformal.ConformalClassifier;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.classification.conformal.ConformalClassifier;
+import org.mimirframework.evaluation.EvaluationContext;
+import org.mimirframework.evaluation.MutableEvaluationContext;
+import org.mimirframework.evaluation.Validator;
+import org.mimirframework.evaluation.partition.FoldPartitioner;
+import org.mimirframework.evaluation.partition.Partition;
+import org.mimirframework.evaluation.partition.Partitioner;
+import org.mimirframework.evaluation.partition.SplitPartitioner;
+import org.mimirframework.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public final class ConformalClassifierValidator<P extends ConformalClassifier>
-    extends org.mimirframework.evaluation.Validator<P> {
+    extends Validator<P> {
 
   private final double calibrationSize;
   private final List<Double> confidences;
 
-  public ConformalClassifierValidator(org.mimirframework.evaluation.partition.Partitioner partitioner, double calibrationSize,
+  public ConformalClassifierValidator(Partitioner partitioner, double calibrationSize,
                                       List<Double> confidences) {
     super(partitioner);
     this.calibrationSize = calibrationSize;
     this.confidences = confidences;
   }
 
-  public ConformalClassifierValidator(org.mimirframework.evaluation.partition.Partitioner partitioner, double calibrationSize) {
+  public ConformalClassifierValidator(Partitioner partitioner, double calibrationSize) {
     super(partitioner);
     this.calibrationSize = calibrationSize;
     this.confidences = Arrays.linspace(0.01, 0.1, 9).toList();
   }
 
   @Override
-  protected void evaluate(org.mimirframework.evaluation.EvaluationContext<P> evaluationContext, int fold) {
+  protected void evaluate(EvaluationContext<P> evaluationContext, int fold) {
     for (Double confidence : confidences) {
       evaluationContext.getMeasureCollection().add("significance", confidence);
       evaluationContext.getMeasureCollection().add("fold", fold);
@@ -41,16 +49,16 @@ public final class ConformalClassifierValidator<P extends ConformalClassifier>
   }
 
   @Override
-  protected P fit(org.mimirframework.supervised.Predictor.Learner<? extends P> learner, DataFrame x, Vector y) {
-    org.mimirframework.evaluation.partition.SplitPartitioner partitioner = new org.mimirframework.evaluation.partition.SplitPartitioner(calibrationSize);
-    org.mimirframework.evaluation.partition.Partition partition = partitioner.partition(x, y).iterator().next();
+  protected P fit(Predictor.Learner<? extends P> learner, DataFrame x, Vector y) {
+    SplitPartitioner partitioner = new SplitPartitioner(calibrationSize);
+    Partition partition = partitioner.partition(x, y).iterator().next();
     P fit = learner.fit(partition.getTrainingData(), partition.getTrainingTarget());
     fit.calibrate(partition.getValidationData(), partition.getValidationTarget());
     return fit;
   }
 
   @Override
-  protected void predict(org.mimirframework.evaluation.MutableEvaluationContext<? extends P> ctx) {
+  protected void predict(MutableEvaluationContext<? extends P> ctx) {
     DataFrame validationData = ctx.getPartition().getValidationData();
     ctx.setPredictions(ctx.getPredictor().predict(validationData));
     ctx.setEstimates(ctx.getPredictor().estimate(validationData));
@@ -74,7 +82,7 @@ public final class ConformalClassifierValidator<P extends ConformalClassifier>
 
   public static <T extends ConformalClassifier> ConformalClassifierValidator<T> crossValidator(
       int folds, double calibrationSize, DoubleArray significance) {
-    return new ConformalClassifierValidator<T>(new org.mimirframework.evaluation.partition.FoldPartitioner(folds), calibrationSize,
+    return new ConformalClassifierValidator<T>(new FoldPartitioner(folds), calibrationSize,
         significance.toList());
   }
 }

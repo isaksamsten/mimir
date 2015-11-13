@@ -36,8 +36,7 @@ import org.mimirframework.supervised.Characteristic;
 
 /**
  * Provides sane defaults for a predictor. Sub-classes only have to implement the
- * {@link #estimate(org.briljantframework.data.vector.Vector)} method to have a sensible default
- * predictor.
+ * {@link #estimate(Vector)} method to have a sensible default predictor.
  * 
  * <p/>
  * For a classifier unable to output probability estimates the {@linkplain #estimate(Vector)} should

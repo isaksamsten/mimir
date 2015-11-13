@@ -4,13 +4,18 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.mimirframework.classifier.evaluation.ClassifierEvaluator;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.classifier.evaluation.ClassifierEvaluator;
 import org.mimirframework.evaluation.Evaluator;
+import org.mimirframework.evaluation.MutableEvaluationContext;
 import org.mimirframework.evaluation.Validator;
+import org.mimirframework.evaluation.partition.FoldPartitioner;
 import org.mimirframework.evaluation.partition.Partition;
+import org.mimirframework.evaluation.partition.Partitioner;
+import org.mimirframework.evaluation.partition.SplitPartitioner;
 import org.mimirframework.supervised.Predictor;
 
 /**
@@ -25,11 +30,11 @@ public class ClassifierValidator<T extends Classifier> extends Validator<T> {
       new HashSet<>(Collections.singletonList(ClassifierEvaluator.getInstance()));
 
   public ClassifierValidator(Set<? extends Evaluator<? super T>> evaluators,
-      org.mimirframework.evaluation.partition.Partitioner partitioner) {
+      Partitioner partitioner) {
     super(evaluators, partitioner);
   }
 
-  public ClassifierValidator(org.mimirframework.evaluation.partition.Partitioner partitioner) {
+  public ClassifierValidator(Partitioner partitioner) {
     super(partitioner);
   }
 
@@ -39,7 +44,7 @@ public class ClassifierValidator<T extends Classifier> extends Validator<T> {
   }
 
   @Override
-  protected void predict(org.mimirframework.evaluation.MutableEvaluationContext<? extends T> ctx) {
+  protected void predict(MutableEvaluationContext<? extends T> ctx) {
     T p = ctx.getPredictor();
     Partition partition = ctx.getEvaluationContext().getPartition();
     DataFrame x = partition.getValidationData();
@@ -54,7 +59,7 @@ public class ClassifierValidator<T extends Classifier> extends Validator<T> {
       ctx.setEstimates(estimate);
       for (int i = 0; i < estimate.rows(); i++) {
         builder.loc().set(i, classes,
-            org.briljantframework.array.Arrays.argmax(estimate.getRow(i)));
+ Arrays.argmax(estimate.getRow(i)));
       }
       ctx.setPredictions(builder.build());
     } else {
@@ -68,7 +73,7 @@ public class ClassifierValidator<T extends Classifier> extends Validator<T> {
   }
 
   public static <T extends Classifier> ClassifierValidator<T> splitValidation(double testFraction) {
-    return createValidator(new org.mimirframework.evaluation.partition.SplitPartitioner(testFraction));
+    return createValidator(new SplitPartitioner(testFraction));
   }
 
   public static <T extends Classifier> ClassifierValidator<T> leaveOneOutValidation() {
@@ -76,11 +81,11 @@ public class ClassifierValidator<T extends Classifier> extends Validator<T> {
   }
 
   public static <T extends Classifier> ClassifierValidator<T> crossValidation(int folds) {
-    return createValidator(new org.mimirframework.evaluation.partition.FoldPartitioner(folds));
+    return createValidator(new FoldPartitioner(folds));
   }
 
   private static <T extends Classifier> ClassifierValidator<T> createValidator(
-      org.mimirframework.evaluation.partition.Partitioner partitioner) {
+      Partitioner partitioner) {
     return new ClassifierValidator<T>(EVALUATORS, partitioner);
   }
 }

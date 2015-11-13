@@ -10,11 +10,15 @@ import org.briljantframework.array.BooleanArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
+import org.mimirframework.classification.tree.ClassSet;
+import org.mimirframework.classification.tree.Example;
+import org.mimirframework.classification.tree.RandomSplitter;
+import org.mimirframework.classification.tree.Splitter;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public final class RandomForest extends org.mimirframework.classification.Ensemble {
+public final class RandomForest extends Ensemble {
 
   private RandomForest(Vector classes, List<? extends Classifier> members, BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
@@ -28,24 +32,24 @@ public final class RandomForest extends org.mimirframework.classification.Ensemb
   /**
    * @author Isak Karlsson
    */
-  public static class Learner extends org.mimirframework.classification.Ensemble.Learner<RandomForest> {
+  public static class Learner extends Ensemble.Learner<RandomForest> {
 
-    private final org.mimirframework.classification.tree.Splitter splitter;
+    private final Splitter splitter;
 
-    protected Learner(org.mimirframework.classification.tree.Splitter splitter, int size) {
+    protected Learner(Splitter splitter, int size) {
       super(size);
       this.splitter = splitter;
     }
 
     public Learner(int size) {
       super(size);
-      splitter = org.mimirframework.classification.tree.RandomSplitter.withMaximumFeatures(-1).create();
+      splitter = RandomSplitter.withMaximumFeatures(-1).create();
     }
 
     @Override
     public RandomForest fit(DataFrame x, Vector y) {
       Vector classes = Vectors.unique(y);
-      org.mimirframework.classification.tree.ClassSet classSet = new org.mimirframework.classification.tree.ClassSet(y, classes);
+      ClassSet classSet = new ClassSet(y, classes);
       List<FitTask> fitTasks = new ArrayList<>();
       BooleanArray oobIndicator = Arrays.newBooleanArray(x.rows(), size());
       for (int i = 0; i < size(); i++) {
@@ -66,14 +70,14 @@ public final class RandomForest extends org.mimirframework.classification.Ensemb
 
     private static final class FitTask implements Callable<Classifier> {
 
-      private final org.mimirframework.classification.tree.ClassSet classSet;
+      private final ClassSet classSet;
       private final DataFrame x;
       private final Vector y;
-      private final org.mimirframework.classification.tree.Splitter splitter;
+      private final Splitter splitter;
       private final Vector classes;
       private final BooleanArray oobIndicator;
 
-      private FitTask(org.mimirframework.classification.tree.ClassSet classSet, DataFrame x, Vector y, org.mimirframework.classification.tree.Splitter splitter, Vector classes,
+      private FitTask(ClassSet classSet, DataFrame x, Vector y, Splitter splitter, Vector classes,
                       BooleanArray oobIndicator) {
         this.classSet = classSet;
         this.x = x;
@@ -86,16 +90,16 @@ public final class RandomForest extends org.mimirframework.classification.Ensemb
       @Override
       public Classifier call() throws Exception {
         Random random = new Random(Thread.currentThread().getId() * System.currentTimeMillis());
-        org.mimirframework.classification.tree.ClassSet bootstrap = sample(classSet, random);
+        ClassSet bootstrap = sample(classSet, random);
         return new DecisionTree.Learner(splitter, bootstrap, classes).fit(x, y);
       }
 
-      public org.mimirframework.classification.tree.ClassSet sample(org.mimirframework.classification.tree.ClassSet classSet, Random random) {
-        org.mimirframework.classification.tree.ClassSet inBag = new org.mimirframework.classification.tree.ClassSet(classSet.getDomain());
+      public ClassSet sample(ClassSet classSet, Random random) {
+        ClassSet inBag = new ClassSet(classSet.getDomain());
         int[] bootstrap = bootstrap(classSet, random);
-        for (org.mimirframework.classification.tree.ClassSet.Sample sample : classSet.samples()) {
-          org.mimirframework.classification.tree.ClassSet.Sample inSample = org.mimirframework.classification.tree.ClassSet.Sample.create(sample.getTarget());
-          for (org.mimirframework.classification.tree.Example example : sample) {
+        for (ClassSet.Sample sample : classSet.samples()) {
+          ClassSet.Sample inSample = ClassSet.Sample.create(sample.getTarget());
+          for (Example example : sample) {
             int id = example.getIndex();
             if (bootstrap[id] > 0) {
               inSample.add(example.updateWeight(bootstrap[id]));
@@ -110,7 +114,7 @@ public final class RandomForest extends org.mimirframework.classification.Ensemb
         return inBag;
       }
 
-      private int[] bootstrap(org.mimirframework.classification.tree.ClassSet sample, Random random) {
+      private int[] bootstrap(ClassSet sample, Random random) {
         int[] bootstrap = new int[sample.size()];
         for (int i = 0; i < bootstrap.length; i++) {
           int idx = random.nextInt(bootstrap.length);
@@ -124,7 +128,7 @@ public final class RandomForest extends org.mimirframework.classification.Ensemb
 
   public static class Configurator implements Classifier.Configurator<Learner> {
 
-    private org.mimirframework.classification.tree.RandomSplitter.Builder splitter = org.mimirframework.classification.tree.RandomSplitter.withMaximumFeatures(-1);
+    private RandomSplitter.Builder splitter = RandomSplitter.withMaximumFeatures(-1);
     private int size = 100;
 
     public Configurator(int size) {

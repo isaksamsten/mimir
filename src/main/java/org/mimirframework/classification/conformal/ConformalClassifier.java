@@ -8,11 +8,12 @@ import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Na;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.classification.Classifier;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface ConformalClassifier extends org.mimirframework.classification.Classifier {
+public interface ConformalClassifier extends Classifier {
 
   double DEFAULT_SIGNIFICANCE = 0.05;
 

@@ -35,10 +35,10 @@ import org.mimirframework.supervised.Predictor;
 /**
  * @author Isak Karlsson
  */
-public class GridSearch<P extends org.mimirframework.supervised.Predictor, O extends org.mimirframework.supervised.Predictor.Configurator<? extends Predictor.Learner<? extends P>>>
-    implements org.mimirframework.classification.tune.Tuner<P, O> {
+public class GridSearch<P extends Predictor, O extends Predictor.Configurator<? extends Predictor.Learner<? extends P>>>
+    implements Tuner<P, O> {
 
-  private final List<org.mimirframework.classification.tune.UpdatableParameter<O>> updatables = new ArrayList<>();
+  private final List<UpdatableParameter<O>> updatables = new ArrayList<>();
   private final List<String> parameterNames = new ArrayList<>();
 
   private Validator<P> validator;
@@ -63,7 +63,7 @@ public class GridSearch<P extends org.mimirframework.supervised.Predictor, O ext
         gridSearch(classifierBuilder, x, y, results, parameters, n + 1);
       }
     } else {
-      org.mimirframework.supervised.Predictor.Learner<? extends P> classifier = classifierBuilder.configure();
+      Predictor.Learner<? extends P> classifier = classifierBuilder.configure();
       Result result = validator.test(classifier, x, y);
       System.out.println(Arrays.toString(parameters));
       Vector.Builder builder = Vector.Builder.of(Object.class);
@@ -81,7 +81,7 @@ public class GridSearch<P extends org.mimirframework.supervised.Predictor, O ext
 
 
   @Override
-  public org.mimirframework.classification.tune.Tuner<P, O> setParameter(String name, org.mimirframework.classification.tune.UpdatableParameter<O> updatable) {
+  public Tuner<P, O> setParameter(String name, UpdatableParameter<O> updatable) {
     Objects.requireNonNull(name, "parameter name is required");
     Objects.requireNonNull(updatable, "updatable is required");
     int i = parameterNames.indexOf(name);
@@ -96,7 +96,7 @@ public class GridSearch<P extends org.mimirframework.supervised.Predictor, O ext
   }
 
   @Override
-  public org.mimirframework.classification.tune.Tuner<P, O> setValidator(Validator<P> validator) {
+  public Tuner<P, O> setValidator(Validator<P> validator) {
     this.validator = Objects.requireNonNull(validator, "validator required");
     return this;
   }

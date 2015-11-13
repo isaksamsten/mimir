@@ -28,7 +28,7 @@ public class ChannelShapelet extends IndexSortedNormalizedShapelet {
 
   private final int channel;
 
-  public ChannelShapelet(int channel, org.mimirframework.shapelet.Shapelet delegate) {
+  public ChannelShapelet(int channel, Shapelet delegate) {
     super(0, delegate.size(), delegate);
     this.channel = channel;
   }

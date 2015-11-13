@@ -6,13 +6,13 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.briljantframework.Check;
-import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
 import org.mimirframework.classification.AbstractClassifier;
 import org.mimirframework.classification.ClassifierCharacteristic;
+import org.mimirframework.supervised.Characteristic;
 import org.mimirframework.supervised.Predictor;
 
 /**
@@ -54,7 +54,7 @@ public class InductiveConformalClassifier extends AbstractClassifier
   }
 
   @Override
-  public Set<org.mimirframework.supervised.Characteristic> getCharacteristics() {
+  public Set<Characteristic> getCharacteristics() {
     return new HashSet<>(Collections.singletonList(ClassifierCharacteristic.ESTIMATOR));
   }
 
