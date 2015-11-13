@@ -143,7 +143,8 @@ public class RandomShapeletForest extends Ensemble {
       implements org.mimirframework.evaluation.Evaluator<RandomShapeletForest> {
 
     @Override
-    public void accept(org.mimirframework.evaluation.EvaluationContext<? extends RandomShapeletForest> ctx) {
+    public void accept(
+        org.mimirframework.evaluation.EvaluationContext<? extends RandomShapeletForest> ctx) {
       ctx.getMeasureCollection().add("depth", ctx.getPredictor().getAverageDepth());
     }
   }
@@ -170,7 +171,8 @@ public class RandomShapeletForest extends Ensemble {
     @Override
     public RandomShapeletForest fit(DataFrame x, Vector y) {
       Vector classes = Vectors.unique(y);
-      org.mimirframework.classification.tree.ClassSet classSet = new org.mimirframework.classification.tree.ClassSet(y, classes);
+      org.mimirframework.classification.tree.ClassSet classSet =
+          new org.mimirframework.classification.tree.ClassSet(y, classes);
       List<FitTask> tasks = new ArrayList<>();
       BooleanArray oobIndicator = Arrays.newBooleanArray(x.rows(), size());
       for (int i = 0; i < size(); i++) {
@@ -179,18 +181,18 @@ public class RandomShapeletForest extends Ensemble {
 
       try {
         List<ShapeletTree> models = Ensemble.Learner.execute(tasks);
-        DoubleArray lenSum = Arrays.newDoubleArray(x.columns());
-        DoubleArray posSum = Arrays.newDoubleArray(x.columns());
+        DoubleArray lenSum = DoubleArray.zeros(x.columns());
+        DoubleArray posSum = DoubleArray.zeros(x.columns());
         for (ShapeletTree m : models) {
-          lenSum.addi(m.getLengthImportance());
-          posSum.addi(m.getPositionImportance());
+          lenSum.plusAssign(m.getLengthImportance());
+          posSum.plusAssign(m.getPositionImportance());
         }
 
-        lenSum.update(v -> v / size());
-        posSum.update(v -> v / size());
+        lenSum.apply(v -> v / size());
+        posSum.apply(v -> v / size());
 
         Map<Object, Integer> counts = Vectors.count(y);
-        DoubleArray apriori = Arrays.newDoubleArray(classes.size());
+        DoubleArray apriori = DoubleArray.zeros(classes.size());
         for (int i = 0; i < classes.size(); i++) {
           apriori.set(i, counts.get(classes.loc().get(Object.class, i)) / (double) y.size());
         }
@@ -218,8 +220,9 @@ public class RandomShapeletForest extends Ensemble {
       private final BooleanArray oobIndicator;
 
 
-      private FitTask(org.mimirframework.classification.tree.ClassSet classSet, DataFrame x, Vector y,
-                      ShapeletTree.Configurator configurator, Vector classes, BooleanArray oobIndicator) {
+      private FitTask(org.mimirframework.classification.tree.ClassSet classSet, DataFrame x,
+          Vector y, ShapeletTree.Configurator configurator, Vector classes,
+          BooleanArray oobIndicator) {
         this.classSet = classSet;
         this.x = x;
         this.y = y;
@@ -237,11 +240,14 @@ public class RandomShapeletForest extends Ensemble {
         return new ShapeletTree.Learner(low, high, configurator, sample, classes).fit(x, y);
       }
 
-      public org.mimirframework.classification.tree.ClassSet sample(org.mimirframework.classification.tree.ClassSet classSet, Random random) {
-        org.mimirframework.classification.tree.ClassSet inBag = new org.mimirframework.classification.tree.ClassSet(classSet.getDomain());
+      public org.mimirframework.classification.tree.ClassSet sample(
+          org.mimirframework.classification.tree.ClassSet classSet, Random random) {
+        org.mimirframework.classification.tree.ClassSet inBag =
+            new org.mimirframework.classification.tree.ClassSet(classSet.getDomain());
         int[] bootstrap = bootstrap(classSet, random);
         for (org.mimirframework.classification.tree.ClassSet.Sample sample : classSet.samples()) {
-          org.mimirframework.classification.tree.ClassSet.Sample inSample = org.mimirframework.classification.tree.ClassSet.Sample.create(sample.getTarget());
+          org.mimirframework.classification.tree.ClassSet.Sample inSample =
+              org.mimirframework.classification.tree.ClassSet.Sample.create(sample.getTarget());
           for (org.mimirframework.classification.tree.Example example : sample) {
             int id = example.getIndex();
             if (bootstrap[id] > 0) {
@@ -257,7 +263,8 @@ public class RandomShapeletForest extends Ensemble {
         return inBag;
       }
 
-      private int[] bootstrap(org.mimirframework.classification.tree.ClassSet sample, Random random) {
+      private int[] bootstrap(org.mimirframework.classification.tree.ClassSet sample,
+          Random random) {
         int[] bootstrap = new int[sample.size()];
         for (int i = 0; i < bootstrap.length; i++) {
           int idx = random.nextInt(bootstrap.length);

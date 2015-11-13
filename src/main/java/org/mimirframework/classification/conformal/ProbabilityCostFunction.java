@@ -1,7 +1,5 @@
 package org.mimirframework.classification.conformal;
 
-import static org.briljantframework.array.Arrays.newDoubleArray;
-
 import java.util.Objects;
 
 import org.briljantframework.Check;
@@ -42,7 +40,7 @@ public interface ProbabilityCostFunction {
    */
   default DoubleArray apply(DoubleArray scores, Vector y, Vector classes) {
     Check.argument(classes.size() == scores.columns(), "Illegal prediction matrix");
-    DoubleArray probabilities = newDoubleArray(y.size());
+    DoubleArray probabilities = DoubleArray.zeros(y.size());
     for (int i = 0, size = y.size(); i < size; i++) {
       int yIndex = Vectors.find(classes, y, i);
       if (yIndex < 0) {

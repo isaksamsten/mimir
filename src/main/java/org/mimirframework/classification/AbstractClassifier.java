@@ -81,7 +81,7 @@ public abstract class AbstractClassifier implements Classifier {
 
   @Override
   public DoubleArray estimate(DataFrame x) {
-    DoubleArray estimations = Arrays.newDoubleArray(x.rows(), getClasses().size());
+    DoubleArray estimations = DoubleArray.zeros(x.rows(), getClasses().size());
     IntStream.range(0, x.rows()).parallel()
         .forEach(i -> estimations.setRow(i, estimate(x.loc().getRecord(i))));
     return estimations;

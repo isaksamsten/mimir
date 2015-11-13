@@ -6,7 +6,7 @@ import org.briljantframework.array.IntArray;
 import org.briljantframework.optimize.DifferentialFunction;
 
 /**
- * Created by isak on 11/6/15.
+ * @author Isak Karlsson
  */
 public class MultiClassLogisticFunction implements DifferentialFunction {
 
@@ -30,11 +30,11 @@ public class MultiClassLogisticFunction implements DifferentialFunction {
     w = w.reshape(p, k);
     g = g.reshape(p, k);
     g.assign(0);
-    DoubleArray prob = Arrays.newDoubleArray(k);
+    DoubleArray prob = DoubleArray.zeros(k);
     for (int i = 0; i < n; i++) {
       DoubleArray xi = x.getRow(i);
       for (int j = 0; j < k; j++) {
-        prob.set(j, Arrays.dot(xi, w.getColumn(j)));
+        prob.set(j, Arrays.inner(xi, w.getColumn(j)));
       }
       OptimizationUtils.softMax(prob);
       f -= OptimizationUtils.stableLog(prob.get(y.get(i)));
@@ -55,11 +55,11 @@ public class MultiClassLogisticFunction implements DifferentialFunction {
     int n = x.rows();
     int p = x.columns();
     w = w.reshape(p, k);
-    DoubleArray prob = Arrays.newDoubleArray(k);
+    DoubleArray prob = DoubleArray.zeros(k);
     for (int i = 0; i < n; i++) {
       DoubleArray xi = x.getRow(i);
       for (int j = 0; j < k; j++) {
-        prob.set(j, Arrays.dot(xi, w.getColumn(j)));
+        prob.set(j, Arrays.inner(xi, w.getColumn(j)));
       }
 
       OptimizationUtils.softMax(prob);

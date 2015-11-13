@@ -63,8 +63,8 @@ public class Ensemble extends AbstractClassifier {
     org.mimirframework.evaluation.MeasureCollection measureCollection = ctx.getMeasureCollection();
 
     // Store the out-of-bag and in-bag probability estimates
-    DoubleArray oobEstimates = Arrays.newDoubleArray(x.rows(), classes.size());
-    DoubleArray inbEstimates = Arrays.newDoubleArray(x.rows(), classes.size());
+    DoubleArray oobEstimates = DoubleArray.zeros(x.rows(), classes.size());
+    DoubleArray inbEstimates = DoubleArray.zeros(x.rows(), classes.size());
 
     // Count the number of times each training sample have been included
     IntArray counts = Arrays.sum(1, oobIndicator.asInt());
@@ -151,7 +151,7 @@ public class Ensemble extends AbstractClassifier {
       /* Stores the probability of the m:th member for the j:th class */
       List<Classifier> members = ensemble.getEnsembleMembers();
       int estimators = members.size();
-      DoubleArray memberEstimates = Arrays.newDoubleArray(estimators, classes.size());
+      DoubleArray memberEstimates = DoubleArray.zeros(estimators, classes.size());
       for (int j = 0; j < estimators; j++) {
         Classifier member = members.get(j);
         memberEstimates.setRow(j, member.estimate(record));
@@ -193,7 +193,7 @@ public class Ensemble extends AbstractClassifier {
   }
 
   private static DoubleArray createTrueClassVector(Vector y, Vector classes, int i) {
-    DoubleArray c = Arrays.newDoubleArray(classes.size());
+    DoubleArray c = DoubleArray.zeros(classes.size());
     for (int j = 0; j < classes.size(); j++) {
       if (classes.loc().equals(j, y, i)) {
         c.set(j, 1);
@@ -214,7 +214,7 @@ public class Ensemble extends AbstractClassifier {
 
     int estimators = getEnsembleMembers().size();
     Vector classes = getClasses();
-    DoubleArray m = Arrays.newDoubleArray(classes.size());
+    DoubleArray m = DoubleArray.zeros(classes.size());
     for (DoubleArray prediction : predictions) {
       m.assign(prediction, (t, o) -> t + o / estimators);
     }

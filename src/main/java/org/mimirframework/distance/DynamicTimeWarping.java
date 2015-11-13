@@ -76,7 +76,7 @@ public class DynamicTimeWarping implements Distance {
   @Override
   public double compute(Vector a, Vector b) {
     int n = a.size(), m = b.size();
-    DoubleArray dtw = Arrays.newDoubleArray(n, m);
+    DoubleArray dtw = DoubleArray.zeros(n, m);
     dtw.assign(Double.POSITIVE_INFINITY);
     dtw.set(0, 0, 0);
 

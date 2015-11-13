@@ -48,9 +48,9 @@ public final class LinearRegression implements Regression {
     @Override
     public LinearRegression fit(DoubleArray x, DoubleArray y) {
       x = Arrays.hstack(Arrays.ones(x.rows()).reshape(x.rows(), 1), x);
-      DoubleArray inner = Arrays.mmul(x.transpose(), x);
-      DoubleArray v = Arrays.mmul(Arrays.linalg.pinv(inner), x.transpose());
-      DoubleArray theta = Arrays.mmul(v, y);
+      DoubleArray inner = Arrays.dot(x.transpose(), x);
+      DoubleArray v = Arrays.dot(Arrays.linalg.pinv(inner), x.transpose());
+      DoubleArray theta = Arrays.dot(v, y);
       return new LinearRegression(theta);
     }
 

@@ -4,7 +4,7 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 
 /**
- * Created by isak on 11/6/15.
+ * @author Isak Karlsson
  */
 public class OptimizationUtils {
 
@@ -17,7 +17,7 @@ public class OptimizationUtils {
       prob.set(i, p);
       Z += p;
     }
-    prob.divi(Z);
+    prob.divAssign(Z);
   }
 
   /**

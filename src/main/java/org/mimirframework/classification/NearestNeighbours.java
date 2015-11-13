@@ -59,7 +59,7 @@ public class NearestNeighbours extends AbstractClassifier {
     }
 
     Vector classes = getClasses();
-    DoubleArray estimate = Arrays.newDoubleArray(classes.size());
+    DoubleArray estimate = DoubleArray.zeros(classes.size());
     for (int i = 0; i < classes.size(); i++) {
       estimate.set(i, classes.loc().get(Object.class, i).equals(cls) ? 1 : 0);
     }
@@ -74,7 +74,7 @@ public class NearestNeighbours extends AbstractClassifier {
   public DoubleArray distance(DataFrame x) {
     int n = x.rows();
     int m = this.x.rows();
-    DoubleArray distances = Arrays.newDoubleArray(n, m);
+    DoubleArray distances = DoubleArray.zeros(n, m);
     for (int i = 0; i < n; i++) {
       Vector ri = x.loc().getRecord(i);
       for (int j = 0; j < m; j++) {
@@ -93,7 +93,7 @@ public class NearestNeighbours extends AbstractClassifier {
    */
   public DoubleArray distance(Vector example) {
     int n = x.rows();
-    DoubleArray distances = Arrays.newDoubleArray(n);
+    DoubleArray distances = DoubleArray.zeros(n);
     for (int i = 0; i < n; i++) {
       distances.set(i, this.distance.compute(example, x.loc().getRecord(i)));
     }

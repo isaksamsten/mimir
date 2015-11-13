@@ -29,7 +29,7 @@ public class BinaryLogisticFunction implements DifferentialFunction {
     g.assign(0);
     double f = 0.0;
     for (int i = 0; i < n; i++) {
-      double wx = Arrays.dot(x.getRow(i), w);
+      double wx = Arrays.inner(x.getRow(i), w);
       f += OptimizationUtils.log1pExp(wx) - y.get(i) * wx;
 
       double yi = y.get(i) - OptimizationUtils.logistic(wx);
@@ -59,7 +59,7 @@ public class BinaryLogisticFunction implements DifferentialFunction {
     int n = x.rows();
     double f = 0.0;
     for (int i = 0; i < n; i++) {
-      double wx = Arrays.dot(x.getRow(i), w);
+      double wx = Arrays.inner(x.getRow(i), w);
       f += OptimizationUtils.log1pExp(wx) - y.get(i) * wx;
     }
 

@@ -36,12 +36,10 @@ public class LinearRegressionTest {
     LinearRegression.Learner learner = new LinearRegression.Learner();
     LinearRegression regression = learner.fit(x, y);
     System.out.println(regression.getTheta());
-
-
   }
 
   private DoubleArray sinTarget(DoubleArray x) {
-    return x.getColumn(0).sub(x.getColumn(1)).add(x.getColumn(0).map(i -> Math.sin(i) * Math.PI))
+    return x.getColumn(0).minus(x.getColumn(1)).plus(x.getColumn(0).map(i -> Math.sin(i) * Math.PI))
         .map(Math::signum);
   }
 

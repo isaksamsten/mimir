@@ -24,16 +24,16 @@ package org.mimirframework.classification.linear;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.mimirframework.classification.Classifier;
-import org.mimirframework.classification.ClassifierValidator;
-import org.mimirframework.classification.RandomForest;
 import org.briljantframework.data.Collectors;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
-import org.mimirframework.evaluation.Result;
 import org.junit.Test;
+import org.mimirframework.classification.Classifier;
+import org.mimirframework.classification.ClassifierValidator;
+import org.mimirframework.classification.RandomForest;
+import org.mimirframework.evaluation.Result;
 
 public class LogisticRegressionTest {
 
@@ -57,9 +57,8 @@ public class LogisticRegressionTest {
 
     System.out.println(classifier);
     long start = System.nanoTime();
-    Result result = ClassifierValidator.crossValidation(10).test((d, t) -> {
-      return classifier.fit(kernel(d), t);
-    } , x, y);
+    ClassifierValidator<Classifier> cv = ClassifierValidator.crossValidation(10);
+    Result result = cv.test((d, t) -> classifier.fit(kernel(d), t), x, y);
     System.out.println((System.nanoTime() - start) / 1e6);
     System.out.println(result.getMeasures().mean());
   }
@@ -88,11 +87,11 @@ public class LogisticRegressionTest {
   private DataFrame kernel(DataFrame x) {
     DoubleArray y = x.toDoubleArray();
 
-    DoubleArray result = Arrays.newDoubleArray(x.rows(), x.rows());
+    DoubleArray result = DoubleArray.zeros(x.rows(), x.rows());
     for (int i = 0; i < x.rows(); i++) {
       for (int j = 0; j < x.rows(); j++) {
         // result.set(i, j, Math.pow(1 * Arrays.dot(y.getRow(i), y.getRow(j)) + 1, 10));
-        result.set(i, j, -0.000001 * Math.exp(Arrays.norm2(y.getRow(i).sub(y.getRow(j)))));
+        result.set(i, j, -0.000001 * Math.exp(Arrays.norm2(y.getRow(i).minus(y.getRow(j)))));
       }
     }
 
@@ -112,7 +111,8 @@ public class LogisticRegressionTest {
     Vector y = Vector.of(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
     System.out.println(x);
 
-    org.mimirframework.classification.LogisticRegression.Learner regression = new org.mimirframework.classification.LogisticRegression.Learner();
+    org.mimirframework.classification.LogisticRegression.Learner regression =
+        new org.mimirframework.classification.LogisticRegression.Learner();
     org.mimirframework.classification.LogisticRegression model = regression.fit(x, y);
     System.out.println(model);
 

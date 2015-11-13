@@ -11,11 +11,15 @@ import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
+import org.mimirframework.classification.AbstractClassifier;
+import org.mimirframework.classification.ClassifierCharacteristic;
+import org.mimirframework.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class InductiveConformalClassifier extends org.mimirframework.classification.AbstractClassifier implements ConformalClassifier {
+public class InductiveConformalClassifier extends AbstractClassifier
+    implements ConformalClassifier {
 
   private final Nonconformity nonconformity;
 
@@ -38,7 +42,7 @@ public class InductiveConformalClassifier extends org.mimirframework.classificat
   @Override
   public DoubleArray estimate(Vector example) {
     Check.state(calibration != null, "the conformal predictor must be calibrated");
-    DoubleArray significance = Arrays.newDoubleArray(getClasses().size());
+    DoubleArray significance = DoubleArray.zeros(getClasses().size());
     double n = calibration.size();
     for (int i = 0; i < significance.size(); i++) {
       Object label = getClasses().loc().get(i);
@@ -51,13 +55,13 @@ public class InductiveConformalClassifier extends org.mimirframework.classificat
 
   @Override
   public Set<org.mimirframework.supervised.Characteristic> getCharacteristics() {
-    return new HashSet<>(Collections.singletonList(org.mimirframework.classification.ClassifierCharacteristic.ESTIMATOR));
+    return new HashSet<>(Collections.singletonList(ClassifierCharacteristic.ESTIMATOR));
   }
 
   /**
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  public static class Learner implements org.mimirframework.supervised.Predictor.Learner<InductiveConformalClassifier> {
+  public static class Learner implements Predictor.Learner<InductiveConformalClassifier> {
 
     private final Nonconformity.Learner learner;
 

@@ -23,12 +23,11 @@ package org.mimirframework.distance;
 
 import java.util.function.DoubleSupplier;
 
-import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.vector.Vector;
 
 /**
- * Created by isak on 24/03/15.
+ * @author Isak Karlsson
  */
 public class EditDistance implements Distance {
 
@@ -56,10 +55,10 @@ public class EditDistance implements Distance {
       }
     };
 
-    DoubleArray previousRow = Arrays.newDoubleArray(b.size() + 1);
+    DoubleArray previousRow = DoubleArray.zeros(b.size() + 1);
     previousRow.assign(iter);
     for (int i = 0; i < a.size(); i++) {
-      DoubleArray currentRow = Arrays.newDoubleArray(b.size() + 1);
+      DoubleArray currentRow = DoubleArray.zeros(b.size() + 1);
       currentRow.set(0, i + 1);
       for (int j = 0; j < b.size(); j++) {
         double insert = previousRow.get(j + 1) + 1;

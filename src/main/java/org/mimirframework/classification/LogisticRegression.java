@@ -1,5 +1,7 @@
 package org.mimirframework.classification;
 
+import static org.mimirframework.classification.optimization.OptimizationUtils.logistic;
+
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -8,16 +10,16 @@ import org.briljantframework.Check;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
-import org.mimirframework.classification.optimization.BinaryLogisticFunction;
-import org.mimirframework.classification.optimization.MultiClassLogisticFunction;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
-import org.mimirframework.evaluation.EvaluationContext;
 import org.briljantframework.optimize.DifferentialFunction;
 import org.briljantframework.optimize.LimitedMemoryBfgsOptimizer;
 import org.briljantframework.optimize.NonlinearOptimizer;
+import org.mimirframework.classification.optimization.BinaryLogisticFunction;
+import org.mimirframework.classification.optimization.MultiClassLogisticFunction;
+import org.mimirframework.evaluation.EvaluationContext;
 import org.mimirframework.supervised.Characteristic;
 import org.mimirframework.supervised.Predictor;
 
@@ -52,7 +54,7 @@ public class LogisticRegression extends AbstractClassifier {
 
   @Override
   public DoubleArray estimate(Vector record) {
-    DoubleArray x = Arrays.newDoubleArray(record.size() + 1);
+    DoubleArray x = DoubleArray.zeros(record.size() + 1);
     x.set(0, 1); // set the intercept
     for (int i = 0; i < record.size(); i++) {
       x.set(i + 1, record.loc().getAsDouble(i));
@@ -61,10 +63,10 @@ public class LogisticRegression extends AbstractClassifier {
     Vector classes = getClasses();
     int k = classes.size();
     if (k > 2) {
-      DoubleArray probs = Arrays.newDoubleArray(k);
+      DoubleArray probs = DoubleArray.zeros(k);
       double max = Double.NEGATIVE_INFINITY;
       for (int i = 0; i < k; i++) {
-        double prob = Arrays.dot(x, coefficients.getColumn(i));
+        double prob = Arrays.inner(x, coefficients.getColumn(i));
         if (prob > max) {
           max = prob;
         }
@@ -76,10 +78,11 @@ public class LogisticRegression extends AbstractClassifier {
         probs.set(i, Math.exp(probs.get(i) - max));
         z += probs.get(i);
       }
-      return probs.divi(z);
+      probs.divAssign(z);
+      return probs;
     } else {
-      double prob = org.mimirframework.classification.optimization.OptimizationUtils.logistic(Arrays.dot(x, coefficients));
-      DoubleArray probs = Arrays.newDoubleArray(2);
+      double prob = logistic(Arrays.inner(x, coefficients));
+      DoubleArray probs = DoubleArray.zeros(2);
       probs.set(0, 1 - prob);
       probs.set(1, prob);
       return probs;
@@ -110,7 +113,8 @@ public class LogisticRegression extends AbstractClassifier {
 
   @Override
   public Set<Characteristic> getCharacteristics() {
-    return Collections.singleton(org.mimirframework.classification.ClassifierCharacteristic.ESTIMATOR);
+    return Collections
+        .singleton(org.mimirframework.classification.ClassifierCharacteristic.ESTIMATOR);
   }
 
   @Override
@@ -118,7 +122,8 @@ public class LogisticRegression extends AbstractClassifier {
     return "LogisticRegression{" + "coefficients=" + coefficients + ", logLoss=" + logLoss + '}';
   }
 
-  public static final class Configurator implements org.mimirframework.classification.Classifier.Configurator<Learner> {
+  public static final class Configurator
+      implements org.mimirframework.classification.Classifier.Configurator<Learner> {
 
     private int iterations = 100;
     private double regularization = 0.01;
@@ -160,8 +165,8 @@ public class LogisticRegression extends AbstractClassifier {
 
     @Override
     public void accept(EvaluationContext<? extends LogisticRegression> ctx) {
-      ctx.getMeasureCollection().add("logLoss", org.mimirframework.evaluation.MeasureSample.IN_SAMPLE,
-          ctx.getPredictor().getLogLoss());
+      ctx.getMeasureCollection().add("logLoss",
+          org.mimirframework.evaluation.MeasureSample.IN_SAMPLE, ctx.getPredictor().getLogLoss());
 
       // TODO: compute log-loss out-sample
     }
@@ -225,10 +230,10 @@ public class LogisticRegression extends AbstractClassifier {
       int k = classes.size();
       if (k == 2) {
         objective = new BinaryLogisticFunction(x, y, regularization);
-        theta = Arrays.newDoubleArray(x.columns());
+        theta = DoubleArray.zeros(x.columns());
       } else if (k > 2) {
         objective = new MultiClassLogisticFunction(x, y, regularization, k);
-        theta = Arrays.newDoubleArray(x.columns(), k);
+        theta = DoubleArray.zeros(x.columns(), k);
       } else {
         throw new IllegalArgumentException(String.format("Illegal classes. k >= 2 (%d >= 2)", k));
       }
@@ -240,7 +245,7 @@ public class LogisticRegression extends AbstractClassifier {
     }
 
     protected DoubleArray constructInputMatrix(DataFrame df, int n, int m) {
-      DoubleArray x = Arrays.newDoubleArray(n, m + 1);
+      DoubleArray x = DoubleArray.zeros(n, m + 1);
       for (int i = 0; i < n; i++) {
         x.set(i, 0, 1);
         for (int j = 0; j < df.columns(); j++) {
