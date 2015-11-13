@@ -9,7 +9,7 @@ import org.briljantframework.dataset.io.Datasets;
 import org.junit.Test;
 import org.mimirframework.classification.ClassifierValidator;
 import org.mimirframework.classification.LogisticRegression;
-import org.mimirframework.classifier.evaluation.ClassifierEvaluator;
+import org.mimirframework.classification.evaluation.ClassifierEvaluator;
 import org.mimirframework.evaluation.Validator;
 import org.mimirframework.evaluation.partition.FoldPartitioner;
 

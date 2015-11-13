@@ -51,12 +51,6 @@ public class RandomShapeletForest extends Ensemble {
     return positionImportance;
   }
 
-  // @Override
-  // public void acceptEvaluators(EvaluationContext<?> ctx) {
-  // super.acceptEvaluators(ctx);
-  // ctx.getOrDefault(Depth.class, Depth.Builder::new).add(Sample.OUT, getAverageDepth());
-  // }
-
   public double getAverageDepth() {
     double depth = 0;
     for (Classifier classifier : getEnsembleMembers()) {
@@ -67,26 +61,6 @@ public class RandomShapeletForest extends Ensemble {
     }
     return depth / getEnsembleMembers().size();
   }
-
-  // public static class Depth extends PointMeasure {
-  //
-  // protected Depth(Builder builder) {
-  // super(builder);
-  // }
-  //
-  // @Override
-  // public String getName() {
-  // return "Depth";
-  // }
-  //
-  // public static class Builder extends PointMeasure.Builder<Depth> {
-  //
-  // @Override
-  // public Depth build() {
-  // return new Depth(this);
-  // }
-  // }
-  // }
 
   public static class Configurator implements Classifier.Configurator<Learner> {
 
@@ -147,8 +121,7 @@ public class RandomShapeletForest extends Ensemble {
       implements org.mimirframework.evaluation.Evaluator<RandomShapeletForest> {
 
     @Override
-    public void accept(
-EvaluationContext<? extends RandomShapeletForest> ctx) {
+    public void accept(EvaluationContext<? extends RandomShapeletForest> ctx) {
       ctx.getMeasureCollection().add("depth", ctx.getPredictor().getAverageDepth());
     }
   }
@@ -161,16 +134,6 @@ EvaluationContext<? extends RandomShapeletForest> ctx) {
       super(size);
       this.configurator = configurator;
     }
-
-    // @Override
-    // public Evaluator<RandomShapeletForest> getEvaluator() {
-    // Evaluator<RandomShapeletForest> evaluator = super.getEvaluator();
-    // return ctx -> {
-    // evaluator.accept(ctx);
-    // ctx.getMeasureCollection().add(RandomShapeletForestMeasure.DEPTH,
-    // ctx.getPredictor().getAverageDepth());
-    // };
-    // }
 
     @Override
     public RandomShapeletForest fit(DataFrame x, Vector y) {
@@ -223,9 +186,8 @@ EvaluationContext<? extends RandomShapeletForest> ctx) {
       private final BooleanArray oobIndicator;
 
 
-      private FitTask(ClassSet classSet, DataFrame x,
-          Vector y, ShapeletTree.Configurator configurator, Vector classes,
-          BooleanArray oobIndicator) {
+      private FitTask(ClassSet classSet, DataFrame x, Vector y,
+          ShapeletTree.Configurator configurator, Vector classes, BooleanArray oobIndicator) {
         this.classSet = classSet;
         this.x = x;
         this.y = y;
@@ -263,8 +225,7 @@ EvaluationContext<? extends RandomShapeletForest> ctx) {
         return inBag;
       }
 
-      private int[] bootstrap(ClassSet sample,
-          Random random) {
+      private int[] bootstrap(ClassSet sample, Random random) {
         int[] bootstrap = new int[sample.size()];
         for (int i = 0; i < bootstrap.length; i++) {
           int idx = random.nextInt(bootstrap.length);

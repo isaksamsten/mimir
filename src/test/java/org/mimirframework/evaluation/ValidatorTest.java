@@ -12,7 +12,7 @@ import org.mimirframework.classification.Classifier;
 import org.mimirframework.classification.ClassifierValidator;
 import org.mimirframework.classification.LogisticRegression;
 import org.mimirframework.classification.NearestNeighbours;
-import org.mimirframework.classifier.evaluation.ClassifierEvaluator;
+import org.mimirframework.classification.evaluation.ClassifierEvaluator;
 import org.mimirframework.evaluation.partition.FoldPartitioner;
 import org.mimirframework.evaluation.partition.Partitioner;
 import org.mimirframework.supervised.Predictor;

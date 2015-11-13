@@ -25,40 +25,21 @@ import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
 
 /**
- * Created by Isak Karlsson on 27/10/14.
+ * @author Isak Karlsson
  */
 public class IndexSortedNormalizedShapelet extends NormalizedShapelet {
-
-  /**
-   * The Order.
-   */
   protected final int[] order;
 
-  /**
-   * Instantiates a new Index sorted normalized shapelet.
-   *
-   * @param start the start
-   * @param length the length
-   * @param vector the vector
-   */
   public IndexSortedNormalizedShapelet(int start, int length, Vector vector) {
     super(start, length, vector);
     if (vector instanceof IndexSortedNormalizedShapelet) {
       this.order = ((IndexSortedNormalizedShapelet) vector).getSortOrder();
     } else {
-      this.order =
-          Vectors.indexSort(
-              this,
-              (i, j) -> Double.compare(Math.abs(loc().getAsDouble(j)),
-                  Math.abs(loc().getAsDouble(i))));
+      this.order = Vectors.indexSort(this,
+          (i, j) -> Double.compare(Math.abs(loc().getAsDouble(j)), Math.abs(loc().getAsDouble(i))));
     }
   }
 
-  /**
-   * Get order.
-   *
-   * @return the int [ ]
-   */
   public int[] getSortOrder() {
     return order;
   }

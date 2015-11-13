@@ -8,7 +8,7 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
-import org.mimirframework.classifier.evaluation.ClassifierEvaluator;
+import org.mimirframework.classification.evaluation.ClassifierEvaluator;
 import org.mimirframework.evaluation.Evaluator;
 import org.mimirframework.evaluation.MutableEvaluationContext;
 import org.mimirframework.evaluation.Validator;
@@ -27,7 +27,7 @@ public class ClassifierValidator<T extends Classifier> extends Validator<T> {
    * The default evaluators for classifiers
    */
   private static final Set<? extends Evaluator<? super Classifier>> EVALUATORS =
-      new HashSet<>(Collections.singletonList(ClassifierEvaluator.getInstance()));
+      new HashSet<>(Collections.singletonList(ClassifierEvaluator.INSTANCE));
 
   public ClassifierValidator(Set<? extends Evaluator<? super T>> evaluators,
       Partitioner partitioner) {
@@ -58,8 +58,7 @@ public class ClassifierValidator<T extends Classifier> extends Validator<T> {
       DoubleArray estimate = p.estimate(x);
       ctx.setEstimates(estimate);
       for (int i = 0; i < estimate.rows(); i++) {
-        builder.loc().set(i, classes,
- Arrays.argmax(estimate.getRow(i)));
+        builder.loc().set(i, classes, Arrays.argmax(estimate.getRow(i)));
       }
       ctx.setPredictions(builder.build());
     } else {

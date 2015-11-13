@@ -45,7 +45,7 @@ public class RandomForestTest {
     IntArray f = Arrays.newIntVector(10, 2, 3);
     Validator<RandomForest> classifierValidator =
         new ClassifierValidator<>(new FoldPartitioner(10));
-    classifierValidator.add(new Ensemble.Evaluator());
+    classifierValidator.add(EnsembleEvaluator.INSTANCE);
     for (int i = 0; i < f.size(); i++) {
       RandomForest.Learner forest =
           new RandomForest.Configurator(100).setMaximumFeatures(f.get(i)).configure();

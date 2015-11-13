@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.mimirframework.classifier.evaluation;
+package org.mimirframework.classification.evaluation;
 
 import org.briljantframework.data.vector.Vector;
 import org.mimirframework.classification.Classifier;
@@ -30,15 +30,8 @@ import org.mimirframework.evaluation.Evaluator;
 /**
  * @author Isak Karlsson
  */
-public class ClassifierEvaluator implements Evaluator<Classifier> {
-
-  private static final ClassifierEvaluator INSTANCE = new ClassifierEvaluator();
-
-  private ClassifierEvaluator() {}
-
-  public static ClassifierEvaluator getInstance() {
-    return INSTANCE;
-  }
+public enum ClassifierEvaluator implements Evaluator<Classifier> {
+  INSTANCE;
 
   @Override
   public void accept(EvaluationContext<? extends Classifier> ctx) {
