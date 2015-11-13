@@ -1,4 +1,4 @@
-package org.mimirframework.classification.tune;
+package org.mimirframework.examples;
 
 import java.util.List;
 
@@ -6,22 +6,23 @@ import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.Datasets;
-import org.junit.Test;
 import org.mimirframework.classification.ClassifierValidator;
 import org.mimirframework.classification.LogisticRegression;
 import org.mimirframework.classification.evaluation.ClassifierEvaluator;
+import org.mimirframework.classification.tune.Configuration;
+import org.mimirframework.classification.tune.GridSearch;
+import org.mimirframework.classification.tune.Tuner;
+import org.mimirframework.classification.tune.Updaters;
 import org.mimirframework.evaluation.Validator;
 import org.mimirframework.evaluation.partition.FoldPartitioner;
 
 /**
- * @author Isak Karlsson <isak-kar@dsv.su.se>
+ * @author Isak Karlsson
  */
-public class GridSearchTest {
-
-  @Test
-  public void testTuen() throws Exception {
+public class GridSearchExample {
+  public static void main(String[] args) {
     Validator<LogisticRegression> cv = new ClassifierValidator<>(new FoldPartitioner(10));
-    cv.add(ClassifierEvaluator.getInstance());
+    cv.add(ClassifierEvaluator.INSTANCE);
     Tuner<LogisticRegression, LogisticRegression.Configurator> tuner = new GridSearch<>(cv);
     // @formatter:off
     tuner.setParameter("iterations", Updaters.enumeration(LogisticRegression.Configurator::setIterations, 100, 200, 300))

@@ -1,4 +1,4 @@
-package org.mimirframework.classification.conformal;
+package org.mimirframework.examples;
 
 import org.briljantframework.array.ArrayPrinter;
 import org.briljantframework.array.Arrays;
@@ -8,21 +8,23 @@ import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.Datasets;
-import org.junit.Test;
 import org.mimirframework.classification.Classifier;
 import org.mimirframework.classification.RandomForest;
+import org.mimirframework.classification.conformal.ConformalClassifier;
+import org.mimirframework.classification.conformal.InductiveConformalClassifier;
+import org.mimirframework.classification.conformal.Nonconformity;
+import org.mimirframework.classification.conformal.ProbabilityCostFunction;
+import org.mimirframework.classification.conformal.ProbabilityEstimateNonconformity;
 import org.mimirframework.classification.conformal.evaluation.ConformalClassifierValidator;
 import org.mimirframework.evaluation.Result;
 import org.mimirframework.evaluation.Validator;
 import org.mimirframework.supervised.Predictor;
 
 /**
- * @author Isak Karlsson <isak-kar@dsv.su.se>
+ * @author Isak Karlsson
  */
-public class InductiveConformalClassifierTest {
-
-  @Test
-  public void testConformalPredictions() throws Exception {
+public class InductiveConformalPredictionExample {
+  public static void main(String[] args) {
     ArrayPrinter.setMinimumTruncateSize(10000);
     DataFrame sc = DataFrames.permuteRecords(Datasets.loadIris());
     DataFrame x = sc.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean()));
@@ -40,13 +42,5 @@ public class InductiveConformalClassifierTest {
     System.out.println(result.getFitTime());
     System.out.println(
         result.getMeasures().groupBy("significance").collect(Vector::mean).sort(SortOrder.ASC));
-
-    // EvaluationContextImpl context = new EvaluationContextImpl();
-    // context.setPartition(test);
-    // context.setPredictor(predictor);
-
-    // new ConformalClassifierEvaluator(0.05).accept(context);
-    // System.out.println(context.getMeasures());
   }
-
 }

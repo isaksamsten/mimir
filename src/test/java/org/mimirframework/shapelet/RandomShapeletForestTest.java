@@ -48,6 +48,7 @@ import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.dataset.io.MatlabDatasetReader;
 import org.briljantframework.dataset.io.SequenceDatasetReader;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mimirframework.classification.Classifier;
 import org.mimirframework.classification.RandomForest;
@@ -63,6 +64,7 @@ import org.mimirframework.evaluation.partition.Partition;
 import org.mimirframework.evaluation.partition.SplitPartitioner;
 import org.mimirframework.supervised.Predictor;
 
+@Ignore
 public class RandomShapeletForestTest {
 
   // @Test
@@ -167,7 +169,7 @@ public class RandomShapeletForestTest {
   @Test
   public void testSynticControl() throws Exception {
     // DataFrame train = Datasets.load(
-    // (i) -> new DataSeriesCollection.Builder(double.class), new MatlabDatasetReader(
+    // (i) -> new DataSeriesCollection.Builder(double.class), new dDatasetReader(
     // new FileInputStream(
     // "/Users/isak-kar/Downloads/dataset/SwedishLeaf/SwedishLeaf_TRAIN")));
     // DataFrame test = Datasets.load(
@@ -452,43 +454,4 @@ public class RandomShapeletForestTest {
     // System.out.println(result.getAverageConfusionMatrix().getFMeasure("ade", 2));
     // System.out.println(result);
   }
-  // @Test
-  // public void testClassify() throws Exception {
-  // String name = "Gun_Point";
-  //
-  // // path to the data sets
-  // String trainFile = String.format("/Users/isak-kar/Downloads/dataset/%s/%s_TRAIN", name, name);
-  // String testFile = String.format("/Users/isak-kar/Downloads/dataset/%s/%s_TEST", name, name);
-  // DataFrame trainingSet = new DataSeriesCollection.Builder(VectorType.DOUBLE)
-  // .readAll(train)
-  // .build();
-  // DataFrame validationSet = new DataSeriesCollection.Builder(VectorType.DOUBLE)
-  // .readAll(test)
-  // .build();
-  // System.out.println(trainingSet);
-  //
-  // // remove the class-label column
-  // DataFrame xTrain = trainingSet.drop(0);
-  // DataFrame xTest = validationSet.drop(0);
-  //
-  // // get the class label column
-  // Vector yTrain = trainingSet.get(0);
-  // Vector yTest = validationSet.get(0);
-  //
-  // long start = System.nanoTime();
-  //
-  // // Initialize the Shapelet Forest Algorithm with a few default parameters
-  // RandomShapeletForest forest = RandomShapeletForest.withSize(500) // No trees
-  // .withInspectedShapelets(100) // No inspected shapelets
-  // .withLowerLength(0.025) // The lower length (a fraction of time-series length)
-  // .withUpperLength(1) // The upper length (a fraction of time-series length)
-  // .withAssessment(ShapeletTree.Assessment.IG) // The shapelet scoring function
-  // .build();
-  //
-  // // Evaluate the predictive performance using the holdout dataset
-  // Result result = HoldoutValidator.withHoldout(xTest, yTest).test(forest, xTrain, yTrain);
-  // System.out.printf("Experiment took: %f milliseconds\n", (System.nanoTime() - start) / 1e6);
-  // System.out.println(result);
-  //
-  // }
 }

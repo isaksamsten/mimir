@@ -256,7 +256,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       }
 
       // TODO: add alternative shapelet sampling approaches.
-      // The simple approach to do this is to add shapelets to the list `shapelets` below.
+      // The simple approach to ddo this is to add shapelets to the list `shapelets` below.
       // Shapelet are created with the new IndexSortedNormalizedShapelet(vector, start, end);
       // constructor.
       List<Shapelet> shapelets = new ArrayList<>(maxShapelets);
