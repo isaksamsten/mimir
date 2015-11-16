@@ -35,7 +35,10 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
 
     @Override
     public DoubleArray visitBranch(TreeBranch<HyperPlaneThreshold> node, Vector example) {
-      DoubleArray row = example.toDoubleArray();
+      DoubleArray row = DoubleArray.zeros(example.size() + 1);
+      row.set(0, 1);
+      example.toArray(row.get(Arrays.range(1, row.size())));
+      row = take(row, node.getThreshold().getFeatures());
       DoubleArray weights = node.getThreshold().getWeights();
       if (Arrays.inner(row, weights) < node.getThreshold().getThreshold()) {
         return visit(node.getLeft(), example);
@@ -45,15 +48,34 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
     }
   }
 
+  private static DoubleArray take(DoubleArray x, IntArray i) {
+    if (i == null) {
+      return x;
+    }
+    DoubleArray y = DoubleArray.zeros(i.size() + 1);
+    y.set(0, x.get(0));
+    for (int j = 1; j < i.size(); j++) {
+      y.set(j, x.get(i.get(j)));
+    }
+    return y;
+  }
+
+  private static IntArray getRandomFeatures(DoubleArray x) {
+    IntArray features = Arrays.range(1, x.size()).copy();
+    features.permute(x.size() - 1);
+    return features.get(Arrays.range(0, (int) (Math.round(Math.log(x.size()) / Math.log(2)) + 1)));
+  }
 
   public static class Learner implements Predictor.Learner<HyperPlaneTree> {
     private final ClassSet set;
     private final Gain criterion = Gain.INFO;
     private final Vector classes;
+    private final int noHyperPlanes;
 
-    public Learner(ClassSet set, Vector classes) {
+    public Learner(ClassSet set, Vector classes, int noHyperPlanes) {
       this.set = set;
       this.classes = classes;
+      this.noHyperPlanes = noHyperPlanes;
     }
 
     @Override
@@ -64,7 +86,8 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
         set = new ClassSet(y, classes);
       }
 
-      TreeNode<HyperPlaneThreshold> root = build(x.toDoubleArray(), y, set);
+      DoubleArray array = Arrays.vstack(DoubleArray.ones(x.rows()), x.toDoubleArray());
+      TreeNode<HyperPlaneThreshold> root = build(array, y, set);
       return new HyperPlaneTree(classes, root, new HyperPlaneTreeVisitor());
     }
 
@@ -91,15 +114,15 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
     }
 
     private TreeSplit<HyperPlaneThreshold> find(ClassSet set, DoubleArray x, Vector y) {
-
       TreeSplit<HyperPlaneThreshold> bestSplit = null;
       double bestImpurity = Double.POSITIVE_INFINITY;
-      for (int i = 0; i < 10; i++) {
+      for (int i = 0; i < noHyperPlanes; i++) {
         int index = set.getRandomSample().getRandomExample().getIndex();
         DoubleArray row = x.getRow(index);
-        DoubleArray weights = Arrays.randn(row.size());
-        TreeSplit<HyperPlaneThreshold> split =
-            split(x, set, weights, null, Arrays.inner(row, weights));
+        IntArray randomFeatures = getRandomFeatures(row);
+        DoubleArray weights = Arrays.randn(randomFeatures.size() + 1);
+        double threshold = Arrays.inner(take(row, randomFeatures), weights);
+        TreeSplit<HyperPlaneThreshold> split = split(x, set, weights, randomFeatures, threshold);
         double impurity = criterion.compute(split);
         if (impurity < bestImpurity) {
           bestImpurity = impurity;
@@ -128,6 +151,7 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
         ClassSet.Sample rightSample = ClassSet.Sample.create(target);
         for (Example example : sample) {
           DoubleArray row = x.getRow(example.getIndex());
+          row = take(row, dims);
           if (Arrays.inner(row, weights) < threshold) {
             leftSample.add(example);
           } else {
