@@ -20,7 +20,8 @@ import org.mimirframework.classification.tree.Splitter;
  */
 public final class RandomForest extends Ensemble {
 
-  private RandomForest(Vector classes, List<? extends Classifier> members, BooleanArray oobIndicator) {
+  private RandomForest(Vector classes, List<? extends Classifier> members,
+      BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
   }
 
@@ -34,16 +35,20 @@ public final class RandomForest extends Ensemble {
    */
   public static class Learner extends Ensemble.Learner<RandomForest> {
 
-    private final Splitter splitter;
-
-    protected Learner(Splitter splitter, int size) {
-      super(size);
-      this.splitter = splitter;
-    }
+    private final BaseLearner<? extends Classifier> learnStrategy;
 
     public Learner(int size) {
+      this(RandomSplitter.withMaximumFeatures(-1).create(), size);
+    }
+
+    private Learner(BaseLearner<? extends Classifier> baseLearner, int size) {
       super(size);
-      splitter = RandomSplitter.withMaximumFeatures(-1).create();
+      this.learnStrategy = baseLearner;
+    }
+
+    private Learner(Splitter splitter, int size) {
+      super(size);
+      learnStrategy = (set, classes) -> new DecisionTree.Learner(splitter, set, classes);
     }
 
     @Override
@@ -53,7 +58,8 @@ public final class RandomForest extends Ensemble {
       List<FitTask> fitTasks = new ArrayList<>();
       BooleanArray oobIndicator = Arrays.newBooleanArray(x.rows(), size());
       for (int i = 0; i < size(); i++) {
-        fitTasks.add(new FitTask(classSet, x, y, splitter, classes, oobIndicator.getColumn(i)));
+        fitTasks
+            .add(new FitTask(classSet, x, y, learnStrategy, classes, oobIndicator.getColumn(i)));
       }
       try {
         return new RandomForest(classes, execute(fitTasks), oobIndicator);
@@ -73,16 +79,17 @@ public final class RandomForest extends Ensemble {
       private final ClassSet classSet;
       private final DataFrame x;
       private final Vector y;
-      private final Splitter splitter;
       private final Vector classes;
       private final BooleanArray oobIndicator;
+      private final BaseLearner<? extends Classifier> baseLearner;
 
-      private FitTask(ClassSet classSet, DataFrame x, Vector y, Splitter splitter, Vector classes,
-                      BooleanArray oobIndicator) {
+      private FitTask(ClassSet classSet, DataFrame x, Vector y,
+          BaseLearner<? extends Classifier> baseLearner, Vector classes,
+          BooleanArray oobIndicator) {
         this.classSet = classSet;
         this.x = x;
         this.y = y;
-        this.splitter = splitter;
+        this.baseLearner = baseLearner;
         this.classes = classes;
         this.oobIndicator = oobIndicator;
       }
@@ -91,7 +98,7 @@ public final class RandomForest extends Ensemble {
       public Classifier call() throws Exception {
         Random random = new Random(Thread.currentThread().getId() * System.currentTimeMillis());
         ClassSet bootstrap = sample(classSet, random);
-        return new DecisionTree.Learner(splitter, bootstrap, classes).fit(x, y);
+        return baseLearner.getLearner(bootstrap, classes).fit(x, y);
       }
 
       public ClassSet sample(ClassSet classSet, Random random) {
@@ -130,6 +137,7 @@ public final class RandomForest extends Ensemble {
 
     private RandomSplitter.Builder splitter = RandomSplitter.withMaximumFeatures(-1);
     private int size = 100;
+    private BaseLearner<? extends Classifier> learner = null;
 
     public Configurator(int size) {
       this.size = size;
@@ -145,9 +153,18 @@ public final class RandomForest extends Ensemble {
       return this;
     }
 
+    public Configurator setBaseLearner(BaseLearner<? extends Classifier> learner) {
+      this.learner = learner;
+      return this;
+    }
+
     @Override
     public Learner configure() {
-      return new Learner(splitter.create(), size);
+      if (learner == null) {
+        return new Learner(splitter.create(), size);
+      } else {
+        return new Learner(learner, size);
+      }
     }
   }
 }

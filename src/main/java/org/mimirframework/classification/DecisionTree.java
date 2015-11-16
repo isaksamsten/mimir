@@ -74,7 +74,7 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
     }
 
     protected TreeNode<ValueThreshold> build(DataFrame frame, Vector target, ClassSet classSet,
-                                                                                    int depth) {
+        int depth) {
       if (classSet.getTotalWeight() <= mininumWeight || classSet.getTargetCount() == 1) {
         return TreeLeaf.fromExamples(classSet);
       }
@@ -119,7 +119,6 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
           @SuppressWarnings("unchecked")
           Comparable<Object> leftComparable = example.loc().get(Comparable.class, axis);
           direction = leftComparable.compareTo(threshold) <= 0 ? LEFT : RIGHT;
-          // direction = example.compare(axis, (Comparable<?>) threshold) <= 0 ? LEFT : RIGHT;
         }
       }
 

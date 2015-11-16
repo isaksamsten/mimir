@@ -80,17 +80,8 @@ public abstract class AbstractSplitter implements Splitter {
             @SuppressWarnings("unchecked")
             Comparable<Object> leftComparable = axisVector.loc().get(Comparable.class, index);
             direction = leftComparable.compareTo(threshold) <= 0 ? LEFT : RIGHT;
-            // direction = axisVector.compare(index, (Comparable<?>) threshold) <= 0 ? LEFT : RIGHT;
           }
         }
-        // switch (axisType.getScale()) {
-        // case NOMINAL:
-        // direction = axisType.equals(threshold, value) ? LEFT : RIGHT;
-        // break;
-        // case NUMERICAL:
-        // direction = axisType.compare(threshold, value) <= 0 ? LEFT : RIGHT;
-        // break;
-        // }
         switch (direction) {
           case LEFT:
             leftSample.add(example);
@@ -121,8 +112,6 @@ public abstract class AbstractSplitter implements Splitter {
     }
 
     return new TreeSplit<>(left, right, ValueThreshold.create(axis, threshold));
-    //
-    // throw new UnsupportedOperationException("TODO");
   }
 
   /**

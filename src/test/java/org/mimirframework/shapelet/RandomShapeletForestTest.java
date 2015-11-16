@@ -282,7 +282,7 @@ public class RandomShapeletForestTest {
     // RandomShapeletForest.Configurator(100).setAssessment(ShapeletTree.Learner.Assessment.IG).configure(),
     // new Margin());
     InductiveConformalClassifier.Learner learner = new InductiveConformalClassifier.Learner(nc);
-    ConformalClassifier classifier =
+    InductiveConformalClassifier classifier =
         learner.fit(trainPart.getTrainingData(), trainPart.getTrainingTarget());
     classifier.calibrate(trainPart.getValidationData(), trainPart.getValidationTarget());
     testEarlyClassification(test, classifier);

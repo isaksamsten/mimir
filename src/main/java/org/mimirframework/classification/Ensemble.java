@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.classification.tree.ClassSet;
 import org.mimirframework.supervised.Characteristic;
 import org.mimirframework.supervised.Predictor;
 
@@ -21,6 +22,10 @@ import org.mimirframework.supervised.Predictor;
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public class Ensemble extends AbstractClassifier {
+
+  public interface BaseLearner<T extends Classifier> {
+    Predictor.Learner<? extends T> getLearner(ClassSet set, Vector classes);
+  }
 
   private final List<? extends Classifier> members;
   private final BooleanArray oobIndicator;
