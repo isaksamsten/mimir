@@ -19,23 +19,18 @@ import org.mimirframework.supervised.Predictor;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public final class ConformalClassifierValidator<P extends ConformalClassifier>
+public abstract class ConformalClassifierValidator<P extends ConformalClassifier>
     extends Validator<P> {
-
-  private final double calibrationSize;
   private final List<Double> confidences;
 
-  public ConformalClassifierValidator(Partitioner partitioner, double calibrationSize,
-                                      List<Double> confidences) {
+  public ConformalClassifierValidator(Partitioner partitioner, List<Double> confidences) {
     super(partitioner);
-    this.calibrationSize = calibrationSize;
+
     this.confidences = confidences;
   }
 
-  public ConformalClassifierValidator(Partitioner partitioner, double calibrationSize) {
-    super(partitioner);
-    this.calibrationSize = calibrationSize;
-    this.confidences = Arrays.linspace(0.01, 0.1, 9).toList();
+  public ConformalClassifierValidator(Partitioner partitioner) {
+    this(partitioner, Arrays.linspace(0.01, 0.1, 9).toList());
   }
 
   @Override
@@ -49,13 +44,7 @@ public final class ConformalClassifierValidator<P extends ConformalClassifier>
   }
 
   @Override
-  protected P fit(Predictor.Learner<? extends P> learner, DataFrame x, Vector y) {
-    SplitPartitioner partitioner = new SplitPartitioner(calibrationSize);
-    Partition partition = partitioner.partition(x, y).iterator().next();
-    P fit = learner.fit(partition.getTrainingData(), partition.getTrainingTarget());
-    fit.calibrate(partition.getValidationData(), partition.getValidationTarget());
-    return fit;
-  }
+  abstract protected P fit(Predictor.Learner<? extends P> learner, DataFrame x, Vector y);
 
   @Override
   protected void predict(MutableEvaluationContext<? extends P> ctx) {
@@ -66,7 +55,8 @@ public final class ConformalClassifierValidator<P extends ConformalClassifier>
 
   /**
    * Returns a k-fold cross validator for evaluating conformal classifiers. For each fold, the
-   * specified calibration set size is used. The default {@linkplain org.mimirframework.evaluation.Evaluator evaluator} is the
+   * specified calibration set size is used. The default
+   * {@linkplain org.mimirframework.evaluation.Evaluator evaluator} is the
    * {@link ConformalClassifierEvaluator} (with the specified confidence level)
    *
    * @param folds the number of folds
@@ -82,7 +72,16 @@ public final class ConformalClassifierValidator<P extends ConformalClassifier>
 
   public static <T extends ConformalClassifier> ConformalClassifierValidator<T> crossValidator(
       int folds, double calibrationSize, DoubleArray significance) {
-    return new ConformalClassifierValidator<T>(new FoldPartitioner(folds), calibrationSize,
-        significance.toList());
+    return new ConformalClassifierValidator<T>(new FoldPartitioner(folds), significance.toList()) {
+
+      @Override
+      protected T fit(Predictor.Learner<? extends T> learner, DataFrame x, Vector y) {
+        SplitPartitioner partitioner = new SplitPartitioner(calibrationSize);
+        Partition partition = partitioner.partition(x, y).iterator().next();
+        T fit = learner.fit(partition.getTrainingData(), partition.getTrainingTarget());
+        fit.calibrate(partition.getValidationData(), partition.getValidationTarget());
+        return fit;
+      }
+    };
   }
 }

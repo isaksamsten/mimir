@@ -12,13 +12,19 @@ public class LinearRegressionExample {
     DoubleArray x = Arrays.randn(100).reshape(50, 2);
     DoubleArray y = sinTarget(x);
 
+    // Initialize the linear regression learner
     LinearRegression.Learner learner = new LinearRegression.Learner();
+
+    // Fit the model
     LinearRegression regression = learner.fit(x, y);
-    System.out.println(regression.getTheta());
+
+    // Print the parameters
+    System.out.println(regression.getParameters());
   }
 
   private static DoubleArray sinTarget(DoubleArray x) {
-    return x.getColumn(0).minus(x.getColumn(1)).plus(x.getColumn(0).map(i -> Math.sin(i) * Math.PI))
-        .map(Math::signum);
+    DoubleArray x0 = x.getColumn(0);
+    DoubleArray x1 = x.getColumn(1);
+    return Arrays.signum(x0.minus(x1).plus(Arrays.sin(x0).times(Math.PI)));
   }
 }

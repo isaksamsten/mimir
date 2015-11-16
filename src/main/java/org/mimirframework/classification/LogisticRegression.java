@@ -114,8 +114,7 @@ public class LogisticRegression extends AbstractClassifier {
 
   @Override
   public Set<Characteristic> getCharacteristics() {
-    return Collections
-.singleton(ClassifierCharacteristic.ESTIMATOR);
+    return Collections.singleton(ClassifierCharacteristic.ESTIMATOR);
   }
 
   @Override
@@ -123,8 +122,7 @@ public class LogisticRegression extends AbstractClassifier {
     return "LogisticRegression{" + "coefficients=" + coefficients + ", logLoss=" + logLoss + '}';
   }
 
-  public static final class Configurator
- implements Classifier.Configurator<Learner> {
+  public static final class Configurator implements Classifier.Configurator<Learner> {
 
     private int iterations = 100;
     private double regularization = 0.01;
@@ -166,8 +164,7 @@ public class LogisticRegression extends AbstractClassifier {
 
     @Override
     public void accept(EvaluationContext<? extends LogisticRegression> ctx) {
-      ctx.getMeasureCollection().add("logLoss",
- MeasureSample.IN_SAMPLE,
+      ctx.getMeasureCollection().add("logLoss", MeasureSample.IN_SAMPLE,
           ctx.getPredictor().getLogLoss());
 
       // TODO: compute log-loss out-sample

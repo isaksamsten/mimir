@@ -20,8 +20,8 @@ public final class LinearRegression implements Regression {
     this.theta = theta;
   }
 
-  public DoubleArray getTheta() {
-    return theta;
+  public DoubleArray getParameters() {
+    return theta.copy()o;
   }
 
   @Override
@@ -48,10 +48,13 @@ public final class LinearRegression implements Regression {
 
     @Override
     public LinearRegression fit(DoubleArray x, DoubleArray y) {
-      x = Arrays.hstack(Arrays.ones(x.rows()).reshape(x.rows(), 1), x);
-      DoubleArray inner = Arrays.dot(x.transpose(), x);
+      x = Arrays.vstack(Arrays.ones(x.rows()), x);
+      DoubleArray inner =
+          Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.eye(x.columns()).times(1));
       DoubleArray v = Arrays.dot(Arrays.linalg.pinv(inner), x.transpose());
       DoubleArray theta = Arrays.dot(v, y);
+
+      // X'(XX'\lambda*I_n)^-1y
       return new LinearRegression(theta);
     }
 
