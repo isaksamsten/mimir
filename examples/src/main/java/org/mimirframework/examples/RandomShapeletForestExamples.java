@@ -62,6 +62,7 @@ public class RandomShapeletForestExamples {
   }
 
   public static DataFrame loadDatasetExample() throws IOException {
+    // Dataset can be found here: http://www.cs.ucr.edu/~eamonn/time_series_data/
     String trainFile = "/home/isak/Projects/datasets/dataset/Gun_Point/Gun_Point_TRAIN";
     String testFile = "/home/isak/Projects/datasets/dataset/Gun_Point/Gun_Point_TEST";
     try (DatasetReader train = new MatlabDatasetReader(new FileInputStream(trainFile));

@@ -19,7 +19,7 @@ public class LogisticRegressionTest {
     DataFrame x = iris.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean()));
     Vector y = iris.get("Class");
 
-    // Multinomial logistic regression (handles |unique(y)| > 1)
+    // Multinomial logistic regression
     Classifier.Learner<LogisticRegression> classifier = new LogisticRegression.Learner();
     Result result = ClassifierValidator.crossValidation(10).test(classifier, x, y);
     DataFrame measures = result.getMeasures();
@@ -28,21 +28,26 @@ public class LogisticRegressionTest {
     testOdds();
   }
 
-  public static void testOdds()  {
+  public static void testOdds() {
     // Construct a dataset
     DataFrame x = DataFrame.of("Age", Vector.of(55, 28, 65, 46, 86, 56, 85, 33, 21, 42), "Smoker",
         Vector.of(0, 0, 1, 0, 1, 1, 0, 0, 1, 1));
 
     // Construct a target (got cancer / not)
     Vector y = Vector.of(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
+
+    // Show the dataset
     System.out.println(x.set("Cancer?", y));
 
     LogisticRegression.Learner regression = new LogisticRegression.Learner();
     LogisticRegression model = regression.fit(x, y);
+
+    // Print the model
     System.out.println(model);
 
+    // Get the odds ratio for the parameters
     System.out.println("(Intercept) " + model.getOddsRatio("(Intercept)"));
-    for (Object o : x.getColumnIndex().keySet()) {
+    for (Object o : x.getColumnIndex()) {
       System.out.println(o + " " + model.getOddsRatio(o));
     }
   }

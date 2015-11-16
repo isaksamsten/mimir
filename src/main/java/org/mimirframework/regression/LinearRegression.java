@@ -21,7 +21,7 @@ public final class LinearRegression implements Regression {
   }
 
   public DoubleArray getParameters() {
-    return theta.copy()o;
+    return theta.copy();
   }
 
   @Override
