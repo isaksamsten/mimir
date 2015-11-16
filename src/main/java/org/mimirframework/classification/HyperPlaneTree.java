@@ -51,7 +51,7 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
     private final Gain criterion = Gain.INFO;
     private final Vector classes;
 
-    protected Learner(ClassSet set, Vector classes) {
+    public Learner(ClassSet set, Vector classes) {
       this.set = set;
       this.classes = classes;
     }
