@@ -9,7 +9,6 @@ import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.Datasets;
 import org.mimirframework.classification.Classifier;
 import org.mimirframework.classification.RandomForest;
-import org.mimirframework.classification.conformal.ConformalClassifier;
 import org.mimirframework.classification.conformal.InductiveConformalClassifier;
 import org.mimirframework.classification.conformal.Nonconformity;
 import org.mimirframework.classification.conformal.ProbabilityCostFunction;
@@ -47,7 +46,7 @@ public class InductiveConformalPredictionExample {
     // Create a validator for evaluating the validity and efficiency of the conformal classifier. In
     // this case, we evaluate the classifier using 10-fold cross-validation and 9 significance
     // levels between 0.1 and 0.1
-    Validator<ConformalClassifier> validator =
+    Validator<InductiveConformalClassifier> validator =
         ConformalClassifierValidator.crossValidator(10, 0.3, Arrays.linspace(0.01, 0.1, 9));
 
     Result result = validator.test(cp, x, y);

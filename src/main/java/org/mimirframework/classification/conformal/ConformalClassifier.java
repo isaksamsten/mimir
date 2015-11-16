@@ -17,8 +17,6 @@ public interface ConformalClassifier extends Classifier {
 
   double DEFAULT_SIGNIFICANCE = 0.05;
 
-  void calibrate(DataFrame x, Vector y);
-
   /**
    * Returns the conformal predictions for the records in the given data frame using the given
    * significance level.

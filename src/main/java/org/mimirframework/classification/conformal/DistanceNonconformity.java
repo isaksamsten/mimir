@@ -1,7 +1,5 @@
 package org.mimirframework.classification.conformal;
 
-import java.util.stream.IntStream;
-
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
@@ -52,15 +50,6 @@ public class DistanceNonconformity implements Nonconformity {
       return Double.NEGATIVE_INFINITY;
     }
     return negDist == 0 ? 0 : (posDist / negDist) / example.size();
-  }
-
-  @Override
-  public DoubleArray estimate(DataFrame x, Vector y) {
-    DoubleArray array = DoubleArray.zeros(x.rows());
-    // Run in parallel
-    IntStream.range(0, x.rows()).parallel()
-        .forEach(i -> array.set(i, estimate(x.loc().getRecord(i), y.loc().get(i))));
-    return array;
   }
 
   /**

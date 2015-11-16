@@ -10,7 +10,6 @@ import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
-import org.mimirframework.classification.AbstractClassifier;
 import org.mimirframework.classification.ClassifierCharacteristic;
 import org.mimirframework.supervised.Characteristic;
 import org.mimirframework.supervised.Predictor;
@@ -18,8 +17,7 @@ import org.mimirframework.supervised.Predictor;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class InductiveConformalClassifier extends AbstractClassifier
-    implements ConformalClassifier {
+public class InductiveConformalClassifier extends AbstractConformalClassifier {
 
   private final Nonconformity nonconformity;
 
@@ -34,23 +32,22 @@ public class InductiveConformalClassifier extends AbstractClassifier
     this.nonconformity = Objects.requireNonNull(nonconformity, "Requires nonconformity scorer");
   }
 
-  @Override
+  /**
+   * Calibrate this inductive conformal classifier using the supplied dataframe and output target
+   * 
+   * @param x the ddata
+   * @param y the calibration target
+   */
   public void calibrate(DataFrame x, Vector y) {
     calibration = nonconformity.estimate(x, y);
   }
 
-  @Override
-  public DoubleArray estimate(Vector example) {
-    Check.state(calibration != null, "the conformal predictor must be calibrated");
-    DoubleArray significance = DoubleArray.zeros(getClasses().size());
-    double n = calibration.size();
-    for (int i = 0; i < significance.size(); i++) {
-      Object label = getClasses().loc().get(i);
-      double nc = nonconformity.estimate(example, label);
-      double gt = calibration.filter(score -> score >= nc).size();
-      significance.set(i, (gt + 1) / (n + 1));
-    }
-    return significance;
+  public DoubleArray getCalibration() {
+    return calibration;
+  }
+
+  public Nonconformity getNonconformity() {
+    return nonconformity;
   }
 
   @Override
