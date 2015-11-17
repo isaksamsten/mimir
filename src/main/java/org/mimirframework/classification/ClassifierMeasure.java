@@ -156,8 +156,8 @@ public class ClassifierMeasure {
     double averageAuc = 0;
     for (Object classKey : auc.getIndex()) {
       if (dist.getIndex().contains(classKey)) {
-        int classCount = dist.getAsInt(classKey);
-        averageAuc += auc.getAsDouble(classKey) * (classCount / (double) a.size());
+        double classCount = dist.getAsDouble(classKey);
+        averageAuc += auc.getAsDouble(classKey) * (classCount / a.size());
       }
     }
     return averageAuc;

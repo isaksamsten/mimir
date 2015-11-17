@@ -37,7 +37,7 @@ public enum ClassifierEvaluator implements Evaluator<Classifier> {
   public void accept(EvaluationContext<? extends Classifier> ctx) {
     Vector predictions = ctx.getPredictions();
     Vector truth = ctx.getPartition().getValidationTarget();
-    ClassifierMeasure cm = new ClassifierMeasure(predictions, truth, ctx.getEstimates(),
+    ClassifierMeasure cm = new ClassifierMeasure(truth, predictions, ctx.getEstimates(),
         ctx.getPredictor().getClasses());
 
     ctx.getMeasureCollection().add("accuracy", cm.getAccuracy());
