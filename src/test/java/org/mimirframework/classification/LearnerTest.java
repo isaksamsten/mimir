@@ -35,7 +35,7 @@ public class LearnerTest {
     DataFrame x = data.drop(classColumn).apply(v -> v.set(v.where(Is::NA), v.mean()));
     x = new MinMaxNormalizer().fitTransform(x);
     Vector y = data.get(classColumn);
-    Validator<RandomForest> cv = ClassifierValidator.crossValidation(10);
+    Validator<RandomForest> cv = ClassifierValidator.crossValidator(10);
     cv.add(EnsembleEvaluator.INSTANCE);
 
     RandomForest.Configurator configurator = new RandomForest.Configurator(100);

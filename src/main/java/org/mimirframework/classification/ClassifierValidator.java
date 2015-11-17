@@ -66,20 +66,20 @@ public class ClassifierValidator<T extends Classifier> extends Validator<T> {
     }
   }
 
-  public static <T extends Classifier> ClassifierValidator<T> holdout(DataFrame testX,
+  public static <T extends Classifier> ClassifierValidator<T> holdoutValidator(DataFrame testX,
       Vector testY) {
     return createValidator((x, y) -> Collections.singleton(new Partition(x, testX, y, testY)));
   }
 
-  public static <T extends Classifier> ClassifierValidator<T> splitValidation(double testFraction) {
+  public static <T extends Classifier> ClassifierValidator<T> splitValidator(double testFraction) {
     return createValidator(new SplitPartitioner(testFraction));
   }
 
-  public static <T extends Classifier> ClassifierValidator<T> leaveOneOutValidation() {
+  public static <T extends Classifier> ClassifierValidator<T> leaveOneOutValidator() {
     return createValidator(LOO_PARTITIONER);
   }
 
-  public static <T extends Classifier> ClassifierValidator<T> crossValidation(int folds) {
+  public static <T extends Classifier> ClassifierValidator<T> crossValidator(int folds) {
     return createValidator(new FoldPartitioner(folds));
   }
 

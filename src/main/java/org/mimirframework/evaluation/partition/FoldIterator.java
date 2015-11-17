@@ -28,9 +28,9 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import org.briljantframework.Check;
-import org.mimirframework.classification.ClassifierValidator;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.mimirframework.classification.ClassifierValidator;
 
 /**
  * Lazy iterator that partitions the supplied {@linkplain DataFrame data frame} and {@code Vector
@@ -43,9 +43,8 @@ import org.briljantframework.data.vector.Vector;
  * <pre>
  * {
  *   &#064;code
- *   DataFrame df =
- *       MixedDataFrame.of(&quot;a&quot;, Vector.of(1, 2, 3, 4, 5), &quot;b&quot;, Vector.of(5, 4, 3, 2, 1), &quot;c&quot;,
- *           Vector.of(4, 3, 2, 2, 1));
+ *   DataFrame df = MixedDataFrame.of(&quot;a&quot;, Vector.of(1, 2, 3, 4, 5), &quot;b&quot;, Vector.of(5, 4, 3, 2, 1),
+ *       &quot;c&quot;, Vector.of(4, 3, 2, 2, 1));
  * }
  * </pre>
  *
@@ -93,7 +92,7 @@ import org.briljantframework.data.vector.Vector;
  * </pre>
  *
  * This class can be used to implement cross-validation. For an implementation, see
- * {@link ClassifierValidator#crossValidation(int)}
+ * {@link ClassifierValidator#crossValidator(int)}
  *
  * @author Isak Karlsson
  */

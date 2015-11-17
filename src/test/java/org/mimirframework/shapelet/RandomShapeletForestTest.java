@@ -21,7 +21,7 @@
 
 package org.mimirframework.shapelet;
 
-import static org.mimirframework.classification.ClassifierValidator.crossValidation;
+import static org.mimirframework.classification.ClassifierValidator.crossValidator;
 
 import java.io.FileInputStream;
 import java.util.ArrayList;
@@ -445,7 +445,7 @@ public class RandomShapeletForestTest {
     // new NearestNeighbours.Learner(1, new SimilarityDistance(
     // new SmithWatermanSimilarity(1, 0, 0)));
 
-    Validator<Classifier> cv = crossValidation(10);
+    Validator<Classifier> cv = crossValidator(10);
     cv.add(Evaluator.foldOutput(fold -> System.out.printf("Completed fold %d\n", fold)));
     Result result = cv.test(forest, x, y);
     System.out.println(result.getMeasures().mean());

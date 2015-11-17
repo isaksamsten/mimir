@@ -4,7 +4,7 @@ import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.Datasets;
-import org.mimirframework.classification.RandomShapeletForest;
+import org.mimirframework.classification.RandomForest;
 import org.mimirframework.classification.conformal.BootstrapConformalClassifier;
 import org.mimirframework.classification.conformal.ProbabilityCostFunction;
 import org.mimirframework.classification.conformal.evaluation.ConformalClassifierValidator;
@@ -13,22 +13,23 @@ import org.mimirframework.evaluation.Validator;
 import org.mimirframework.supervised.Predictor;
 
 /**
- * Created by isak on 11/16/15.
+ * @author Isak Karlsson
  */
 public class BootstrapConformalClassifierExample {
   public static void main(String[] args) {
-    DataFrame iris = DataFrames.permuteRecords(Datasets.loadSyntheticControl());
-    DataFrame x = iris.drop(0);
-    Vector y = iris.get(0);
+    DataFrame iris = DataFrames.permuteRecords(Datasets.loadIris());
+    DataFrame x = iris.drop("Class");
+    Vector y = iris.get("Class");
 
     Predictor.Learner<BootstrapConformalClassifier> learner =
-        new BootstrapConformalClassifier.Learner(
-            new RandomShapeletForest.Configurator(100).configure(),
+        new BootstrapConformalClassifier.Learner(new RandomForest.Learner(100),
             ProbabilityCostFunction.margin());
 
     Validator<BootstrapConformalClassifier> cv = ConformalClassifierValidator.crossValidator(10);
     Result result = cv.test(learner, x, y);
-    System.out.println(result.getMeasures().groupBy("significance").collect(Vector::mean));
+    System.out.println(
+        result.getMeasures().groupBy(Double.class, v -> String.format("%.2f", v), "significance")
+            .collect(Vector::mean));
   }
 }
 

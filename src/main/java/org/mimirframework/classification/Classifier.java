@@ -41,7 +41,7 @@ import org.mimirframework.supervised.Predictor;
  * <p>
  * The output of the classifier is a {@link Classifier} (i.e., the {@code g}) which (hopefully)
  * approximates {@code h}. To estimate how well {@code g} approximates {@code h}, cross-validation
- * {@link ClassifierValidator#crossValidation(int)} can be employed.
+ * {@link ClassifierValidator#crossValidator(int)} can be employed.
  * </p>
  *
  * A classifier is always atomic, i.e. does not have mutable state.

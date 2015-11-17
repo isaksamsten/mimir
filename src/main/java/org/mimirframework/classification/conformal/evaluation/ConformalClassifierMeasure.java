@@ -17,8 +17,12 @@ public class ConformalClassifierMeasure {
   public ConformalClassifierMeasure(Vector truth, DoubleArray score, double significance,
       Vector classes) {
     // Compute confidence and credibility
-    double correct = 0, avgConfidence = 0, avgCredibility = 0, noSingletons = 0, avgPValue = 0,
-        avgNoClasses = 0;
+    double correct = 0;
+    double avgConfidence = 0;
+    double avgCredibility = 0;
+    double noSingletons = 0;
+    double avgPValue = 0;
+    double avgNoClasses = 0;
     for (int i = 0; i < score.rows(); i++) {
       DoubleArray estimate = score.getRow(i);
       BooleanArray predictions = estimate.where(p -> p >= significance);

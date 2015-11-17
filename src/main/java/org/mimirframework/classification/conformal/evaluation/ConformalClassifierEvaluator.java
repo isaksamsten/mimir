@@ -29,6 +29,7 @@ public class ConformalClassifierEvaluator implements Evaluator<ConformalClassifi
         new ConformalClassifierMeasure(truth, scores, significance, classes);
 
     MeasureCollection measureCollection = ctx.getMeasureCollection();
+    measureCollection.add("significance", significance);
     measureCollection.add("accuracy", cm.getAccuracy());
     measureCollection.add("error", cm.getError());
     measureCollection.add("confidence", cm.getConfidence());

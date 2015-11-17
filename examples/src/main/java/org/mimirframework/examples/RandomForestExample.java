@@ -1,7 +1,5 @@
 package org.mimirframework.examples;
 
-import org.briljantframework.array.Arrays;
-import org.briljantframework.array.IntArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
@@ -12,7 +10,6 @@ import org.mimirframework.classification.EnsembleEvaluator;
 import org.mimirframework.classification.RandomForest;
 import org.mimirframework.evaluation.Result;
 import org.mimirframework.evaluation.Validator;
-import org.mimirframework.evaluation.partition.FoldPartitioner;
 
 /**
  * @author Isak Karlsson
@@ -23,7 +20,7 @@ public class RandomForestExample {
     DataFrame x = iris.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean()));
     Vector y = iris.get("Class");
 
-    Validator<RandomForest> cv = ClassifierValidator.crossValidation(10);
+    Validator<RandomForest> cv = ClassifierValidator.crossValidator(10);
     cv.add(EnsembleEvaluator.INSTANCE);
 
     Result result = cv.test(new RandomForest.Learner(100), x, y);
