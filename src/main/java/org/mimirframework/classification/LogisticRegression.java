@@ -185,6 +185,10 @@ public class LogisticRegression extends AbstractClassifier {
    */
   public static class Learner implements Predictor.Learner<LogisticRegression> {
 
+    public static final double GRADIENT_TOLERANCE = 1E-5;
+    public static final int MAX_ITERATIONS = 100;
+    public static final int MEMORY = 20;
+
     private final double regularization;
     private final NonlinearOptimizer optimizer;
 
@@ -197,14 +201,13 @@ public class LogisticRegression extends AbstractClassifier {
 
     public Learner() {
       this.regularization = 0.01;
-      this.optimizer = new LimitedMemoryBfgsOptimizer(20, 100, 1E-5);
+      this.optimizer = new LimitedMemoryBfgsOptimizer(MEMORY, MAX_ITERATIONS, GRADIENT_TOLERANCE);
     }
 
-    // @Override
-    // public Evaluator<LogisticRegression> getEvaluator() {
-    // return ctx -> ctx.getMeasureCollection().add(Measure.LOG_LOSS,
-    // ctx.getPredictor().getLogLoss());
-    // }
+    public Learner(double regularization) {
+      this.regularization = regularization;
+      this.optimizer = new LimitedMemoryBfgsOptimizer(MEMORY, MAX_ITERATIONS, GRADIENT_TOLERANCE);
+    }
 
     @Override
     public String toString() {

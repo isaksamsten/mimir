@@ -18,21 +18,21 @@ public class ClassifierMeasure {
 
   private final double accuracy, areaUnderRocCurve, brierScore, precision, recall;
 
-  public ClassifierMeasure(Vector t, Vector p, DoubleArray scores, Vector classes) {
-    this.accuracy = accuracy(p, t);
+  public ClassifierMeasure(Vector truth, Vector predicted, DoubleArray scores, Vector classes) {
+    this.accuracy = accuracy(predicted, truth);
     this.precision = 0;
     this.recall = 0;
 
     if (scores != null) {
-      areaUnderRocCurve = averageAreaUnderRocCurve(p, t, scores, classes);
-      brierScore = brierScore(p, t, scores, classes);
+      areaUnderRocCurve = averageAreaUnderRocCurve(predicted, truth, scores, classes);
+      brierScore = brierScore(predicted, truth, scores, classes);
     } else {
       brierScore = Na.DOUBLE;
       areaUnderRocCurve = Na.DOUBLE;
     }
   }
 
-  public ClassifierMeasure(Vector predictions, Vector truth) {
+  public ClassifierMeasure(Vector truth, Vector predictions) {
     this(truth, predictions, null, null);
   }
 

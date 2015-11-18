@@ -34,7 +34,7 @@ public class RandomShapeletForestExamples {
     DataFrame x = data.drop(0);
     Vector y = data.get(0);
 
-    Validator<RandomShapeletForest> cv = ClassifierValidator.crossValidation(10);
+    Validator<RandomShapeletForest> cv = ClassifierValidator.crossValidator(10);
     cv.add(Evaluator.foldOutput(i -> System.out.printf("Fold: %d\n", i)));
     cv.add(EnsembleEvaluator.INSTANCE);
 

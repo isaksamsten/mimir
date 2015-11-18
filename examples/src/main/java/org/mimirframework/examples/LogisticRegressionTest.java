@@ -21,7 +21,7 @@ public class LogisticRegressionTest {
 
     // Multinomial logistic regression
     Classifier.Learner<LogisticRegression> classifier = new LogisticRegression.Learner();
-    Result result = ClassifierValidator.crossValidation(10).test(classifier, x, y);
+    Result result = ClassifierValidator.crossValidator(10).test(classifier, x, y);
     DataFrame measures = result.getMeasures();
     System.out.println(measures.mean());
 

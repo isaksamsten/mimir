@@ -24,7 +24,7 @@ public class RandomForestExample {
     cv.add(EnsembleEvaluator.INSTANCE);
 
     Result result = cv.test(new RandomForest.Learner(100), x, y);
-    System.out.println(result.getMeasures().mean());
+    System.out.println(result.getMeasures());
 
 
     /*
