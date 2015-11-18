@@ -51,9 +51,9 @@ public enum EnsembleEvaluator implements Evaluator<Ensemble> {
       for (int j = 0; j < members.size(); j++) {
         DoubleArray estimate = members.get(j).estimate(record);
         if (oobIndicator.get(i, j)) {
-          oobEstimates.getRow(i).assign(estimate, (e, v) -> e + v / oobSize);
+          oobEstimates.getRow(i).combineAssign(estimate, (e, v) -> e + v / oobSize);
         } else {
-          inbEstimates.getRow(i).assign(estimate, (e, v) -> e + v / inbSize);
+          inbEstimates.getRow(i).combineAssign(estimate, (e, v) -> e + v / inbSize);
         }
       }
       oobAccuracy.add(find(classes, y, i) == argmax(oobEstimates.getRow(i)) ? 1 : 0);

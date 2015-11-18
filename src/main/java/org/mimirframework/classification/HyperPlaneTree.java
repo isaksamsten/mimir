@@ -63,7 +63,10 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
   private static IntArray getRandomFeatures(DoubleArray x) {
     IntArray features = Arrays.range(1, x.size()).copy();
     features.permute(x.size() - 1);
-    return features.get(Arrays.range(0, (int) (Math.round(Math.log(x.size()) / Math.log(2)) + 1)));
+    // double thing = Math.log(x.size()) / Math.log(2);
+    double thing = Math.sqrt(x.size());
+    int end = (int) (Math.round(thing) + 1);
+    return features.get(Arrays.range(0, end));
   }
 
   public static class Learner implements Predictor.Learner<HyperPlaneTree> {
@@ -95,7 +98,7 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
       if (set.getTotalWeight() <= 1.0 || set.getTargetCount() == 1) {
         return TreeLeaf.fromExamples(set);
       }
-      TreeSplit<HyperPlaneThreshold> maxSplit = find(set, x, y);
+      TreeSplit<HyperPlaneThreshold> maxSplit = findHyperPlaneRandomMeanPoint(set, x, y);
       if (maxSplit == null) {
         return TreeLeaf.fromExamples(set);
       } else {
@@ -113,7 +116,8 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
       }
     }
 
-    private TreeSplit<HyperPlaneThreshold> find(ClassSet set, DoubleArray x, Vector y) {
+    private TreeSplit<HyperPlaneThreshold> findHyperPlaneRandomPoint(ClassSet set, DoubleArray x,
+        Vector y) {
       TreeSplit<HyperPlaneThreshold> bestSplit = null;
       double bestImpurity = Double.POSITIVE_INFINITY;
       for (int i = 0; i < noHyperPlanes; i++) {
@@ -122,6 +126,34 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
         IntArray randomFeatures = getRandomFeatures(row);
         DoubleArray weights = Arrays.randn(randomFeatures.size() + 1);
         double threshold = Arrays.inner(take(row, randomFeatures), weights);
+        TreeSplit<HyperPlaneThreshold> split = split(x, set, weights, randomFeatures, threshold);
+        double impurity = criterion.compute(split);
+        if (impurity < bestImpurity) {
+          bestImpurity = impurity;
+          bestSplit = split;
+        }
+      }
+      if (bestSplit != null) {
+        bestSplit.setImpurity(bestImpurity);
+      }
+
+      return bestSplit;
+    }
+
+
+    private TreeSplit<HyperPlaneThreshold> findHyperPlaneRandomMeanPoint(ClassSet set,
+        DoubleArray x, Vector y) {
+      TreeSplit<HyperPlaneThreshold> bestSplit = null;
+      double bestImpurity = Double.POSITIVE_INFINITY;
+      for (int i = 0; i < noHyperPlanes; i++) {
+        int a = set.getRandomSample().getRandomExample().getIndex();
+        int b = set.getRandomSample().getRandomExample().getIndex();
+        DoubleArray ra = x.getRow(a);
+        DoubleArray rb = x.getRow(b);
+
+        IntArray randomFeatures = getRandomFeatures(ra);
+        DoubleArray weights = Arrays.randn(randomFeatures.size() + 1);
+        double threshold = Arrays.inner(take(ra.plus(rb).div(2), randomFeatures), weights);
         TreeSplit<HyperPlaneThreshold> split = split(x, set, weights, randomFeatures, threshold);
         double impurity = criterion.compute(split);
         if (impurity < bestImpurity) {

@@ -65,7 +65,7 @@ public class Ensemble extends AbstractClassifier {
     Vector classes = getClasses();
     DoubleArray m = DoubleArray.zeros(classes.size());
     for (DoubleArray prediction : predictions) {
-      m.assign(prediction, (t, o) -> t + o / estimators);
+      m.combineAssign(prediction, (t, o) -> t + o / estimators);
     }
     return m;
   }
