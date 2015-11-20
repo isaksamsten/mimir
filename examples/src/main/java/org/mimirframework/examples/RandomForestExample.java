@@ -25,7 +25,8 @@ public class RandomForestExample {
 
     Result result = cv.test(new RandomForest.Learner(100), x, y);
     System.out.println(result.getMeasures());
-
+    System.out.println(result.getMeasures().mean());
+    System.out.printf("On average, it took %.2f ms to fit the model\n",  result.getFitTime());
 
     /*
      * for (int i = 0; i < f.size(); i++) { RandomForest.Learner forest = new

@@ -52,7 +52,7 @@ public class ClassifierExample {
     DoubleArray scores = lr.estimate(xTest);
 
     // Comute some classifier measures (accurac, auc, etc.)
-    ClassifierMeasure cm = new ClassifierMeasure(yTest, predicted, scores, lr.getClasses());
+    ClassifierMeasure cm = new ClassifierMeasure(predicted, yTest, scores, lr.getClasses());
 
     System.out.println(cm.getAccuracy());
     System.out.println(cm.getAreaUnderRocCurve());
