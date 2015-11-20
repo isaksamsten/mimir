@@ -8,8 +8,11 @@ import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.Na;
+import org.briljantframework.data.dataframe.DataFrame;
+import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.DoubleVector;
 import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.vector.Vectors;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -20,8 +23,12 @@ public class ClassifierMeasure {
 
   public ClassifierMeasure(Vector truth, Vector predicted, DoubleArray scores, Vector classes) {
     this.accuracy = accuracy(predicted, truth);
-    this.precision = 0;
-    this.recall = 0;
+    if (classes == null) {
+      classes = Vectors.unique(truth);
+    }
+
+    this.precision = precision(predicted, truth, classes).mean();
+    this.recall = recall(predicted, truth, classes).mean();
 
     if (scores != null) {
       areaUnderRocCurve = averageAreaUnderRocCurve(predicted, truth, scores, classes);
@@ -65,6 +72,40 @@ public class ClassifierMeasure {
     return "ClassifierMeasure{" + "accuracy=" + accuracy + ", areaUnderRocCurve="
         + areaUnderRocCurve + ", brierScore=" + brierScore + ", precision=" + precision
         + ", recall=" + recall + '}';
+  }
+
+  /**
+   * Compute the precision of each class
+   * 
+   * @param predicted the predicted values
+   * @param truth the true values
+   * @param classes the classes
+   * @return a vector of precision values
+   */
+  public static Vector precision(Vector predicted, Vector truth, Vector classes) {
+    DataFrame table = DataFrames.table(predicted, truth);
+    Vector.Builder precision = new DoubleVector.Builder();
+    for (Object key : classes.toList()) {
+      precision.set(key, table.getAsDouble(key, key) / table.getRecord(key).sum());
+    }
+    return precision.build();
+  }
+
+  /**
+   * Compute the recall of each class
+   *
+   * @param predicted the predicted values
+   * @param truth the true values
+   * @param classes the classes
+   * @return a vector of recall values
+   */
+  private Vector recall(Vector predicted, Vector truth, Vector classes) {
+    DataFrame table = DataFrames.table(predicted, truth);
+    Vector.Builder precision = new DoubleVector.Builder();
+    for (Object key : classes.toList()) {
+      precision.set(key, table.getAsDouble(key, key) / table.get(key).sum());
+    }
+    return precision.build();
   }
 
   /**
