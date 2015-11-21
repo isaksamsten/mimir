@@ -20,7 +20,7 @@ public class ClassifierExample {
     DataFrame iris = Datasets.loadIris();
     DataFrame x = iris.drop("Class");
 
-    // Multiclass setting (3 classes), we can transform it
+    // Multiclass setting (3 classes), however, any c > 2 is supported
     Vector y = iris.get("Class");
 
     LogisticRegression.Learner lrl = new LogisticRegression.Learner();
