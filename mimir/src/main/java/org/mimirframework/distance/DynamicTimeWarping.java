@@ -21,7 +21,6 @@
 
 package org.mimirframework.distance;
 
-import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.vector.Vector;
 

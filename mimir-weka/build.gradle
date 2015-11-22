@@ -1,0 +1,6 @@
+dependencies {
+  compile project(":mimir")
+  compile group: 'nz.ac.waikato.cms.weka', name: 'weka-stable', version: '3.6.13'
+
+  testCompile group: 'org.briljantframework', name: 'briljant-dataset', version: '0.1.4'
+}

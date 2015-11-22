@@ -1,2 +1,5 @@
 rootProject.name = 'mimir'
 
+include 'mimir'
+include 'mimir-weka'
+
