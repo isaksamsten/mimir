@@ -31,18 +31,19 @@ public class ClassifierMeasure {
       classes = Vectors.unique(truth);
     }
 
-    Vector weight = truth.valueCounts().div(truth.size());
+    Vector weight = truth.valueCounts().div((double) truth.size());
     Vector precision =
         precision(predicted, truth, classes).mapWithIndex(Double.class,
-            (key, value) -> weight.getAsDouble(key) * value);
+            (key, value) -> weight.getIndex().contains(key) ? weight.getAsDouble(key) * value : 0);
     Vector recall =
         recall(predicted, truth, classes).mapWithIndex(Double.class,
-            (key, value) -> weight.getAsDouble(key) * value);
-    this.precision = precision.mean();
-    this.recall = recall.mean();
-    this.fMeasure =
+            (key, value) -> weight.getIndex().contains(key) ? weight.getAsDouble(key) * value : 0);
+    Vector fMeasure =
         fMeasure(predicted, truth, classes).mapWithIndex(Double.class,
-            (key, value) -> weight.getAsDouble(key) * value).mean();
+            (key, value) -> weight.getIndex().contains(key) ? weight.getAsDouble(key) * value : 0);
+    this.precision = precision.sum();
+    this.recall = recall.sum();
+    this.fMeasure = fMeasure.sum();
 
     if (scores != null) {
       areaUnderRocCurve = averageAreaUnderRocCurve(predicted, truth, scores, classes);
@@ -148,7 +149,7 @@ public class ClassifierMeasure {
     DataFrame table = DataFrames.table(predicted, truth);
     Vector.Builder precision = new DoubleVector.Builder();
     for (Object key : classes.toList()) {
-      if (table.getColumnIndex().contains(key)) {
+      if (table.getIndex().contains(key)) {
         precision.set(key, table.getAsDouble(key, key) / table.get(key).sum());
       } else {
         precision.set(key, 0);
