@@ -2,6 +2,7 @@ group 'org.mimirframework'
 version '1.0'
 
 apply plugin: 'java'
+apply plugin: 'application'
 
 sourceCompatibility = 1.8
 
@@ -10,13 +11,11 @@ repositories {
   mavenCentral()
 }
 
-/**task execute(type: JavaExec) {
-  main = mainClass
-  classpath = sourceSets.main.runtimeClasspath}*/
+mainClassName = 'org.mimirframework.examples.RandomShapeletForestExamples'
 
 
 dependencies {
-  compile group: 'org.mimirframework', name: 'mimir', version: '0.1-SNAPSHOT'
+  compile group: 'org.mimirframework', name: 'mimir-weka', version: '0.1-SNAPSHOT'
   compile group: 'org.briljantframework', name: 'briljant-dataset', version: '0.1.4'
   testCompile group: 'junit', name: 'junit', version: '4.11'
 }
