@@ -9,7 +9,6 @@ import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
 import org.mimirframework.classification.ClassifierCharacteristic;
 import org.mimirframework.supervised.Characteristic;
 import org.mimirframework.supervised.Predictor;
@@ -19,7 +18,7 @@ import org.mimirframework.supervised.Predictor;
  */
 public class InductiveConformalClassifier extends AbstractConformalClassifier {
 
-  private final Nonconformity nonconformity;
+  private final ClassifierNonconformity nonconformity;
 
   /**
    * [no-calibration, 1] double array of nonconformity scores for the calibration set used to
@@ -27,7 +26,7 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
    */
   private DoubleArray calibration;
 
-  protected InductiveConformalClassifier(Nonconformity nonconformity, Vector classes) {
+  protected InductiveConformalClassifier(ClassifierNonconformity nonconformity, Vector classes) {
     super(classes);
     this.nonconformity = Objects.requireNonNull(nonconformity, "Requires nonconformity scorer");
   }
@@ -46,7 +45,7 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
     return calibration;
   }
 
-  public Nonconformity getNonconformity() {
+  public ClassifierNonconformity getNonconformity() {
     return nonconformity;
   }
 
@@ -60,9 +59,9 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
    */
   public static class Learner implements Predictor.Learner<InductiveConformalClassifier> {
 
-    private final Nonconformity.Learner learner;
+    private final ClassifierNonconformity.Learner learner;
 
-    public Learner(Nonconformity.Learner learner) {
+    public Learner(ClassifierNonconformity.Learner learner) {
       this.learner = Objects.requireNonNull(learner);
     }
 
@@ -71,7 +70,8 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
       Objects.requireNonNull(x, "Input data is required.");
       Objects.requireNonNull(y, "Input target is required.");
       Check.argument(x.rows() == y.size(), "The size of input data and input target don't match.");
-      return new InductiveConformalClassifier(learner.fit(x, y), Vectors.unique(y));
+      ClassifierNonconformity nc = learner.fit(x, y);
+      return new InductiveConformalClassifier(nc, nc.getClasses());
     }
 
   }

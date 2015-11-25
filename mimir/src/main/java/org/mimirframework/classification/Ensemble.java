@@ -30,8 +30,7 @@ public class Ensemble extends AbstractClassifier {
   private final List<? extends Classifier> members;
   private final BooleanArray oobIndicator;
 
-  protected Ensemble(Vector classes, List<? extends Classifier> members,
-      BooleanArray oobIndicator) {
+  protected Ensemble(Vector classes, List<? extends Classifier> members, BooleanArray oobIndicator) {
     super(classes);
     this.members = members;
     this.oobIndicator = oobIndicator;

@@ -117,8 +117,8 @@ public class RandomShapeletForest extends Ensemble {
     }
   }
 
-  public static class Evaluator
-      implements org.mimirframework.evaluation.Evaluator<RandomShapeletForest> {
+  public static class Evaluator implements
+      org.mimirframework.evaluation.Evaluator<RandomShapeletForest> {
 
     @Override
     public void accept(EvaluationContext<? extends RandomShapeletForest> ctx) {
@@ -154,6 +154,32 @@ public class RandomShapeletForest extends Ensemble {
           posSum.plusAssign(m.getPositionImportance());
         }
 
+        // // ShapeletTree.ShapeStore store = new ShapeletTree.ShapeStore();
+        // // ShapeletTree.ShapeStore store1 = models.get(0).getStore();
+        // // for (int i = 0; i < store1.shapes.size(); i++) {
+        // // store.shapes.add(store1.shapes.get(i));
+        // // store.scores.add(store1.scores.get(i));
+        // // }
+        // // for (int i = 1; i < models.size(); i++) {
+        // // ShapeletTree tree = models.get(i);
+        // // ShapeletTree.ShapeStore store2 = tree.getStore();
+        // // for (int j = 0; j < store2.scores.size(); j++) {
+        // // store1.add(store2.shapes.get(j), store2.scores.get(j));
+        // // }
+        // // }
+        // //
+        // // QuickSort.quickSort(0, store1.scores.size(),
+        // // (a, b) -> Double.compare(store1.scores.get(b), store1.scores.get(a)), (a, b) -> {
+        // // Collections.swap(store1.scores, a, b);
+        // // Collections.swap(store1.shapes, a, b);
+        // // Collections.swap(store1.counts, a, b);
+        // // Collections.swap(store1.normalizedShapes, a, b);
+        // // });
+        //
+        // System.out.println(store1.scores);
+        // System.out.println(store1.shapes.stream().map(Vector::size).collect(Collectors.toList()));
+        // System.out.println(store1.counts);
+        // System.out.println(store1.scores.size());
         lenSum.apply(v -> v / size());
         posSum.apply(v -> v / size());
 

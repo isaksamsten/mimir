@@ -20,6 +20,7 @@ import org.briljantframework.statistics.FastStatistics;
 import org.mimirframework.classification.tree.ClassSet;
 import org.mimirframework.classification.tree.Example;
 import org.mimirframework.classification.tree.Gain;
+import org.mimirframework.classification.tree.Impurity;
 import org.mimirframework.classification.tree.ShapeletThreshold;
 import org.mimirframework.classification.tree.TreeBranch;
 import org.mimirframework.classification.tree.TreeClassifier;
@@ -28,6 +29,7 @@ import org.mimirframework.classification.tree.TreeNode;
 import org.mimirframework.classification.tree.TreeSplit;
 import org.mimirframework.classification.tree.TreeVisitor;
 import org.mimirframework.distance.Distance;
+import org.mimirframework.distance.DynamicTimeWarping;
 import org.mimirframework.distance.EarlyAbandonSlidingDistance;
 import org.mimirframework.distance.EuclideanDistance;
 import org.mimirframework.shapelet.ChannelShapelet;
@@ -49,19 +51,85 @@ import com.carrotsearch.hppc.cursors.ObjectDoubleCursor;
  */
 public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
+  public ShapeStore getStore() {
+    return store;
+  }
+
+  public static class ShapeStore {
+
+    public static final double MIN_DIST = 5;
+    public List<Shapelet> shapes = new ArrayList<>();
+    public List<Double> scores = new ArrayList<>();
+    public List<Integer> counts = new ArrayList<>();
+    public List<DoubleArray> normalizedShapes = new ArrayList<>();
+
+    private DynamicTimeWarping distance = new DynamicTimeWarping(-1);
+
+    public void add(Shapelet shapelet, double score) {
+//      if (shapes.isEmpty()) {
+//        shapes.add(shapelet);
+//        scores.add(score);
+//        counts.add(1);
+//        normalizedShapes.add(shapelet.toDoubleArray());
+//        return;
+//      }
+//      int min = -1;
+//      for (int i = 0; i < shapes.size(); i++) {
+//        if (shapes.get(i).size() == shapelet.size()) {
+//          min = i;
+//          break;
+//        }
+//      }
+//
+//      if (min < 0) {
+//        shapes.add(shapelet);
+//        scores.add(score);
+//        counts.add(1);
+//        normalizedShapes.add(shapelet.toDoubleArray().div(score));
+//      } else {
+//        scores.set(min, scores.get(min) + score);
+//        counts.set(min, counts.get(min) + 1);
+//
+//        DoubleArray arr = normalizedShapes.get(min);
+//        for (int i = 0; i < arr.size(); i++) {
+//          arr.set(i, arr.get(i) + shapelet.loc().getAsDouble(i) / score);
+//        }
+//      }//
+       // int min = -1;
+       // double minDist = Double.POSITIVE_INFINITY;
+       // for (int i = 0; i < shapes.size(); i++) {
+       // double dist = distance.compute(shapelet, shapes.get(i));
+       // if (dist < minDist && dist < MIN_DIST) {
+       // min = i;
+       // minDist = dist;
+       // }
+       // }
+       // if (min < 0) {
+       // shapes.add(shapelet);
+       // scores.add(score);
+       // counts.add(1);
+       // } else {
+       // scores.set(min, scores.get(min) + score);
+       // counts.set(min, counts.get(min) + 1);
+       // }
+    }
+  }
+
   public final ClassSet classSet;
   private final int depth;
   private final DoubleArray lengthImportance;
   private final DoubleArray positionImportance;
+  private final ShapeStore store;
 
   private ShapeletTree(Vector classes, TreeNode<ShapeletThreshold> node,
       TreeVisitor<ShapeletThreshold> predictionVisitor, DoubleArray lengthImportance,
-      DoubleArray positionImportance, int depth, ClassSet classSet) {
+      DoubleArray positionImportance, int depth, ClassSet classSet, ShapeStore store) {
     super(classes, node, predictionVisitor);
     this.lengthImportance = lengthImportance;
     this.positionImportance = positionImportance;
     this.depth = depth;
     this.classSet = classSet;
+    this.store = store;
   }
 
   /**
@@ -184,11 +252,12 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       params.lengthImportance = DoubleArray.zeros(x.columns());
       params.positionImportance = DoubleArray.zeros(x.columns());
       params.originalData = x;
+      params.shapeStore = new ShapeStore();
       TreeNode<ShapeletThreshold> node = build(dataFrame, y, classSet, params);
       /* new ShapletTreeVisitor(size, getDistanceMetric()) */
       return new ShapeletTree(classes, node, new ShapeletTree.Learner.ShapletTreeVisitor(10,
           getDistanceMetric()), params.lengthImportance, params.positionImportance, params.depth,
-          classSet);
+          classSet, params.shapeStore);
       // return new ShapeletTree(classes, node, new WeightVisitor(getDistanceMetric()),
       // params.lengthImportance, params.positionImportance, params.depth, classSet);
       // return new Classifier(classes, node, new OneNnVisitor(getDistanceMetric(), x, y),
@@ -216,19 +285,21 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         } else if (right.isEmpty()) {
           return TreeLeaf.fromExamples(left, left.getTotalWeight() / params.noExamples);
         } else {
-          // Shapelet shapelet = maxSplit.getThreshold().getShapelet();
-          // Impurity impurity = getGain().getImpurity();
+          Shapelet shapelet = maxSplit.getThreshold().getShapelet();
+          Impurity impurity = getGain().getImpurity();
+          double imp = impurity.impurity(classSet);
+          double weight = (maxSplit.size() / params.noExamples) * (imp - maxSplit.getImpurity());
 
-          // double imp = impurity.impurity(classSet);
-          // double weight = (maxSplit.size() / params.noExamples) * (imp - maxSplit.getImpurity());
+          params.lengthImportance.set(shapelet.size(), params.lengthImportance.get(shapelet.size())
+              + weight);
+          int length = shapelet.size();
+          int start = shapelet.start();
+          int end = start + length;
+          for (int i = start; i < end; i++) {
+            params.positionImportance.set(i, params.positionImportance.get(i) + (weight / length));
+          }
 
-          // params.lengthImportance.addTo(shapelet.size(), weight);
-          // int length = shapelet.size();
-          // int start = shapelet.start();
-          // int end = start + length;
-          // for (int i = start; i < end; i++) {
-          // params.positionImportance.set(i, params.positionImportance.get(i) + (weight / length));
-          // }
+          params.shapeStore.add(shapelet, weight);
 
           TreeNode<ShapeletThreshold> leftNode = build(x, y, left, params);
           TreeNode<ShapeletThreshold> rightNode = build(x, y, right, params);
@@ -758,6 +829,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       private DoubleArray lengthImportance;
       private DoubleArray positionImportance;
       private int depth = 0;
+      public ShapeStore shapeStore;
     }
 
     private static class GuessVisitor implements TreeVisitor<ShapeletThreshold> {

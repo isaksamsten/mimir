@@ -176,9 +176,9 @@ public class FoldIterator implements Iterator<Partition> {
     }
 
     DataFrame trainingSet = xTrainingBuilder.build();
-//    trainingSet.setColumnIndex(x.getColumnIndex());
+    trainingSet.setColumnIndex(x.getColumnIndex());
     DataFrame validationSet = xValidationBuilder.build();
-//    validationSet.setColumnIndex(x.getColumnIndex());
+    validationSet.setColumnIndex(x.getColumnIndex());
 
     Vector yTraining = yTrainingBuilder.build();
     Vector yValidation = yValidationBuilder.build();

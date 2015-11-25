@@ -16,9 +16,9 @@ import org.mimirframework.supervised.Predictor;
 public class BootstrapConformalClassifier extends AbstractConformalClassifier {
 
   private final DoubleArray calibration;
-  private final Nonconformity nonconformity;
+  private final ClassifierNonconformity nonconformity;
 
-  protected BootstrapConformalClassifier(DoubleArray calibration, Nonconformity nonconformity,
+  protected BootstrapConformalClassifier(DoubleArray calibration, ClassifierNonconformity nonconformity,
       Vector classes) {
     super(classes);
     this.calibration = calibration;
@@ -26,7 +26,7 @@ public class BootstrapConformalClassifier extends AbstractConformalClassifier {
   }
 
   @Override
-  protected Nonconformity getNonconformity() {
+  protected ClassifierNonconformity getNonconformity() {
     return nonconformity;
   }
 

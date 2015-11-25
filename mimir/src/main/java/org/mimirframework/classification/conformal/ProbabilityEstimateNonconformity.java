@@ -11,22 +11,26 @@ import org.mimirframework.classification.ClassifierCharacteristic;
 import org.mimirframework.supervised.Predictor;
 
 /**
+ * Implements a nonconformity scorer based on an underlying classifier and a probability cost
+ * function.
+ * 
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class ProbabilityEstimateNonconformity implements Nonconformity {
+public class ProbabilityEstimateNonconformity implements ClassifierNonconformity {
 
   private final Classifier classifier;
   private final ProbabilityCostFunction errorFunction;
 
-  ProbabilityEstimateNonconformity(Classifier classifier, ProbabilityCostFunction errorFunction) {
-    this.classifier = classifier;
-    this.errorFunction = errorFunction;
+  public ProbabilityEstimateNonconformity(Classifier classifier,
+      ProbabilityCostFunction errorFunction) {
+    this.classifier = Objects.requireNonNull(classifier);
+    this.errorFunction = Objects.requireNonNull(errorFunction);
   }
 
   @Override
   public double estimate(Vector example, Object label) {
     Objects.requireNonNull(example, "Require an example.");
-    int trueClassIndex = classifier.getClasses().loc().indexOf(label);
+    int trueClassIndex = getClasses().loc().indexOf(label);
     Check.argument(trueClassIndex >= 0, "illegal label %s", label);
     return errorFunction.apply(classifier.estimate(example), trueClassIndex);
   }
@@ -36,26 +40,32 @@ public class ProbabilityEstimateNonconformity implements Nonconformity {
     Objects.requireNonNull(x, "Input data required.");
     Objects.requireNonNull(y, "Input target required.");
     Check.argument(x.rows() == y.size(), "The size of input data and input target don't match.");
-    return errorFunction.apply(classifier.estimate(x), y, classifier.getClasses());
+    DoubleArray estimate = classifier.estimate(x);
+    return errorFunction.apply(estimate, y, getClasses());
+  }
+
+  @Override
+  public Vector getClasses() {
+    return classifier.getClasses();
   }
 
   /**
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  public static class Learner implements Nonconformity.Learner {
+  public static class Learner implements ClassifierNonconformity.Learner {
 
     private final Predictor.Learner<? extends Classifier> classifier;
     private final ProbabilityCostFunction errorFunction;
 
     public Learner(Predictor.Learner<? extends Classifier> classifier,
-                   ProbabilityCostFunction errorFunction) {
+        ProbabilityCostFunction errorFunction) {
       this.classifier = Objects.requireNonNull(classifier, "A classifier is required.");
       this.errorFunction = Objects.requireNonNull(errorFunction, "An error function is required");
 
     }
 
     @Override
-    public Nonconformity fit(DataFrame x, Vector y) {
+    public ClassifierNonconformity fit(DataFrame x, Vector y) {
       Objects.requireNonNull(x, "Input data is required.");
       Objects.requireNonNull(y, "Input target is required.");
       Check.argument(x.rows() == y.size(), "The size of input data and input target don't match");
@@ -63,7 +73,7 @@ public class ProbabilityEstimateNonconformity implements Nonconformity {
       Check.state(
           probabilityEstimator != null
               && probabilityEstimator.getCharacteristics().contains(
-ClassifierCharacteristic.ESTIMATOR),
+                  ClassifierCharacteristic.ESTIMATOR),
           "The produced classifier can't estimate probabilities");
       return new ProbabilityEstimateNonconformity(probabilityEstimator, errorFunction);
     }

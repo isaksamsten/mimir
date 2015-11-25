@@ -21,14 +21,15 @@ import org.mimirframework.supervised.Predictor;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public abstract class ConformalClassifierValidator<P extends ConformalClassifier>
-    extends Validator<P> {
+public abstract class ConformalClassifierValidator<P extends ConformalClassifier> extends
+    Validator<P> {
   private final List<ConformalClassifierEvaluator> conformalEvaluators;
 
   protected ConformalClassifierValidator(Partitioner partitioner, DoubleArray confidences) {
     super(partitioner);
-    this.conformalEvaluators = confidences.stream().mapToObj(ConformalClassifierEvaluator::new)
-        .collect(Collectors.toList());
+    this.conformalEvaluators =
+        confidences.stream().mapToObj(ConformalClassifierEvaluator::new)
+            .collect(Collectors.toList());
   }
 
   protected ConformalClassifierValidator(Partitioner partitioner) {
@@ -115,9 +116,9 @@ public abstract class ConformalClassifierValidator<P extends ConformalClassifier
       protected T fit(Predictor.Learner<? extends T> learner, DataFrame x, Vector y) {
         SplitPartitioner partitioner = new SplitPartitioner(calibrationSize);
         Partition partition = partitioner.partition(x, y).iterator().next();
-        T fit = learner.fit(partition.getTrainingData(), partition.getTrainingTarget());
-        fit.calibrate(partition.getValidationData(), partition.getValidationTarget());
-        return fit;
+        T icc = learner.fit(partition.getTrainingData(), partition.getTrainingTarget());
+        icc.calibrate(partition.getValidationData(), partition.getValidationTarget());
+        return icc;
       }
     };
   }

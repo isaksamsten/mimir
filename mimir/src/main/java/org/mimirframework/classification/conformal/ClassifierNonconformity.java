@@ -9,7 +9,7 @@ import org.briljantframework.data.vector.Vector;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface Nonconformity {
+public interface ClassifierNonconformity {
 
   /**
    * Estimate the nonconformity score for each example (record) in the given dataframe w.r.t. to the
@@ -37,20 +37,27 @@ public interface Nonconformity {
   double estimate(Vector example, Object label);
 
   /**
-   * Learn a {@linkplain Nonconformity nonconformity score function} using the given data and
-   * targets.
+   * Get the classes used by this nonconformity scorer
+   * 
+   * @return the classes
+   */
+  Vector getClasses();
+
+  /**
+   * Learn a {@linkplain ClassifierNonconformity nonconformity score function} using the given data
+   * and targets.
    *
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
   interface Learner {
 
     /**
-     * Fit a {@linkplain Nonconformity nonconformity score function} using the given data.
+     * Fit a {@linkplain ClassifierNonconformity nonconformity score function} using the given data.
      *
      * @param x the input data
      * @param y the input target
      * @return a nonconformity score function
      */
-    Nonconformity fit(DataFrame x, Vector y);
+    ClassifierNonconformity fit(DataFrame x, Vector y);
   }
 }

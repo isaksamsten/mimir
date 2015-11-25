@@ -13,20 +13,20 @@ import org.mimirframework.distance.EuclideanDistance;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class DistanceNonconformity implements Nonconformity {
+public class DistanceNonconformity implements ClassifierNonconformity {
 
-  private final NearestNeighbours predictor;
+  private final NearestNeighbours classifier;
   private final int k;
 
-  public DistanceNonconformity(NearestNeighbours predictor, int k) {
-    this.predictor = predictor;
+  public DistanceNonconformity(NearestNeighbours classifier, int k) {
+    this.classifier = classifier;
     this.k = k;
   }
 
   @Override
   public double estimate(Vector example, Object label) {
-    Vector labels = predictor.getTarget();
-    DoubleArray distances = predictor.distance(example);
+    Vector labels = classifier.getTarget();
+    DoubleArray distances = classifier.distance(example);
     IntArray order = Arrays.order(distances);
     double posDist = 0;
     double negDist = 0;
@@ -49,7 +49,12 @@ public class DistanceNonconformity implements Nonconformity {
     } else if (Double.isNaN(negDist)) {
       return Double.NEGATIVE_INFINITY;
     }
-    return negDist == 0 ? 0 : (posDist / negDist) / example.size();
+    return negDist == 0 ? 0 : posDist / negDist / example.size();
+  }
+
+  @Override
+  public Vector getClasses() {
+    return classifier.getClasses();
   }
 
   /**
@@ -69,7 +74,7 @@ public class DistanceNonconformity implements Nonconformity {
    *
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  public static class Learner implements Nonconformity.Learner {
+  public static class Learner implements ClassifierNonconformity.Learner {
 
     private final NearestNeighbours.Learner nearestNeighbors;
     private final int k;
@@ -84,7 +89,7 @@ public class DistanceNonconformity implements Nonconformity {
     }
 
     @Override
-    public Nonconformity fit(DataFrame x, Vector y) {
+    public ClassifierNonconformity fit(DataFrame x, Vector y) {
       return new DistanceNonconformity(nearestNeighbors.fit(x, y), k);
     }
 

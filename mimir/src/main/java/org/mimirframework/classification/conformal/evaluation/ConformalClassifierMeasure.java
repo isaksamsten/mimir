@@ -25,8 +25,8 @@ public class ConformalClassifierMeasure {
     double avgNoClasses = 0;
     for (int i = 0; i < score.rows(); i++) {
       DoubleArray estimate = score.getRow(i);
-      BooleanArray predictions = estimate.where(p -> p >= significance);
-      correct += predictions.get(Vectors.find(classes, truth, i)) ? 1 : 0;
+      BooleanArray predictions = estimate.where(p -> p > significance);
+      correct += predictions.get(classes.loc().indexOf(truth.loc().get(i))) ? 1 : 0;
       int prediction = Arrays.argmax(estimate);
       double credibility = estimate.get(prediction);
       double confidence = 1 - Arrays.maxExcluding(estimate, prediction);

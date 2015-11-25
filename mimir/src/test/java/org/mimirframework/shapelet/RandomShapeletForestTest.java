@@ -53,10 +53,10 @@ import org.junit.Test;
 import org.mimirframework.classification.Classifier;
 import org.mimirframework.classification.RandomForest;
 import org.mimirframework.classification.RandomShapeletForest;
+import org.mimirframework.classification.conformal.ClassifierNonconformity;
 import org.mimirframework.classification.conformal.ConformalClassifier;
 import org.mimirframework.classification.conformal.DistanceNonconformity;
 import org.mimirframework.classification.conformal.InductiveConformalClassifier;
-import org.mimirframework.classification.conformal.Nonconformity;
 import org.mimirframework.evaluation.Evaluator;
 import org.mimirframework.evaluation.Result;
 import org.mimirframework.evaluation.Validator;
@@ -275,7 +275,7 @@ public class RandomShapeletForestTest {
     Partition trainPart =
         new SplitPartitioner(0.1).partition(train.drop(0), train.get(0)).iterator().next();
 
-    Nonconformity.Learner nc = new DistanceNonconformity.Learner(1);
+    ClassifierNonconformity.Learner nc = new DistanceNonconformity.Learner(1);
     // Nonconformity.Learner nc =
     // new ProbabilityEstimateNonconformity.Learner(
     // new
@@ -305,24 +305,24 @@ public class RandomShapeletForestTest {
       for (int j = 5; j < record.size() && !found; j++) {
         double minSignificance = 0.05;
         double minConfidence = 0.95;
-        DoubleArray estimates = classifier.estimate(record.select(0, j));
-        int prediction = Arrays.argmax(estimates);
-        double credibility = estimates.get(prediction);
-        double confidence = 1 - maxnot(estimates, prediction);
-        // System.out.println(confidence + " " + credibility + " from " + estimates);
-        if (confidence >= minConfidence && credibility >= minSignificance) {
-          d.set(i, j);
-          correct += Is.equal(c.loc().get(prediction), trueLabel) ? 1 : 0;
-          found = true;
-        }
+//        DoubleArray estimates = classifier.estimate(record.select(0, j));
+//        int prediction = Arrays.argmax(estimates);
+//        double credibility = estimates.get(prediction);
+//        double confidence = 1 - maxnot(estimates, prediction);
+//         System.out.println(confidence + " " + credibility + " from " + estimates);
+//        if (confidence >= minConfidence && credibility >= minSignificance) {
+//          d.set(i, j);
+//          correct += Is.equal(c.loc().get(prediction), trueLabel) ? 1 : 0;
+//          found = true;
+//        }
       }
 
       // Classify it once all time has passed
-      if (!found) {
-        Object prediction = c.loc().get(Arrays.argmax(classifier.estimate(record)));
-        correct += Is.equal(trueLabel, prediction) ? 1 : 0;
-        d.set(i, record.size());
-      }
+//      if (!found) {
+//        Object prediction = c.loc().get(Arrays.argmax(classifier.estimate(record)));
+//        correct += Is.equal(trueLabel, prediction) ? 1 : 0;
+//        d.set(i, record.size());
+//      }
     }
 
     System.out.println(correct / x.rows());

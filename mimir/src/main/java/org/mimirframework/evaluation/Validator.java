@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.briljantframework.data.dataframe.DataFrame;
+import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.Vector;
 import org.mimirframework.classification.Classifier;
 import org.mimirframework.evaluation.partition.FoldPartitioner;
@@ -52,7 +53,7 @@ import org.mimirframework.supervised.Predictor;
  * DataFrame iris = Datasets.loadIris();
  * DataFrame x = iris.drop(&quot;Class&quot;).apply(v -&gt; v.set(v.where(Object.class, Is::NA), v.mean()));
  * Vector y = iris.get(&quot;Class&quot;);
- *
+ * 
  * Result&lt;Classifier&gt; result = validator.test(learner, x, y);
  * DataFrame measures = result.getMeasures();
  * measures.mean();
@@ -110,7 +111,7 @@ public abstract class Validator<P extends Predictor> {
     Vector.Builder actual = y.newBuilder();
     Vector.Builder predictions = y.newBuilder();
     double avgFitTime = 0, avgPredictTime = 0, avgTrainingSize = 0, avgValidationSize = 0;
-    double noPartition = (double) partitions.size();
+    double noPartition = partitions.size();
     int iteration = 0;
     for (Partition partition : partitions) {
       DataFrame trainingData = partition.getTrainingData();
@@ -137,8 +138,6 @@ public abstract class Validator<P extends Predictor> {
       actual.addAll(validationTarget);
       predictions.addAll(evaluationContext.getPredictions());
 
-      // These are evaluated for all predictors no matter what
-      MeasureCollection measureCollection = evaluationContext.getMeasureCollection();
       avgFitTime += fitTime / noPartition;
       avgPredictTime += predictTime / noPartition;
       avgTrainingSize += trainingData.rows() / noPartition;
@@ -221,10 +220,8 @@ public abstract class Validator<P extends Predictor> {
 
   /**
    * Gets the partitioner used for this validator. The partitioner partitions the data into training
-   * and validation folds. For example,
-   * {@link FoldPartitioner} partitions the data into
-   * {@code k} folds and {@link SplitPartitioner}
-   * partitions the data into one fold.
+   * and validation folds. For example, {@link FoldPartitioner} partitions the data into {@code k}
+   * folds and {@link SplitPartitioner} partitions the data into one fold.
    *
    * @return the partitioner used by this validator
    */

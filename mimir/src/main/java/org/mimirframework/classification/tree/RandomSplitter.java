@@ -53,18 +53,19 @@ public class RandomSplitter extends AbstractSplitter {
 
   @Override
   public TreeSplit<ValueThreshold> find(ClassSet classSet, DataFrame dataFrame, Vector column) {
-    if (features == null) {
-      initialize(dataFrame);
-    }
+    // if (features == null) {
+    // initialize(dataFrame);
+    // }
+
+    int[] features = initialize(dataFrame);
 
     int maxFeatures =
         this.maxFeatures > 0 ? this.maxFeatures
             : (int) Math.round(Math.sqrt(dataFrame.columns())) + 1;
 
     // TODO! Fix me!
-    synchronized (features) {
-      ArrayAllocations.shuffle(features);
-    }
+    // synchronized (features) {
+    // }
 
     TreeSplit<ValueThreshold> bestSplit = null;
     double bestImpurity = Double.POSITIVE_INFINITY;
@@ -90,11 +91,13 @@ public class RandomSplitter extends AbstractSplitter {
     return bestSplit;
   }
 
-  private void initialize(DataFrame dataFrame) {
-    this.features = new int[dataFrame.columns()];
+  private int[] initialize(DataFrame dataFrame) {
+    int[] features = new int[dataFrame.columns()];
     for (int i = 0; i < features.length; i++) {
-      this.features[i] = i;
+      features[i] = i;
     }
+    ArrayAllocations.shuffle(features);
+    return features;
   }
 
   /**

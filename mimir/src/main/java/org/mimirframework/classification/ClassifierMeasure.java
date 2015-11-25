@@ -25,8 +25,21 @@ public class ClassifierMeasure {
   private final double accuracy, areaUnderRocCurve, brierScore, precision, recall;
   private final double fMeasure;
 
+  /**
+   * Compute some common classifier measures
+   * 
+   * @param predicted the predictions
+   * @param truth the true values
+   * @param scores an array of scores (one column per class; one row per instance)
+   * @param classes a set of classes
+   */
   public ClassifierMeasure(Vector predicted, Vector truth, DoubleArray scores, Vector classes) {
-    this.accuracy = accuracy(predicted, truth);
+    Check.size(predicted.size(), truth.size(),
+        "The predicted and actual values must have the same size.");
+    if (scores != null) {
+      Check.argument(classes != null, "If score matrix is given, classes are required");
+      Check.size(scores.rows(), predicted.size(), "Illegal score matrix (illegal rows)");
+    }
     if (classes == null) {
       classes = Vectors.unique(truth);
     }
@@ -41,6 +54,8 @@ public class ClassifierMeasure {
     Vector fMeasure =
         fMeasure(predicted, truth, classes).mapWithIndex(Double.class,
             (key, value) -> weight.getIndex().contains(key) ? weight.getAsDouble(key) * value : 0);
+
+    this.accuracy = accuracy(predicted, truth);
     this.precision = precision.sum();
     this.recall = recall.sum();
     this.fMeasure = fMeasure.sum();
@@ -54,6 +69,12 @@ public class ClassifierMeasure {
     }
   }
 
+  /**
+   * Compute classifier measures
+   * 
+   * @param predicted the predicated values
+   * @param truth the true values
+   */
   public ClassifierMeasure(Vector predicted, Vector truth) {
     this(predicted, truth, null, null);
   }

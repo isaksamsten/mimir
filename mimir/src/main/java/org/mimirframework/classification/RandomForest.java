@@ -20,8 +20,7 @@ import org.mimirframework.classification.tree.Splitter;
  */
 public final class RandomForest extends Ensemble {
 
-  private RandomForest(Vector classes, List<? extends Classifier> members,
-      BooleanArray oobIndicator) {
+  private RandomForest(Vector classes, List<? extends Classifier> members, BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
   }
 
@@ -84,8 +83,7 @@ public final class RandomForest extends Ensemble {
       private final BaseLearner<? extends Classifier> baseLearner;
 
       private FitTask(ClassSet classSet, DataFrame x, Vector y,
-          BaseLearner<? extends Classifier> baseLearner, Vector classes,
-          BooleanArray oobIndicator) {
+          BaseLearner<? extends Classifier> baseLearner, Vector classes, BooleanArray oobIndicator) {
         this.classSet = classSet;
         this.x = x;
         this.y = y;

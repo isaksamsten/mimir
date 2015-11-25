@@ -1,6 +1,6 @@
 package org.mimirframework.examples;
 
-import org.briljantframework.array.Arrays;
+import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.SortOrder;
 import org.briljantframework.data.dataframe.DataFrame;
@@ -9,8 +9,8 @@ import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.Datasets;
 import org.mimirframework.classification.Classifier;
 import org.mimirframework.classification.RandomForest;
+import org.mimirframework.classification.conformal.ClassifierNonconformity;
 import org.mimirframework.classification.conformal.InductiveConformalClassifier;
-import org.mimirframework.classification.conformal.Nonconformity;
 import org.mimirframework.classification.conformal.ProbabilityCostFunction;
 import org.mimirframework.classification.conformal.ProbabilityEstimateNonconformity;
 import org.mimirframework.classification.conformal.evaluation.ConformalClassifierValidator;
@@ -37,7 +37,7 @@ public class InductiveConformalPredictionExample {
         new RandomForest.Configurator(100).configure();
 
     // Initialize the non-conformity learner using the margin as cost function
-    Nonconformity.Learner nc =
+    ClassifierNonconformity.Learner nc =
         new ProbabilityEstimateNonconformity.Learner(classifier, ProbabilityCostFunction.margin());
 
     // Initialize an inductive conformal classifier using the non-conformity learner
@@ -47,7 +47,8 @@ public class InductiveConformalPredictionExample {
     // this case, we evaluate the classifier using 10-fold cross-validation and 9 significance
     // levels between 0.1 and 0.1
     Validator<InductiveConformalClassifier> validator =
-        ConformalClassifierValidator.crossValidator(10, 0.3, Arrays.linspace(0.01, 0.1, 9));
+        ConformalClassifierValidator.crossValidator(10, 0.25,
+            DoubleArray.of(0.5, 0.6, 0.7, 0.8, 0.9));
 
     Result result = validator.test(cp, x, y);
 
@@ -56,7 +57,8 @@ public class InductiveConformalPredictionExample {
 
     // Compute the mean of all measures grouped by significance level
     DataFrame meanPerSignificance =
-        measures.groupBy("significance").collect(Vector::mean).sort(SortOrder.ASC);
+        measures.groupBy(Double.class, v -> String.format("%.2f", v), "significance")
+            .collect(Vector::mean).sort(SortOrder.ASC);
     System.out.println(meanPerSignificance);
   }
 }
