@@ -38,7 +38,7 @@ public abstract class AbstractConformalClassifier extends AbstractClassifier imp
    * 
    * @return a classifier calibration
    */
-  protected abstract ClassifierCalibratorScores getClassifierCalibration();
+  protected abstract ClassifierCalibratorScores getCalibrationScores();
 
   @Override
   public DoubleArray estimate(Vector example) {
@@ -46,7 +46,7 @@ public abstract class AbstractConformalClassifier extends AbstractClassifier imp
     double tau = stochasticSmoothing ? ThreadLocalRandom.current().nextDouble() : 1;
     for (int i = 0; i < significance.size(); i++) {
       Object label = getClasses().loc().get(i);
-      DoubleArray calibration = getClassifierCalibration().getCalibrationScores(example, label);
+      DoubleArray calibration = getCalibrationScores().get(example, label);
       double n = calibration.size() + 1;
       double nc = getClassifierNonconformity().estimate(example, label);
       double gt = 0;

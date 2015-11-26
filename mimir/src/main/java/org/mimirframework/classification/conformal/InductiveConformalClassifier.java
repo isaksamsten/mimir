@@ -39,7 +39,7 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
   }
 
   public DoubleArray getCalibrationScore(Vector example, Object label) {
-    return calibration.getCalibrationScores(example, label);
+    return calibration.get(example, label);
   }
 
   public ClassifierNonconformity getClassifierNonconformity() {
@@ -47,7 +47,7 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
   }
 
   @Override
-  protected ClassifierCalibratorScores getClassifierCalibration() {
+  protected ClassifierCalibratorScores getCalibrationScores() {
     Check.state(calibration != null, "Classifier is not calibrated.");
     return calibration;
   }

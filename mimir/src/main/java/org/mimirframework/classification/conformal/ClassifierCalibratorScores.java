@@ -17,6 +17,6 @@ public interface ClassifierCalibratorScores {
    * @param label the label
    * @return the calibration scores
    */
-  DoubleArray getCalibrationScores(Vector example, Object label);
+  DoubleArray get(Vector example, Object label);
 
 }

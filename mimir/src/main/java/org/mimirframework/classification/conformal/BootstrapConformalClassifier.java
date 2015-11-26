@@ -32,7 +32,7 @@ public class BootstrapConformalClassifier extends AbstractConformalClassifier {
   }
 
   @Override
-  protected ClassifierCalibratorScores getClassifierCalibration() {
+  protected ClassifierCalibratorScores getCalibrationScores() {
     return (example, label) -> calibration;
   }
 
