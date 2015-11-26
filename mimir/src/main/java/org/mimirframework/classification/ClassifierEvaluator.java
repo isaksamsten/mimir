@@ -19,11 +19,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.mimirframework.classification.evaluation;
+package org.mimirframework.classification;
 
 import org.briljantframework.data.vector.Vector;
-import org.mimirframework.classification.Classifier;
-import org.mimirframework.classification.ClassifierMeasure;
 import org.mimirframework.evaluation.EvaluationContext;
 import org.mimirframework.evaluation.Evaluator;
 

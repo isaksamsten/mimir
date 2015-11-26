@@ -3,7 +3,6 @@ package org.mimirframework.classification.conformal;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.math3.util.Precision;
-import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.vector.Vector;
 import org.mimirframework.classification.AbstractClassifier;
@@ -16,24 +15,40 @@ import org.mimirframework.classification.AbstractClassifier;
 public abstract class AbstractConformalClassifier extends AbstractClassifier implements
     ConformalClassifier {
 
-  protected AbstractConformalClassifier(Vector classes) {
+  private final boolean stochasticSmoothing;
+
+  protected AbstractConformalClassifier(boolean stochasticSmoothing, Vector classes) {
     super(classes);
+    this.stochasticSmoothing = stochasticSmoothing;
   }
 
-  protected abstract ClassifierNonconformity getNonconformity();
+  protected AbstractConformalClassifier(Vector classes) {
+    this(true, classes);
+  }
 
-  protected abstract DoubleArray getCalibration();
+  /**
+   * Return the non conformity scorer
+   * 
+   * @return a classifier nonconformity
+   */
+  protected abstract ClassifierNonconformity getClassifierNonconformity();
+
+  /**
+   * Get the calibration
+   * 
+   * @return a classifier calibration
+   */
+  protected abstract ClassifierCalibratorScores getClassifierCalibration();
 
   @Override
   public DoubleArray estimate(Vector example) {
-    Check.state(getCalibration() != null, "the conformal predictor must be calibrated");
     DoubleArray significance = DoubleArray.zeros(getClasses().size());
-    DoubleArray calibration = getCalibration();
-    double tau = ThreadLocalRandom.current().nextDouble();
-    double n = calibration.size() + 1;
+    double tau = stochasticSmoothing ? ThreadLocalRandom.current().nextDouble() : 1;
     for (int i = 0; i < significance.size(); i++) {
       Object label = getClasses().loc().get(i);
-      double nc = getNonconformity().estimate(example, label);
+      DoubleArray calibration = getClassifierCalibration().getCalibrationScores(example, label);
+      double n = calibration.size() + 1;
+      double nc = getClassifierNonconformity().estimate(example, label);
       double gt = 0;
       double eq = 1;
       for (int j = 0; j < calibration.size(); j++) {

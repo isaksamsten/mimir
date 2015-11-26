@@ -17,28 +17,29 @@ import org.briljantframework.data.vector.Vectors;
 public interface ProbabilityCostFunction {
 
   static ProbabilityCostFunction margin() {
-    return (score, yIndex) -> {
+    return (score, y) -> {
       Objects.requireNonNull(score, "Require predictions.");
-      return 0.5 - (score.get(yIndex) - Arrays.maxExcluding(score, yIndex)) / 2;
+      return 0.5 - (score.get(y) - Arrays.maxExcluding(score, y)) / 2;
     };
   }
 
   static ProbabilityCostFunction inverseProbability() {
-    return (score, tc) -> 1 - Objects.requireNonNull(score, "Require predictions").get(tc);
+    return (score, y) -> 1 - Objects.requireNonNull(score, "Require predictions").get(y);
   }
-
 
   /**
    * Compute the cost function for each row in the supplied score matrix
    * {@code [n-examples, n-classes]} and return a {@code [n-example]} array of costs.
    *
+   * @param pcf
    * @param scores the score matrix (e.g., probability estimates)
    * @param y the true class array
    * @param classes the possible classes ({@code classes.loc().indexOf(y.loc().get(i))} is used to
    *        find the true class column in the score matrix for the i:th example)
    * @return an array of costs
    */
-  default DoubleArray apply(DoubleArray scores, Vector y, Vector classes) {
+  static DoubleArray estimate(ProbabilityCostFunction pcf, DoubleArray scores, Vector y,
+      Vector classes) {
     Check.argument(classes.size() == scores.columns(), "Illegal prediction matrix");
     DoubleArray probabilities = DoubleArray.zeros(y.size());
     for (int i = 0, size = y.size(); i < size; i++) {
@@ -47,7 +48,7 @@ public interface ProbabilityCostFunction {
         Object label = y.loc().get(i);
         throw new IllegalArgumentException(String.format("Illegal class: '%s' (not found)", label));
       }
-      double value = apply(scores.getRow(i), yIndex);
+      double value = pcf.apply(scores.getRow(i), yIndex);
       probabilities.set(i, value);
     }
 
@@ -59,9 +60,9 @@ public interface ProbabilityCostFunction {
    * true class.
    * 
    * @param score the score array
-   * @param trueClassIndex the true class index (i.e. the index in the score array which is
-   *        considered the true class label)
+   * @param y the true class index (i.e. the index in the score array which is considered the true
+   *        class label)
    * @return the cost
    */
-  double apply(DoubleArray score, int trueClassIndex);
+  double apply(DoubleArray score, int y);
 }

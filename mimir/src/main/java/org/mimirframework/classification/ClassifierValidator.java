@@ -8,7 +8,6 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
-import org.mimirframework.classification.evaluation.ClassifierEvaluator;
 import org.mimirframework.evaluation.Evaluator;
 import org.mimirframework.evaluation.MutableEvaluationContext;
 import org.mimirframework.evaluation.Validator;

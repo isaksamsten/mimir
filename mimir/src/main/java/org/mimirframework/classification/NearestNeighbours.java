@@ -47,6 +47,10 @@ public class NearestNeighbours extends AbstractClassifier {
     this.k = k;
   }
 
+  public double n() {
+    return x.columns();
+  }
+
   @Override
   public DoubleArray estimate(Vector record) {
     // Only 1nn

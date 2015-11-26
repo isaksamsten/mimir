@@ -1,6 +1,7 @@
 package org.mimirframework.classification.conformal;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
@@ -18,21 +19,21 @@ public class BootstrapConformalClassifier extends AbstractConformalClassifier {
   private final DoubleArray calibration;
   private final ClassifierNonconformity nonconformity;
 
-  protected BootstrapConformalClassifier(DoubleArray calibration, ClassifierNonconformity nonconformity,
-      Vector classes) {
-    super(classes);
-    this.calibration = calibration;
-    this.nonconformity = nonconformity;
+  protected BootstrapConformalClassifier(DoubleArray calibration,
+      ClassifierNonconformity nonconformity, Vector classes) {
+    super(true, classes);
+    this.calibration = Objects.requireNonNull(calibration);
+    this.nonconformity = Objects.requireNonNull(nonconformity);
   }
 
   @Override
-  protected ClassifierNonconformity getNonconformity() {
+  protected ClassifierNonconformity getClassifierNonconformity() {
     return nonconformity;
   }
 
   @Override
-  protected DoubleArray getCalibration() {
-    return calibration;
+  protected ClassifierCalibratorScores getClassifierCalibration() {
+    return (example, label) -> calibration;
   }
 
   public static class Learner implements Predictor.Learner<BootstrapConformalClassifier> {
@@ -61,8 +62,8 @@ public class BootstrapConformalClassifier extends AbstractConformalClassifier {
         int trueClassIndex = ensemble.getClasses().loc().indexOf(y.loc().get(i));
         nonConformity.set(i, costFunction.apply(estimate, trueClassIndex));
       }
-      return new BootstrapConformalClassifier(nonConformity,
-          new ProbabilityEstimateNonconformity(ensemble, costFunction), ensemble.getClasses());
+      return new BootstrapConformalClassifier(nonConformity, new ProbabilityEstimateNonconformity(
+          ensemble, costFunction), ensemble.getClasses());
     }
 
     private DoubleArray estimate(List<Classifier> members, BooleanArray oob, Vector example,

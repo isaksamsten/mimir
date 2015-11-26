@@ -18,6 +18,7 @@ import org.briljantframework.dataset.io.DatasetReader;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.dataset.io.MatlabDatasetReader;
 import org.junit.Test;
+import org.mimirframework.classification.conformal.ClassifierCalibrator;
 import org.mimirframework.classification.conformal.ClassifierNonconformity;
 import org.mimirframework.classification.conformal.InductiveConformalClassifier;
 import org.mimirframework.classification.conformal.ProbabilityCostFunction;
@@ -83,14 +84,14 @@ public class LearnerTest {
         new ProbabilityEstimateNonconformity.Learner(classifier, ProbabilityCostFunction.margin());
 
     // Initialize an inductive conformal classifier using the non-conformity learner
-    InductiveConformalClassifier.Learner cp = new InductiveConformalClassifier.Learner(nc);
+    InductiveConformalClassifier.Learner cp =
+        new InductiveConformalClassifier.Learner(nc, ClassifierCalibrator.classConditional(), false);
 
     // Create a validator for evaluating the validity and efficiency of the conformal classifier. In
     // this case, we evaluate the classifier using 10-fold cross-validation and 9 significance
     // levels between 0.1 and 0.1
     Validator<InductiveConformalClassifier> validator =
-        ConformalClassifierValidator.crossValidator(10, 0.25,
-            DoubleArray.range(0.05, 1.01, 0.1));
+        ConformalClassifierValidator.crossValidator(10, 0.25, DoubleArray.range(0.05, 1.01, 0.1));
 
     Result result = validator.test(cp, x, y);
 

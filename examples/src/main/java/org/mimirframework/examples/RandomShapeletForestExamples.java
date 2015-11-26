@@ -37,7 +37,6 @@ public class RandomShapeletForestExamples {
     Validator<RandomShapeletForest> cv = ClassifierValidator.crossValidator(10);
     cv.add(Evaluator.foldOutput(i -> System.out.printf("Fold: %d\n", i)));
     cv.add(EnsembleEvaluator.INSTANCE);
-    cv.add(ctx -> System.out.println(ctx.getPredictor().getLengthImportance()));
 
     // Initialize a random shapelet forest configurator; 100 trees
     RandomShapeletForest.Configurator config = new RandomShapeletForest.Configurator(100);

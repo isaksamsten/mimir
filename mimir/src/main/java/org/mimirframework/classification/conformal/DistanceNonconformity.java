@@ -49,7 +49,7 @@ public class DistanceNonconformity implements ClassifierNonconformity {
     } else if (Double.isNaN(negDist)) {
       return Double.NEGATIVE_INFINITY;
     }
-    return negDist == 0 ? 0 : posDist / negDist / example.size();
+    return negDist == 0 ? 0 : posDist / negDist;
   }
 
   @Override

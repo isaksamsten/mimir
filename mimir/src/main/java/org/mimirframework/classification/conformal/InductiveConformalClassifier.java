@@ -1,7 +1,6 @@
 package org.mimirframework.classification.conformal;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -19,39 +18,43 @@ import org.mimirframework.supervised.Predictor;
 public class InductiveConformalClassifier extends AbstractConformalClassifier {
 
   private final ClassifierNonconformity nonconformity;
+  private ClassifierCalibrator calibrator;
+  private ClassifierCalibratorScores calibration = null;
 
-  /**
-   * [no-calibration, 1] double array of nonconformity scores for the calibration set used to
-   * estimate the p-values when performing a conformal prediction
-   */
-  private DoubleArray calibration;
-
-  protected InductiveConformalClassifier(ClassifierNonconformity nonconformity, Vector classes) {
-    super(classes);
+  protected InductiveConformalClassifier(ClassifierNonconformity nonconformity,
+      ClassifierCalibrator calibrator, boolean stochasticSmoothing, Vector classes) {
+    super(stochasticSmoothing, classes);
+    this.calibrator = Objects.requireNonNull(calibrator, "Calibrator is required.");
     this.nonconformity = Objects.requireNonNull(nonconformity, "Requires nonconformity scorer");
   }
 
   /**
-   * Calibrate this inductive conformal classifier using the supplied dataframe and output target
-   * 
-   * @param x the ddata
+   * Calibrate this inductive conformal classifier using the supplied data frame and output target
+   *
+   * @param x the data
    * @param y the calibration target
    */
   public void calibrate(DataFrame x, Vector y) {
-    calibration = nonconformity.estimate(x, y);
+    calibration = calibrator.calibrate(nonconformity, x, y);
   }
 
-  public DoubleArray getCalibration() {
-    return calibration;
+  public DoubleArray getCalibrationScore(Vector example, Object label) {
+    return calibration.getCalibrationScores(example, label);
   }
 
-  public ClassifierNonconformity getNonconformity() {
+  public ClassifierNonconformity getClassifierNonconformity() {
     return nonconformity;
   }
 
   @Override
+  protected ClassifierCalibratorScores getClassifierCalibration() {
+    Check.state(calibration != null, "Classifier is not calibrated.");
+    return calibration;
+  }
+
+  @Override
   public Set<Characteristic> getCharacteristics() {
-    return new HashSet<>(Collections.singletonList(ClassifierCharacteristic.ESTIMATOR));
+    return Collections.singleton(ClassifierCharacteristic.ESTIMATOR);
   }
 
   /**
@@ -60,9 +63,22 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
   public static class Learner implements Predictor.Learner<InductiveConformalClassifier> {
 
     private final ClassifierNonconformity.Learner learner;
+    private final boolean stochasticSmoothing;
+    private final ClassifierCalibrator calibratable;
+
+    public Learner(ClassifierNonconformity.Learner learner, ClassifierCalibrator calibrator,
+        boolean stochasticSmoothing) {
+      this.stochasticSmoothing = stochasticSmoothing;
+      this.calibratable = Objects.requireNonNull(calibrator, "Calibrator is required.");
+      this.learner = Objects.requireNonNull(learner, "Nonconformity learner is required.");
+    }
+
+    public Learner(ClassifierNonconformity.Learner learner, ClassifierCalibrator calibrator) {
+      this(learner, calibrator, true);
+    }
 
     public Learner(ClassifierNonconformity.Learner learner) {
-      this.learner = Objects.requireNonNull(learner);
+      this(learner, ClassifierCalibrator.unconditional());
     }
 
     @Override
@@ -71,7 +87,8 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
       Objects.requireNonNull(y, "Input target is required.");
       Check.argument(x.rows() == y.size(), "The size of input data and input target don't match.");
       ClassifierNonconformity nc = learner.fit(x, y);
-      return new InductiveConformalClassifier(nc, nc.getClasses());
+      return new InductiveConformalClassifier(nc, calibratable, stochasticSmoothing,
+          nc.getClasses());
     }
 
   }

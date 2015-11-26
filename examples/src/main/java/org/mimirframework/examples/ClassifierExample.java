@@ -36,7 +36,6 @@ public class ClassifierExample {
     // Get the training data (replacing missing values with the column mean)
     DataFrame xTrain = x.loc().getRecord(trainIdx).apply(v -> v.set(v.where(Is::NA), v.mean()));
     Vector yTrain = y.loc().get(trainIdx);
-    System.out.println(yTrain.toList());
 
     // Get the testing data
     DataFrame xTest = x.loc().getRecord(testIdx).apply(v -> v.set(v.where(Is::NA), v.mean()));
@@ -51,7 +50,7 @@ public class ClassifierExample {
     // Compute the probabilities for each class
     DoubleArray scores = lr.estimate(xTest);
 
-    // Comute some classifier measures (accurac, auc, etc.)
+    // Compute some classifier measures (accuracy, auc, etc.)
     ClassifierMeasure cm = new ClassifierMeasure(predicted, yTest, scores, lr.getClasses());
 
     System.out.println(cm.getAccuracy());

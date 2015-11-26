@@ -41,7 +41,7 @@ public class ProbabilityEstimateNonconformity implements ClassifierNonconformity
     Objects.requireNonNull(y, "Input target required.");
     Check.argument(x.rows() == y.size(), "The size of input data and input target don't match.");
     DoubleArray estimate = classifier.estimate(x);
-    return errorFunction.apply(estimate, y, getClasses());
+    return ProbabilityCostFunction.estimate(errorFunction, estimate, y, getClasses());
   }
 
   @Override

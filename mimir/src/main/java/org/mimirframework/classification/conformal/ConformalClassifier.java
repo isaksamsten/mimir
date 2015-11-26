@@ -15,8 +15,6 @@ import org.mimirframework.classification.Classifier;
  */
 public interface ConformalClassifier extends Classifier {
 
-  double DEFAULT_SIGNIFICANCE = 0.05;
-
   /**
    * Returns the conformal predictions for the records in the given data frame using the given
    * significance level.
@@ -34,8 +32,7 @@ public interface ConformalClassifier extends Classifier {
   }
 
   /**
-   * Returns the prediction of the given example or {@code NA}. A prediction is given iff one class
-   * have a significance greater than or equal to {@link #DEFAULT_SIGNIFICANCE}.
+   * Returns the prediction of the given example or {@code NA}.
    *
    * @param record to which the class label shall be assigned
    * @return a class-label or {@code NA}

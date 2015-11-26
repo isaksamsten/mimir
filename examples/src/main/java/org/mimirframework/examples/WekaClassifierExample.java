@@ -1,14 +1,14 @@
 package org.mimirframework.examples;
 
-import org.briljantframework.array.Arrays;
 import org.briljantframework.data.Is;
+import org.briljantframework.data.SortOrder;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.Datasets;
 import org.mimirframework.classification.Classifier;
+import org.mimirframework.classification.conformal.ClassifierNonconformity;
 import org.mimirframework.classification.conformal.InductiveConformalClassifier;
-import org.mimirframework.classification.conformal.Nonconformity;
 import org.mimirframework.classification.conformal.ProbabilityCostFunction;
 import org.mimirframework.classification.conformal.ProbabilityEstimateNonconformity;
 import org.mimirframework.classification.conformal.evaluation.ConformalClassifierValidator;
@@ -28,20 +28,28 @@ public class WekaClassifierExample {
     DataFrame iris = DataFrames.permuteRecords(Datasets.loadIris());
     DataFrame x = iris.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean()));
     Vector y = iris.get("Class");
+
+    // Construct a weka classifier
     Predictor.Learner<? extends Classifier> classifier =
         new WekaClassifier.Learner<>(new RandomForest());
-    Nonconformity.Learner nc =
+
+    // Use the classifier as a probability estimator
+    ClassifierNonconformity.Learner nc =
         new ProbabilityEstimateNonconformity.Learner(classifier, ProbabilityCostFunction.margin());
+
+    // Construct an inductive conformal classifier
     InductiveConformalClassifier.Learner cp = new InductiveConformalClassifier.Learner(nc);
+
+    // and a suitable validator
     Validator<InductiveConformalClassifier> validator =
-        ConformalClassifierValidator.crossValidator(10, 0.3);
+        ConformalClassifierValidator.crossValidator(10, 0.2);
+
+    // Evaluate the conformal classifier
     Result result = validator.test(cp, x, y);
-    DataFrame measures = result.getMeasures();
 
     // Compute the mean of all measures grouped by significance level
     DataFrame meanPerSignificance =
-        measures.groupBy("significance").collect(Vector::mean)
-            .sort((a, b) -> Double.compare((Double) a, (Double) b));
+        result.getMeasures().groupBy("significance").collect(Vector::mean).sort(SortOrder.ASC);
     System.out.println(meanPerSignificance);
   }
 }
