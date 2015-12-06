@@ -1,5 +1,6 @@
 rootProject.name = 'mimir'
 
 include 'mimir'
+include 'mimir-plot'
 include 'mimir-weka'
 

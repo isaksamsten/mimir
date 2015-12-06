@@ -4,7 +4,7 @@ apply plugin: 'maven'
 sourceCompatibility = 1.8
 
 allprojects {
-  group 'org.mimirframework'
+  group 'org.briljantframework'
   version = "0.1-SNAPSHOT"
 }
 
@@ -21,6 +21,8 @@ subprojects {
   }
 
   dependencies {
+    compile group: 'org.briljantframework', name: 'briljant-core', version: '0.1.6-SNAPSHOT'
+    testCompile group: 'org.briljantframework', name: 'briljant-dataset', version: '0.1.6-SNAPSHOT'
     testCompile group: 'junit', name: 'junit', version: '4.11'
   }
 }

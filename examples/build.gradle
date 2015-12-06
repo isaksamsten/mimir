@@ -15,7 +15,8 @@ mainClassName = 'org.mimirframework.examples.RandomShapeletForestExamples'
 
 
 dependencies {
-  compile group: 'org.mimirframework', name: 'mimir-weka', version: '0.1-SNAPSHOT'
-  compile group: 'org.briljantframework', name: 'briljant-dataset', version: '0.1.4'
+  compile group: 'org.briljantframework', name: 'mimir-weka', version: '0.1-SNAPSHOT'
+  compile group: 'org.briljantframework', name: 'mimir-plot', version: '0.1-SNAPSHOT'
+  compile group: 'org.briljantframework', name: 'briljant-dataset', version: '0.1.6-SNAPSHOT'
   testCompile group: 'junit', name: 'junit', version: '4.11'
 }
