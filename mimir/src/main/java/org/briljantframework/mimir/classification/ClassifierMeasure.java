@@ -92,7 +92,7 @@ public class ClassifierMeasure {
     DataFrame table = DataFrames.table(predicted, truth);
     Vector.Builder precision = new DoubleVector.Builder();
     for (Object key : classes.toList()) {
-      if (table.getIndex().contains(key)) {
+      if (table.getIndex().contains(key) && table.getColumnIndex().contains(key)) {
         precision.set(key, table.getAsDouble(key, key) / table.getRecord(key).sum());
       } else {
         precision.set(key, 0);
@@ -114,7 +114,7 @@ public class ClassifierMeasure {
     DataFrame table = DataFrames.table(predicted, truth);
     Vector.Builder precision = new DoubleVector.Builder();
     for (Object key : classes.toList()) {
-      if (table.getIndex().contains(key)) {
+      if (table.getIndex().contains(key) && table.getColumnIndex().contains(key)) {
         precision.set(key, table.getAsDouble(key, key) / table.get(key).sum());
       } else {
         precision.set(key, 0);

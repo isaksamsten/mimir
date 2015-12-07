@@ -66,7 +66,7 @@ public class EarlyConformalPrediction {
     // ProbabilityCostFunction.margin());
     //
     InductiveConformalClassifier.Learner ccl =
-        new InductiveConformalClassifier.Learner(nc, calibrator, true);
+        new InductiveConformalClassifier.Learner(nc, calibrator, false);
     //
     // System.out.println(ConformalClassifierValidator.crossValidator(10).test(pccl, x, y)
     // .getMeasures().groupBy("significance").collect(Vector::mean).sort(SortOrder.ASC));
