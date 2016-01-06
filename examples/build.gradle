@@ -11,8 +11,10 @@ repositories {
   mavenCentral()
 }
 
-mainClassName = 'org.mimirframework.examples.RandomShapeletForestExamples'
-
+task execute(type: JavaExec) {
+  main = mainClass
+  classpath = sourceSets.main.runtimeClasspath
+}
 
 dependencies {
   compile group: 'org.briljantframework', name: 'mimir-weka', version: '0.1-SNAPSHOT'
