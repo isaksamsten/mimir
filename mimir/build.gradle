@@ -1,3 +1,0 @@
-dependencies {
-  compile group: 'com.carrotsearch', name: 'hppc', version: '0.6.1'
-}

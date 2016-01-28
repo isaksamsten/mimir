@@ -1,3 +1,0 @@
-dependencies {
-  compile group: 'org.jfree', name: 'jfreechart', version: '1.0.19'
-}

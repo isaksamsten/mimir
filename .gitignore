@@ -4,7 +4,6 @@
 .mtj.tmp/
 
 # Package Files #
-*.jar
 *.war
 *.ear
 
@@ -25,7 +24,7 @@ hs_err_pid*
 .idea/gradle.xml
 .idea/libraries
 .gradle/
-build/
+target/
 
 # Mongo Explorer plugin:
 .idea/mongoSettings.xml
