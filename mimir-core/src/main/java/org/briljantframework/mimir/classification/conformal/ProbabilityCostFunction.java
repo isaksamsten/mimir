@@ -20,8 +20,6 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
-import java.util.Objects;
-
 import org.briljantframework.Check;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
@@ -37,14 +35,11 @@ import org.briljantframework.data.vector.Vectors;
 public interface ProbabilityCostFunction {
 
   static ProbabilityCostFunction margin() {
-    return (score, y) -> {
-      Objects.requireNonNull(score, "Require predictions.");
-      return 0.5 - (score.get(y) - Arrays.maxExcluding(score, y)) / 2;
-    };
+    return (score, y) -> 0.5 - (score.get(y) - Arrays.maxExcluding(score, y)) / 2;
   }
 
   static ProbabilityCostFunction inverseProbability() {
-    return (score, y) -> 1 - Objects.requireNonNull(score, "Require predictions").get(y);
+    return (score, y) -> 1 - score.get(y);
   }
 
   /**

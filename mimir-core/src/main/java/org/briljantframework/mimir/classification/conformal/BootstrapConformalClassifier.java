@@ -36,13 +36,13 @@ import org.briljantframework.mimir.supervised.Predictor;
  */
 public class BootstrapConformalClassifier extends AbstractConformalClassifier {
 
-  private final DoubleArray calibration;
+  private final ClassifierCalibratorScores calibratorScores;
   private final ClassifierNonconformity nonconformity;
 
-  protected BootstrapConformalClassifier(DoubleArray calibration,
+  protected BootstrapConformalClassifier(ClassifierCalibratorScores calibratorScores,
       ClassifierNonconformity nonconformity, Vector classes) {
     super(true, classes);
-    this.calibration = Objects.requireNonNull(calibration);
+    this.calibratorScores = Objects.requireNonNull(calibratorScores);
     this.nonconformity = Objects.requireNonNull(nonconformity);
   }
 
@@ -53,7 +53,7 @@ public class BootstrapConformalClassifier extends AbstractConformalClassifier {
 
   @Override
   protected ClassifierCalibratorScores getCalibrationScores() {
-    return (example, label) -> calibration;
+    return calibratorScores;
   }
 
   public static class Learner implements Predictor.Learner<BootstrapConformalClassifier> {
@@ -74,16 +74,16 @@ public class BootstrapConformalClassifier extends AbstractConformalClassifier {
       // m x n, m = examples, n = models
       BooleanArray oob = ensemble.getOobIndicator();
       List<Classifier> members = ensemble.getEnsembleMembers();
-      DoubleArray nonConformity = DoubleArray.zeros(x.rows());
+      DoubleArray calibrationScores = DoubleArray.zeros(x.rows());
       for (int i = 0; i < oob.rows(); i++) {
         Vector e = x.loc().getRecord(i);
         BooleanArray o = oob.getRow(i);
         DoubleArray estimate = estimate(members, o, e, ensemble.getClasses());
         int trueClassIndex = ensemble.getClasses().loc().indexOf(y.loc().get(i));
-        nonConformity.set(i, costFunction.apply(estimate, trueClassIndex));
+        calibrationScores.set(i, costFunction.apply(estimate, trueClassIndex));
       }
-      return new BootstrapConformalClassifier(nonConformity, new ProbabilityEstimateNonconformity(
-          ensemble, costFunction), ensemble.getClasses());
+      return new BootstrapConformalClassifier((example, label) -> calibrationScores,
+          new ProbabilityEstimateNonconformity(ensemble, costFunction), ensemble.getClasses());
     }
 
     private DoubleArray estimate(List<Classifier> members, BooleanArray oob, Vector example,
