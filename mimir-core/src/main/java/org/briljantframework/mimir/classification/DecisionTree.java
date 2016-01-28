@@ -26,6 +26,7 @@ import java.util.Set;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.dataframe.DataFrame;
+import org.briljantframework.data.vector.Convert;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.mimir.classification.tree.ClassSet;
@@ -136,9 +137,12 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
           direction = example.loc().get(Object.class, axis).equals(threshold) ? LEFT : RIGHT;
         } else {
           // note: Is.nominal return true for any non-number and Number is always comparable
-          @SuppressWarnings("unchecked")
-          Comparable<Object> leftComparable = example.loc().get(Comparable.class, axis);
-          direction = leftComparable.compareTo(threshold) <= 0 ? LEFT : RIGHT;
+//          @SuppressWarnings("unchecked")
+//          Comparable<Object> leftComparable = example.loc().get(Comparable.class, axis);
+//          direction = leftComparable.compareTo(threshold) <= 0 ? LEFT : RIGHT;
+          double left = example.loc().getAsDouble(axis);
+          double right = Convert.to(Double.class, threshold);
+          direction = Double.compare(left, right) <= 0 ? LEFT : RIGHT;
         }
       }
 
