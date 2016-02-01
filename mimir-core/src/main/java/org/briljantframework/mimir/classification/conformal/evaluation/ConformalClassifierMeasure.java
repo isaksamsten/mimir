@@ -1,17 +1,17 @@
 /**
  * The MIT License (MIT)
- *
+ * <p>
  * Copyright (c) 2016 Isak Karlsson
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  * associated documentation files (the "Software"), to deal in the Software without restriction,
  * including without limitation the rights to use, copy, modify, merge, publish, distribute,
  * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in all copies or
  * substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
  * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
@@ -34,7 +34,7 @@ public class ConformalClassifierMeasure {
       noClasses;
 
   public ConformalClassifierMeasure(Vector truth, DoubleArray score, double significance,
-      Vector classes) {
+                                    Vector classes) {
     // Compute confidence and credibility
     double correct = 0;
     double avgConfidence = 0;
@@ -45,6 +45,7 @@ public class ConformalClassifierMeasure {
     for (int i = 0; i < score.rows(); i++) {
       DoubleArray estimate = score.getRow(i);
       BooleanArray predictions = estimate.where(p -> p > significance);
+      double noPredictions = Arrays.sum(predictions);
 
       int trueClassIndex = classes.loc().indexOf(truth.loc().get(i));
       // if the true class wasn't included during training, it can't be correct
@@ -52,6 +53,9 @@ public class ConformalClassifierMeasure {
         correct++;
       } else {
         correct += predictions.get(trueClassIndex) ? 1 : 0;
+        if (noPredictions == 1 && predictions.get(trueClassIndex)) {
+          noSingletons++;
+        }
       }
       int prediction = Arrays.argmax(estimate);
       double credibility = estimate.get(prediction);
@@ -60,11 +64,6 @@ public class ConformalClassifierMeasure {
       avgCredibility += credibility / score.rows();
       avgConfidence += confidence / score.rows();
       avgPValue += Arrays.mean(estimate) / score.rows();
-
-      double noPredictions = Arrays.sum(predictions);
-      if (noPredictions == 1) {
-        noSingletons++;
-      }
       avgNoClasses += noPredictions / score.rows();
     }
     accuracy = correct / truth.size();
