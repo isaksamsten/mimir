@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.briljantframework.Check;
-import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.classification.ClassifierCharacteristic;
@@ -58,10 +57,7 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
     calibration = calibrator.calibrate(nonconformity, x, y);
   }
 
-  public DoubleArray getCalibrationScore(Vector example, Object label) {
-    return calibration.get(example, label);
-  }
-
+  @Override
   public ClassifierNonconformity getClassifierNonconformity() {
     return nonconformity;
   }
@@ -86,18 +82,19 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
     private final boolean stochasticSmoothing;
     private final ClassifierCalibrator calibratable;
 
-    public Learner(ClassifierNonconformity.Learner learner, ClassifierCalibrator calibrator,
-        boolean stochasticSmoothing) {
+    public Learner(ClassifierNonconformity.Learner<? extends ClassifierNonconformity> learner,
+        ClassifierCalibrator calibrator, boolean stochasticSmoothing) {
       this.stochasticSmoothing = stochasticSmoothing;
       this.calibratable = Objects.requireNonNull(calibrator, "Calibrator is required.");
       this.learner = Objects.requireNonNull(learner, "Nonconformity learner is required.");
     }
 
-    public Learner(ClassifierNonconformity.Learner learner, ClassifierCalibrator calibrator) {
+    public Learner(ClassifierNonconformity.Learner<? extends ClassifierNonconformity> learner,
+        ClassifierCalibrator calibrator) {
       this(learner, calibrator, true);
     }
 
-    public Learner(ClassifierNonconformity.Learner learner) {
+    public Learner(ClassifierNonconformity.Learner<? extends ClassifierNonconformity> learner) {
       this(learner, ClassifierCalibrator.unconditional());
     }
 

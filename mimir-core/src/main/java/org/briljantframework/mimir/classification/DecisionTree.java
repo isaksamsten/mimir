@@ -46,9 +46,16 @@ import org.briljantframework.mimir.supervised.Predictor;
  */
 public class DecisionTree extends TreeClassifier<ValueThreshold> {
 
-  private DecisionTree(Vector classes, TreeNode<ValueThreshold> node,
+  private final int depth;
+
+  private DecisionTree(Vector classes, TreeNode<ValueThreshold> node, int depth,
       TreeVisitor<ValueThreshold> predictionVisitor) {
     super(classes, node, predictionVisitor);
+    this.depth = depth;
+  }
+
+  public int getDepth() {
+    return depth;
   }
 
   @Override
@@ -67,10 +74,10 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
     protected ClassSet classSet;
     protected Vector classes = null;
 
-
     public Learner(Splitter splitter) {
       this(splitter, null, null);
     }
+
 
     protected Learner(Splitter splitter, ClassSet classSet, Vector classes) {
       this.splitter = splitter;
@@ -86,35 +93,47 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
         classSet = new ClassSet(y, classes);
       }
 
-      TreeNode<ValueThreshold> node = build(x, y, classSet);
-      return new DecisionTree(classes, node, new SimplePredictionVisitor());
+      Params p = new Params();
+      TreeNode<ValueThreshold> node = build(x, y, p, classSet);
+      return new DecisionTree(classes, node, p.depth, new SimplePredictionVisitor());
     }
 
-    protected TreeNode<ValueThreshold> build(DataFrame frame, Vector target, ClassSet classSet) {
-      return build(frame, target, classSet, 0);
+    protected TreeNode<ValueThreshold> build(DataFrame frame, Vector target, Params p,
+        ClassSet classSet) {
+      return build(frame, target, p, classSet, 1);
     }
 
-    protected TreeNode<ValueThreshold> build(DataFrame frame, Vector target, ClassSet classSet,
-        int depth) {
+    protected TreeNode<ValueThreshold> build(DataFrame frame, Vector target, Params p,
+        ClassSet classSet, int depth) {
+
       if (classSet.getTotalWeight() <= mininumWeight || classSet.getTargetCount() == 1) {
+        p.depth = Math.max(p.depth, depth);
         return TreeLeaf.fromExamples(classSet);
       }
       TreeSplit<ValueThreshold> maxSplit = splitter.find(classSet, frame, target);
       if (maxSplit == null) {
+        p.depth = Math.max(p.depth, depth);
         return TreeLeaf.fromExamples(classSet);
       } else {
         ClassSet left = maxSplit.getLeft();
         ClassSet right = maxSplit.getRight();
         if (left.isEmpty()) {
+          p.depth = Math.max(p.depth, depth);
           return TreeLeaf.fromExamples(right);
         } else if (right.isEmpty()) {
+          p.depth = Math.max(p.depth, depth);
           return TreeLeaf.fromExamples(left);
         } else {
-          TreeNode<ValueThreshold> leftNode = build(frame, target, left, depth + 1);
-          TreeNode<ValueThreshold> rightNode = build(frame, target, right, depth + 1);
+          TreeNode<ValueThreshold> leftNode = build(frame, target, p, left, depth + 1);
+          TreeNode<ValueThreshold> rightNode = build(frame, target, p, right, depth + 1);
           return new TreeBranch<>(leftNode, rightNode, classes, maxSplit.getThreshold(), 1);
         }
       }
+    }
+
+    private final class Params {
+
+      public int depth = 0;
     }
   }
 
@@ -137,9 +156,9 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
           direction = example.loc().get(Object.class, axis).equals(threshold) ? LEFT : RIGHT;
         } else {
           // note: Is.nominal return true for any non-number and Number is always comparable
-//          @SuppressWarnings("unchecked")
-//          Comparable<Object> leftComparable = example.loc().get(Comparable.class, axis);
-//          direction = leftComparable.compareTo(threshold) <= 0 ? LEFT : RIGHT;
+          // @SuppressWarnings("unchecked")
+          // Comparable<Object> leftComparable = example.loc().get(Comparable.class, axis);
+          // direction = leftComparable.compareTo(threshold) <= 0 ? LEFT : RIGHT;
           double left = example.loc().getAsDouble(axis);
           double right = Convert.to(Double.class, threshold);
           direction = Double.compare(left, right) <= 0 ? LEFT : RIGHT;

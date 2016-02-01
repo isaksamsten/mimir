@@ -69,7 +69,7 @@ public interface ClassifierNonconformity {
    *
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  interface Learner {
+  interface Learner<T extends ClassifierNonconformity> {
 
     /**
      * Fit a {@linkplain ClassifierNonconformity nonconformity score function} using the given data.
@@ -78,6 +78,6 @@ public interface ClassifierNonconformity {
      * @param y the input target
      * @return a nonconformity score function
      */
-    ClassifierNonconformity fit(DataFrame x, Vector y);
+    T fit(DataFrame x, Vector y);
   }
 }

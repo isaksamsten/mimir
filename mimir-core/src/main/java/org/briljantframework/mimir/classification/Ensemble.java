@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
+import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.supervised.Characteristic;
@@ -43,10 +44,6 @@ import org.briljantframework.mimir.supervised.Predictor;
  */
 public class Ensemble extends AbstractClassifier {
 
-  public interface BaseLearner<T extends Classifier> {
-    Predictor.Learner<? extends T> getLearner(ClassSet set, Vector classes);
-  }
-
   private final List<? extends Classifier> members;
   private final BooleanArray oobIndicator;
 
@@ -54,6 +51,26 @@ public class Ensemble extends AbstractClassifier {
     super(classes);
     this.members = members;
     this.oobIndicator = oobIndicator;
+  }
+
+  public static DoubleArray oobEstimates(Ensemble ensemble, DataFrame x) {
+    BooleanArray ind = ensemble.getOobIndicator();
+    List<Classifier> members = ensemble.getEnsembleMembers();
+    DoubleArray estimates = DoubleArray.zeros(x.rows(), ensemble.getClasses().size());
+    for (int i = 0; i < x.rows(); i++) {
+      Vector example = x.loc().getRecord(i);
+      DoubleArray estimate = estimates.getRow(i);
+      BooleanArray oob = ind.getRow(i);
+      int size = 0;
+      for (int j = 0; j < oob.size(); j++) {
+        if (oob.get(j)) {
+          estimate.plusAssign(members.get(j).estimate(example));
+          size++;
+        }
+      }
+      estimate.divAssign(size);
+    }
+    return estimates;
   }
 
   /**
@@ -87,6 +104,10 @@ public class Ensemble extends AbstractClassifier {
       m.combineAssign(prediction, (t, o) -> t + o / estimators);
     }
     return m;
+  }
+
+  public interface BaseLearner<T extends Classifier> {
+    Predictor.Learner<? extends T> getLearner(ClassSet set, Vector classes);
   }
 
   /**

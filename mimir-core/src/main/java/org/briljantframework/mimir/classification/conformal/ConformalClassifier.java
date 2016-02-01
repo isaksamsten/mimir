@@ -61,6 +61,24 @@ public interface ConformalClassifier extends Classifier {
   Object predict(Vector record);
 
   /**
+   * Returns an {@code [n-samples, n-classes]} double array of p-values associated with each class.
+   *
+   * @param x the data frame of records to estimate the p-values
+   * @return the p-values
+   */
+  @Override
+  DoubleArray estimate(DataFrame x);
+
+  /**
+   * Estimates the the p-values associated with each class.
+   * 
+   * @param record the vector to estimate the posterior probability for
+   * @return the p-values
+   */
+  @Override
+  DoubleArray estimate(Vector record);
+
+  /**
    * Returns the prediction of the given example or {@code NA}. A prediction is given iff one class
    * have a significance greater than or equal to the specified significance level.
    *
@@ -123,16 +141,4 @@ public interface ConformalClassifier extends Classifier {
     }
     return set.build();
   }
-
-  /**
-   * Returns an {@code [n-samples, n-classes]} double array of p-values associated with each class.
-   *
-   * @param x the data frame of records to estimate the p-values
-   * @return the p-values
-   */
-  @Override
-  DoubleArray estimate(DataFrame x);
-
-  @Override
-  DoubleArray estimate(Vector record);
 }

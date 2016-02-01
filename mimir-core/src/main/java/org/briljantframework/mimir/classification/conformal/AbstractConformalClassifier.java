@@ -37,11 +37,22 @@ public abstract class AbstractConformalClassifier extends AbstractClassifier imp
 
   private final boolean stochasticSmoothing;
 
+  /**
+   * Create a new conformal classifier.
+   * 
+   * @param stochasticSmoothing enable stochastic smoothing
+   * @param classes the classes
+   */
   protected AbstractConformalClassifier(boolean stochasticSmoothing, Vector classes) {
     super(classes);
     this.stochasticSmoothing = stochasticSmoothing;
   }
 
+  /**
+   * Creates a new conformal classifier with stochastic smoothing enabled
+   * 
+   * @param classes the classes
+   */
   protected AbstractConformalClassifier(Vector classes) {
     this(true, classes);
   }

@@ -45,7 +45,14 @@ public class ConformalClassifierMeasure {
     for (int i = 0; i < score.rows(); i++) {
       DoubleArray estimate = score.getRow(i);
       BooleanArray predictions = estimate.where(p -> p > significance);
-      correct += predictions.get(classes.loc().indexOf(truth.loc().get(i))) ? 1 : 0;
+
+      int trueClassIndex = classes.loc().indexOf(truth.loc().get(i));
+      // if the true class wasn't included during training, it can't be correct
+      if (trueClassIndex < 0) {
+        correct++;
+      } else {
+        correct += predictions.get(trueClassIndex) ? 1 : 0;
+      }
       int prediction = Arrays.argmax(estimate);
       double credibility = estimate.get(prediction);
       double confidence = 1 - Arrays.maxExcluding(estimate, prediction);

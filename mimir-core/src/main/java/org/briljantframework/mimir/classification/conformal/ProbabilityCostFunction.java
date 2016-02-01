@@ -35,11 +35,17 @@ import org.briljantframework.data.vector.Vectors;
 public interface ProbabilityCostFunction {
 
   static ProbabilityCostFunction margin() {
-    return (score, y) -> 0.5 - (score.get(y) - Arrays.maxExcluding(score, y)) / 2;
+    return (score, y) -> {
+      if (y < 0) {
+        return 1;
+      } else {
+        return 0.5 - (score.get(y) - Arrays.maxExcluding(score, y)) / 2;
+      }
+    };
   }
 
   static ProbabilityCostFunction inverseProbability() {
-    return (score, y) -> 1 - score.get(y);
+    return (score, y) -> y < 0 ? 1 : 1 - score.get(y);
   }
 
   /**
@@ -59,10 +65,11 @@ public interface ProbabilityCostFunction {
     DoubleArray probabilities = DoubleArray.zeros(y.size());
     for (int i = 0, size = y.size(); i < size; i++) {
       int yIndex = Vectors.find(classes, y, i);
-      if (yIndex < 0) {
-        Object label = y.loc().get(i);
-        throw new IllegalArgumentException(String.format("Illegal class: '%s' (not found)", label));
-      }
+      // if (yIndex < 0) {
+      // Object label = y.loc().get(i);
+      // throw new IllegalArgumentException(String.format("Illegal class: '%s' (not found)",
+      // label));
+      // }
       double value = pcf.apply(scores.getRow(i), yIndex);
       probabilities.set(i, value);
     }
