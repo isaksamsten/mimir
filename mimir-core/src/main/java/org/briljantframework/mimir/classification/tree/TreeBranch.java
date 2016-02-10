@@ -34,19 +34,28 @@ public final class TreeBranch<T> implements TreeNode<T> {
   private final Vector classDistribution;
   private final T threshold;
   private final double weight;
+  private final TreeNode<T> missing;
 
-  public TreeBranch(TreeNode<T> left, TreeNode<T> right, Vector domain, T threshold, double weight) {
-    this(left, right, domain, null, threshold, weight);
+
+  public TreeBranch(TreeNode<T> left, TreeNode<T> right, Vector domain, T threshold,
+      double weight) {
+    this(left, right, null, domain, null, threshold, weight);
   }
 
-  public TreeBranch(TreeNode<T> left, TreeNode<T> right, Vector domain, Vector classDistribution,
+  public TreeBranch(TreeNode<T> left, TreeNode<T> right, TreeNode<T> missing, Vector domain,
       T threshold, double weight) {
+    this(left, right, missing, domain, null, threshold, weight);
+  }
+
+  public TreeBranch(TreeNode<T> left, TreeNode<T> right, TreeNode<T> missing, Vector domain,
+      Vector classDistribution, T threshold, double weight) {
     this.left = left;
     this.right = right;
     this.domain = domain;
     this.classDistribution = classDistribution;
     this.threshold = threshold;
     this.weight = weight;
+    this.missing = missing;
   }
 
   public TreeNode<T> getLeft() {
@@ -55,6 +64,13 @@ public final class TreeBranch<T> implements TreeNode<T> {
 
   public TreeNode<T> getRight() {
     return right;
+  }
+
+  /**
+   * @return null if missing is missing
+   */
+  public TreeNode<T> getMissing() {
+    return missing;
   }
 
   public T getThreshold() {

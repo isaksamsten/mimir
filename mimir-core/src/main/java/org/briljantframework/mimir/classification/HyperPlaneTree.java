@@ -23,7 +23,9 @@ package org.briljantframework.mimir.classification;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
+import org.briljantframework.array.Range;
 import org.briljantframework.data.dataframe.DataFrame;
+import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.mimir.classification.tree.ClassSet;
@@ -78,7 +80,8 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
     public DoubleArray visitBranch(TreeBranch<HyperPlaneThreshold> node, Vector example) {
       DoubleArray row = DoubleArray.zeros(example.size() + 1);
       row.set(0, 1);
-      example.toArray(row.get(Arrays.range(1, row.size())));
+      Vectors.copy(example, row.getView(Range.of(1, row.size())));
+
       row = take(row, node.getThreshold().getFeatures());
       DoubleArray weights = node.getThreshold().getWeights();
       if (Arrays.inner(row, weights) < node.getThreshold().getThreshold()) {
@@ -109,7 +112,7 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
         set = new ClassSet(y, classes);
       }
 
-      DoubleArray array = Arrays.hstack(DoubleArray.ones(x.rows(), 1), x.toDoubleArray());
+      DoubleArray array = Arrays.hstack(DoubleArray.ones(x.rows(), 1), DataFrames.toDoubleArray(x));
       TreeNode<HyperPlaneThreshold> root = build(array, y, set);
       return new HyperPlaneTree(classes, root, new HyperPlaneTreeVisitor());
     }
@@ -160,8 +163,8 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
       return bestSplit;
     }
 
-    protected TreeSplit<HyperPlaneThreshold> split(DoubleArray x, ClassSet set,
-        DoubleArray weights, IntArray dims, double threshold) {
+    protected TreeSplit<HyperPlaneThreshold> split(DoubleArray x, ClassSet set, DoubleArray weights,
+        IntArray dims, double threshold) {
       ClassSet left = new ClassSet(set.getDomain());
       ClassSet right = new ClassSet(set.getDomain());
 

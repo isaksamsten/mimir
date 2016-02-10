@@ -27,13 +27,29 @@ public final class TreeSplit<E> {
 
   private final ClassSet right;
   private final ClassSet left;
+  private final ClassSet missing;
   private final E threshold;
   private double impurity = 0;
+
+  public TreeSplit(ClassSet left, ClassSet right, ClassSet missing, E threshold) {
+    this.left = left;
+    this.right = right;
+    this.threshold = threshold;
+    this.missing = missing;
+  }
 
   public TreeSplit(ClassSet left, ClassSet right, E threshold) {
     this.left = left;
     this.right = right;
     this.threshold = threshold;
+    this.missing = null;
+  }
+
+  /**
+   * @return null if missing is missing
+   */
+  public ClassSet getMissing() {
+    return missing;
   }
 
   public ClassSet getRight() {

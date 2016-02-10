@@ -30,6 +30,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
+import org.briljantframework.data.Is;
+import org.briljantframework.data.Na;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataseries.Aggregator;
 import org.briljantframework.data.dataseries.Approximations;
@@ -56,6 +58,7 @@ import org.briljantframework.mimir.shapelet.DerivativeShapelet;
 import org.briljantframework.mimir.shapelet.IndexSortedNormalizedShapelet;
 import org.briljantframework.mimir.shapelet.Shapelet;
 import org.briljantframework.mimir.supervised.Predictor;
+import org.briljantframework.primitive.IntList;
 import org.briljantframework.statistics.FastStatistics;
 
 import com.carrotsearch.hppc.IntDoubleMap;
@@ -176,7 +179,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
   /**
    * An implementation of a shapelet tree
-   *
+   * <p>
    * <p>
    * <b>The code herein is so ugly that a kitten dies every time someone look at it.</b>
    *
@@ -275,18 +278,19 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       params.shapeStore = new ShapeStore();
       TreeNode<ShapeletThreshold> node = build(dataFrame, y, classSet, params);
       /* new ShapletTreeVisitor(size, getDistanceMetric()) */
-      // return new ShapeletTree(classes, node, new ShapeletTree.Learner.ShapletTreeVisitor(10,
-      // getDistanceMetric()), params.lengthImportance, params.positionImportance, params.depth,
-      // classSet, params.shapeStore);
+      return new ShapeletTree(classes, node,
+          new ShapeletTree.Learner.ShapletTreeVisitor(10, getDistanceMetric()),
+          params.lengthImportance, params.positionImportance, params.depth, classSet,
+          params.shapeStore);
       // return new ShapeletTree(classes, node, new WeightVisitor(getDistanceMetric()),
       // params.lengthImportance, params.positionImportance, params.depth, classSet,
       // params.shapeStore);
       // return new ShapeletTree(classes, node, new OneNnVisitor(getDistanceMetric(), x, y),
       // params.lengthImportance, params.positionImportance, params.depth, classSet,
       // params.shapeStore);
-      return new ShapeletTree(classes, node, new GuessVisitor(getDistanceMetric()),
-          params.lengthImportance, params.positionImportance, params.depth, classSet,
-          params.shapeStore);
+      // return new ShapeletTree(classes, node, new GuessVisitor(getDistanceMetric()),
+      // params.lengthImportance, params.positionImportance, params.depth, classSet,
+      // params.shapeStore);
     }
 
     protected TreeNode<ShapeletThreshold> build(DataFrame x, Vector y, ClassSet classSet,
@@ -331,19 +335,34 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
           TreeNode<ShapeletThreshold> leftNode = build(x, y, left, params);
           TreeNode<ShapeletThreshold> rightNode = build(x, y, right, params);
+          TreeNode<ShapeletThreshold> missingNode = null;
+          if (maxSplit.getMissing() != null && !maxSplit.getMissing().isEmpty()) {
+            missingNode = build(x, y, maxSplit.getMissing(), params);
+          }
           Vector.Builder classDist = Vector.Builder.of(double.class);
           for (Object target : classSet.getTargets()) {
             classDist.set(target, classSet.get(target).getWeight());
           }
 
-          return new TreeBranch<>(leftNode, rightNode, classes, classDist.build(),
+          return new TreeBranch<>(leftNode, rightNode, missingNode, classes, classDist.build(),
               maxSplit.getThreshold(), classSet.getTotalWeight() / params.noExamples);
         }
       }
     }
 
-    public TreeSplit<ShapeletThreshold> find(ClassSet classSet, DataFrame x, Vector y, Params params) {
+    public TreeSplit<ShapeletThreshold> find(ClassSet classSet, DataFrame x, Vector y,
+        Params params) {
       return getUnivariateShapeletThreshold(classSet, x, y, params);
+    }
+
+    private static IntList nonNaIndicies(Vector vector) {
+      IntList nonNas = new IntList();
+      for (int i = 0; i < vector.size(); i++) {
+        if (!Is.NA(vector.loc().get(i))) {
+          nonNas.add(i);
+        }
+      }
+      return nonNas;
     }
 
     protected TreeSplit<ShapeletThreshold> getUnivariateShapeletThreshold(ClassSet classSet,
@@ -385,12 +404,20 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
           int index = classSet.getRandomSample().getRandomExample().getIndex();
           Vector timeSeries = x.loc().getRecord(index);
           Object shapelet;
+
+          // TODO: implement support for event sequences
+          // Multi-variate time series
           if (Vector.class.isAssignableFrom(timeSeries.getType().getDataClass())) {
-            int channelIndex = random.nextInt(timeSeries.size());
-            Vector channel = timeSeries.loc().get(Vector.class, channelIndex);
-            Shapelet univariateShapelet = getUnivariateShapelet(classSet, x, index, channel);
-            if (univariateShapelet != null) {
-              shapelet = new ChannelShapelet(channelIndex, univariateShapelet);
+            IntList nonNas = nonNaIndicies(timeSeries);
+            if (!nonNas.isEmpty()) {
+              int channelIndex = nonNas.get(random.nextInt(nonNas.size()));
+              Vector channel = timeSeries.loc().get(Vector.class, channelIndex);
+              Shapelet univariateShapelet = getUnivariateShapelet(classSet, x, index, channel);
+              if (univariateShapelet == null) {
+                shapelet = null;
+              } else {
+                shapelet = new ChannelShapelet(channelIndex, univariateShapelet);
+              }
             } else {
               shapelet = null;
             }
@@ -437,6 +464,14 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
     private Shapelet getUnivariateShapelet(ClassSet classSet, DataFrame x, int index,
         Vector timeSeries) {
+      if (timeSeries == null) {
+        return null;
+      }
+      if (isCategorical(timeSeries)) {
+        int rnd = random.nextInt(timeSeries.size());
+        return new CategoricShapelet(timeSeries.loc().get(String.class, rnd));
+      }
+
       int timeSeriesLength = timeSeries.size();
       int upper = (int) Math.round(timeSeriesLength * upperLength);
       int lower = (int) Math.round(timeSeriesLength * lowerLength);
@@ -468,6 +503,18 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         shapelet = new IndexSortedNormalizedShapelet(start, length, timeSeries);
       }
       return shapelet;
+    }
+
+    private static boolean isCategorical(Vector timeSeries) {
+      return timeSeries != null
+          && String.class.isAssignableFrom(timeSeries.getType().getDataClass());
+    }
+
+    private class CategoricShapelet extends Shapelet {
+
+      public CategoricShapelet(String value) {
+        super(0, 1, Vector.singleton(value));
+      }
     }
 
     private Shapelet getDerivativeShapelet(Vector timeSeries, int timeSeriesLength, int length,
@@ -515,6 +562,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         boolean equalImpuritySmallerGap =
             threshold.impurity == bestThreshold.impurity && threshold.gap > bestThreshold.gap;
         if (lowerImpurity || equalImpuritySmallerGap) {
+          // todo: only split the best threshold
           bestSplit = split(distanceMap, classSet, threshold.threshold, shapelet);
           bestThreshold = threshold;
           bestDistanceMap = distanceMap;
@@ -557,19 +605,37 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         Vector record = x.loc().getRecord(example.getIndex());
         double distance;
         if (shapelet instanceof ChannelShapelet) {
-          Vector channel =
-              record.loc().get(Vector.class, ((ChannelShapelet) shapelet).getChannel());
-          distance = distanceMetric.compute(channel, shapelet);
+          int channelIndex = ((ChannelShapelet) shapelet).getChannel();
+          Vector channel = record.loc().get(Vector.class, channelIndex);
+          if (shapelet.getDelegate() instanceof CategoricShapelet) {
+            if (Is.NA(channel)) {
+              distance = Na.DOUBLE;
+            } else {
+              distance = channel.loc().indexOf(shapelet.loc().get(0)) >= 0 ? 1 : 0;
+            }
+          } else {
+            if (Is.NA(channel)) {
+              distance = Na.DOUBLE;
+            } else {
+              distance = distanceMetric.compute(channel, shapelet);
+            }
+          }
         } else {
           distance = distanceMetric.compute(record, shapelet);
         }
         memoizedDistances.put(example.getIndex(), distance);
         distances.add(new ExampleDistance(distance, example));
-        sum += distance;
+        if (!Is.NA(distance)) {
+          sum += distance;
+        }
       }
 
       Collections.sort(distances);
-      return findBestThreshold(distances, classSet, y, sum);
+      int firstNa = distances.indexOf(ExampleDistance.NA);
+      if (firstNa >= 0) {
+        distances = distances.subList(0, firstNa);
+      }
+      return findBestThreshold(distances, classSet, y, sum, firstNa);
     }
 
     protected TreeSplit<ShapeletThreshold> findBestSplitFstat(ClassSet classSet, DataFrame x,
@@ -612,7 +678,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         }
       }
 
-      Threshold t = findBestThreshold(bestDistances, classSet, y, bestSum);
+      Threshold t = findBestThreshold(bestDistances, classSet, y, bestSum, -1);
       TreeSplit<ShapeletThreshold> split =
           split(bestDistanceMap, classSet, t.threshold, bestShapelet);
       split.setImpurity(t.impurity);
@@ -661,8 +727,8 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       return Double.isNaN(f) ? 0 : f;
     }
 
-    public Threshold findBestThreshold(List<ExampleDistance> distances, ClassSet classSet,
-        Vector y, double distanceSum) {
+    public Threshold findBestThreshold(List<ExampleDistance> distances, ClassSet classSet, Vector y,
+        double distanceSum, int firstNa) {
       ObjectDoubleMap<Object> lt = new ObjectDoubleOpenHashMap<>();
       ObjectDoubleMap<Object> gt = new ObjectDoubleOpenHashMap<>();
 
@@ -695,6 +761,9 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       Gain gain = getGain();
       double ltGap = 0.0, gtGap = distanceSum, largestGap = Double.NEGATIVE_INFINITY;
       for (int i = 1; i < distances.size(); i++) {
+        if (firstNa >= 0 && i > firstNa) {
+          break;
+        }
         ExampleDistance ed = distances.get(i);
         Object target = y.loc().get(Object.class, ed.example.getIndex());
 
@@ -751,24 +820,31 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         double threshold, Shapelet shapelet) {
       ClassSet left = new ClassSet(classSet.getDomain());
       ClassSet right = new ClassSet(classSet.getDomain());
+      ClassSet missing = new ClassSet(classSet.getDomain());
       for (ClassSet.Sample sample : classSet.samples()) {
         Object target = sample.getTarget();
 
         ClassSet.Sample leftSample = ClassSet.Sample.create(target);
         ClassSet.Sample rightSample = ClassSet.Sample.create(target);
+        ClassSet.Sample missingSample = ClassSet.Sample.create(target);
 
         for (Example example : sample) {
           double shapeletDistance = distanceMap.get(example.getIndex());
-          if (shapeletDistance == threshold) {
-            if (getRandom().nextDouble() <= 0.5) {
+          // Missing
+          if (Is.NA(shapeletDistance)) {
+            missingSample.add(example);
+          } else {
+            if (shapeletDistance == threshold || Is.NA(shapeletDistance)) {
+              if (getRandom().nextDouble() <= 0.5) {
+                leftSample.add(example);
+              } else {
+                rightSample.add(example);
+              }
+            } else if (shapeletDistance < threshold) {
               leftSample.add(example);
             } else {
               rightSample.add(example);
             }
-          } else if (shapeletDistance < threshold) {
-            leftSample.add(example);
-          } else {
-            rightSample.add(example);
           }
         }
 
@@ -778,9 +854,13 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         if (!rightSample.isEmpty()) {
           right.add(rightSample);
         }
+        if (!missingSample.isEmpty()) {
+          missing.add(missingSample);
+        }
       }
 
-      return new TreeSplit<>(left, right, new ShapeletThreshold(shapelet, threshold, classSet));
+      return new TreeSplit<>(left, right, missing,
+          new ShapeletThreshold(shapelet, threshold, classSet));
     }
 
     public enum SampleMode {
@@ -793,6 +873,7 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
 
     private static class ExampleDistance implements Comparable<ExampleDistance> {
 
+      public static ExampleDistance NA = new ExampleDistance(Na.DOUBLE, null);
       public final double distance;
       public final Example example;
 
@@ -804,6 +885,19 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
       @Override
       public int compareTo(ExampleDistance o) {
         return Double.compare(distance, o.distance);
+      }
+
+      @Override
+      public boolean equals(Object obj) {
+        if (!(obj instanceof ExampleDistance)) {
+          return false;
+        }
+        return compareTo((ExampleDistance) obj) == 0;
+      }
+
+      @Override
+      public int hashCode() {
+        return Double.hashCode(distance);
       }
 
       @Override
@@ -1115,14 +1209,35 @@ public class ShapeletTree extends TreeClassifier<ShapeletThreshold> {
         if (shapelet instanceof ChannelShapelet) {
           int shapeletChannel = ((ChannelShapelet) shapelet).getChannel();
           Vector exampleChannel = example.loc().get(Vector.class, shapeletChannel);
-          computedDistance = distanceMeasure.compute(exampleChannel, shapelet);
+          if (Is.NA(exampleChannel)) {
+            computedDistance = Na.DOUBLE;
+          } else {
+            if (isCategorical(exampleChannel)) {
+              computedDistance = exampleChannel.loc().indexOf(shapelet.loc().get(0)) >= 0 ? 1 : 0;
+            } else {
+              computedDistance = distanceMeasure.compute(exampleChannel, shapelet);
+            }
+          }
         } else {
           computedDistance = distanceMeasure.compute(example, shapelet);
         }
-        if (computedDistance < threshold) {
-          return visit(node.getLeft(), example);
+
+        if (Is.NA(computedDistance)) {
+          if (node.getMissing() != null) {
+            return visit(node.getMissing(), example);
+          } else {
+            if (ThreadLocalRandom.current().nextBoolean()) {
+              return visit(node.getLeft(), example);
+            } else {
+              return visit(node.getRight(), example);
+            }
+          }
         } else {
-          return visit(node.getRight(), example);
+          if (computedDistance < threshold) {
+            return visit(node.getLeft(), example);
+          } else {
+            return visit(node.getRight(), example);
+          }
         }
         // }
       }
