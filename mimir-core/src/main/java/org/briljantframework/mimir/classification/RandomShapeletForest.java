@@ -116,6 +116,11 @@ public class RandomShapeletForest extends Ensemble {
       return this;
     }
 
+    public Configurator setCategoricDistance(Distance categoricDistance) {
+      shapeletTree.setCategoricDistance(categoricDistance);
+      return this;
+    }
+
     public Configurator setSize(int size) {
       this.size = size;
       return this;
@@ -250,6 +255,8 @@ public class RandomShapeletForest extends Ensemble {
         double high = configurator.upperLength;
         return new ShapeletTree.Learner(low, high, configurator, sample, classes).fit(x, y);
       }
+
+//      public ClassSet sampleNoBootstrap(c)
 
       public ClassSet sample(ClassSet classSet, Random random) {
         ClassSet inBag = new ClassSet(classSet.getDomain());
