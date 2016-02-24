@@ -78,7 +78,7 @@ public abstract class AbstractSplitter implements Splitter {
             direction = axisVector.loc().get(Object.class, index).equals(threshold) ? LEFT : RIGHT;
           } else {
             double leftValue = axisVector.loc().getAsDouble(index);
-            direction = Double.compare(leftValue, Convert.to(Double.class, threshold));
+            direction = Double.compare(leftValue, Convert.to(Double.class, threshold)) <= 0 ? LEFT : RIGHT;
           }
         }
         switch (direction) {
