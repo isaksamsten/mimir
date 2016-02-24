@@ -24,6 +24,7 @@ import java.util.Random;
 
 import org.briljantframework.data.Is;
 import org.briljantframework.data.dataframe.DataFrame;
+import org.briljantframework.data.vector.Convert;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.VectorType;
 
@@ -76,9 +77,8 @@ public abstract class AbstractSplitter implements Splitter {
           if (nominal) {
             direction = axisVector.loc().get(Object.class, index).equals(threshold) ? LEFT : RIGHT;
           } else {
-            @SuppressWarnings("unchecked")
-            Comparable<Object> leftComparable = axisVector.loc().get(Comparable.class, index);
-            direction = leftComparable.compareTo(threshold) <= 0 ? LEFT : RIGHT;
+            double leftValue = axisVector.loc().getAsDouble(index);
+            direction = Double.compare(leftValue, Convert.to(Double.class, threshold));
           }
         }
         switch (direction) {
