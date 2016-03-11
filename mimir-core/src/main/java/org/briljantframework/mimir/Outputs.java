@@ -11,6 +11,12 @@ public final class Outputs {
 
   private Outputs() {}
 
+  @SafeVarargs
+  @SuppressWarnings("varargs")
+  public static <T> Output<T> asOutput(T... values) {
+    return new UnmodifiableArrayOutput<>(values);
+  }
+
   public static <T> List<T> unique(Output<? extends T> output) {
     return new ArrayList<>(new HashSet<>(output));
   }
@@ -31,5 +37,41 @@ public final class Outputs {
     }
 
     return out;
+  }
+
+  private static class UnmodifiableArrayOutput<T> extends AbstractCollection<T>
+      implements Output<T> {
+    private final T[] values;
+
+    public UnmodifiableArrayOutput(T[] values) {
+      this.values = values;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+      return new Iterator<T>() {
+        private int current = 0;
+
+        @Override
+        public boolean hasNext() {
+          return current < size();
+        }
+
+        @Override
+        public T next() {
+          return get(current++);
+        }
+      };
+    }
+
+    @Override
+    public int size() {
+      return values.length;
+    }
+
+    @Override
+    public T get(int i) {
+      return values[i];
+    }
   }
 }

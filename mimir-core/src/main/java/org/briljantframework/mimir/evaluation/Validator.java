@@ -27,7 +27,7 @@ import java.util.Set;
 
 import org.briljantframework.mimir.Input;
 import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.OutputList;
+import org.briljantframework.mimir.ArrayOutput;
 import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.evaluation.partition.*;
 import org.briljantframework.mimir.supervised.Predictor;
@@ -106,8 +106,8 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
       Output<Out> y) {
     Collection<Partition<In, Out>> partitions = getPartitioner().partition(x, y);
     MutableEvaluationContext<In, Out, P> ctx = new MutableEvaluationContext<>();
-    Output<Out> actual = new OutputList<>();
-    Output<Out> predictions = new OutputList<>();
+    Output<Out> actual = new ArrayOutput<>();
+    Output<Out> predictions = new ArrayOutput<>();
     double avgFitTime = 0, avgPredictTime = 0, avgTrainingSize = 0, avgValidationSize = 0;
     double noPartition = partitions.size();
     int iteration = 0;

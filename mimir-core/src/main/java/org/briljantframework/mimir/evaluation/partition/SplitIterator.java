@@ -25,9 +25,9 @@ import java.util.NoSuchElementException;
 
 import org.briljantframework.Check;
 import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.InputList;
+import org.briljantframework.mimir.ArrayInput;
 import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.OutputList;
+import org.briljantframework.mimir.ArrayOutput;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -60,16 +60,16 @@ public class SplitIterator<In, Out> implements Iterator<Partition<In, Out>> {
     has = false;
     int trainingSize = x.size() - (int) Math.round(x.size() * splitFraction);
 
-    Input<In> xTraining = new InputList<>();
-    Output<Out> yTraining = new OutputList<>();
+    Input<In> xTraining = new ArrayInput<>(x.getProperties());
+    Output<Out> yTraining = new ArrayOutput<>();
 
     for (int i = 0; i < trainingSize; i++) {
       xTraining.add(x.get(i));
       yTraining.add(y.get(i));
     }
 
-    Input<In> xValidation = new InputList<>();
-    Output<Out> yValidation = new OutputList<>();
+    Input<In> xValidation = new ArrayInput<>(x.getProperties());
+    Output<Out> yValidation = new ArrayOutput<>();
     for (int i = trainingSize; i < x.size(); i++) {
       xValidation.add(x.get(i));
       yValidation.add(y.get(i));

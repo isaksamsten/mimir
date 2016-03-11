@@ -26,11 +26,9 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Na;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.Input;
 import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.OutputList;
+import org.briljantframework.mimir.ArrayOutput;
 import org.briljantframework.mimir.classification.Classifier;
 
 /**
@@ -47,7 +45,7 @@ public interface ConformalClassifier<In> extends Classifier<In> {
    *         given probability; or {@code NA}.
    */
   default Output<Object> predict(Input<? extends In> x, double significance) {
-    OutputList<Object> predictions = new OutputList<>();
+    ArrayOutput<Object> predictions = new ArrayOutput<>();
     for (int i = 0, size = x.size(); i < size; i++) {
       predictions.add(predict(x.get(i), significance));
     }

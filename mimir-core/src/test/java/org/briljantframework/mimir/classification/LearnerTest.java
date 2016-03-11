@@ -22,12 +22,9 @@ package org.briljantframework.mimir.classification;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
-import org.briljantframework.array.ArrayPrinter;
-import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.array.IntArray;
-import org.briljantframework.array.Range;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.SortOrder;
 import org.briljantframework.data.dataframe.DataFrame;
@@ -37,12 +34,14 @@ import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.DatasetReader;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.dataset.io.MatlabDatasetReader;
+import org.briljantframework.mimir.ArrayInput;
+import org.briljantframework.mimir.ArrayOutput;
+import org.briljantframework.mimir.DataFrameInput;
+import org.briljantframework.mimir.Dataset;
 import org.briljantframework.mimir.classification.conformal.ClassifierCalibrator;
-import org.briljantframework.mimir.classification.conformal.ClassifierNonconformity;
 import org.briljantframework.mimir.classification.conformal.InductiveConformalClassifier;
 import org.briljantframework.mimir.classification.conformal.ProbabilityCostFunction;
 import org.briljantframework.mimir.classification.conformal.ProbabilityEstimateNonconformity;
-import org.briljantframework.mimir.classification.conformal.evaluation.ConformalClassifierMeasure;
 import org.briljantframework.mimir.classification.conformal.evaluation.ConformalClassifierValidator;
 import org.briljantframework.mimir.evaluation.Result;
 import org.briljantframework.mimir.evaluation.Validator;
@@ -56,28 +55,28 @@ public class LearnerTest {
 
   @Test
   public void testTesda2() throws Exception {
-    ArrayPrinter.setMinimumTruncateSize(100000);
-    DataFrame iris = DataFrames.permuteRecords(Datasets.loadIris());
-    DataFrame x = iris.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean()));
-    Vector y = iris.get("Class");
-
-    IntArray idx = Arrays.shuffle(Range.of(iris.rows()));
-    IntArray train = idx.get(Range.of(0, 50));
-    IntArray cal = idx.get(Range.of(50, 100));
-    IntArray test = idx.get(Range.of(100, 150));
-
-    ProbabilityEstimateNonconformity.Learner nc =
-        new ProbabilityEstimateNonconformity.Learner(new RandomForest.Learner(100),
-            ProbabilityCostFunction.margin());
-    InductiveConformalClassifier.Learner c = new InductiveConformalClassifier.Learner(nc);
-    InductiveConformalClassifier icp = c.fit(x.loc().getRecord(train), y.loc().get(train));
-    icp.calibrate(x.loc().getRecord(cal), y.loc().get(cal));
-
-    DoubleArray prediction = icp.estimate(x.loc().getRecord(test));
-    System.out.println(Arrays.mean(0, prediction));
-    ConformalClassifierMeasure m =
-        new ConformalClassifierMeasure(y.loc().get(test), prediction, 0.9, icp.getClasses());
-    System.out.println(m.getError());
+    // ArrayPrinter.setMinimumTruncateSize(100000);
+    // DataFrame iris = DataFrames.permuteRecords(Datasets.loadIris());
+    // DataFrame x = iris.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean()));
+    // Vector y = iris.get("Class");
+    //
+    // IntArray idx = Arrays.shuffle(Range.of(iris.rows()));
+    // IntArray train = idx.get(Range.of(0, 50));
+    // IntArray cal = idx.get(Range.of(50, 100));
+    // IntArray test = idx.get(Range.of(100, 150));
+    //
+    // ProbabilityEstimateNonconformity.Learner nc =
+    // new ProbabilityEstimateNonconformity.Learner(new RandomForest.Learner(100),
+    // ProbabilityCostFunction.margin());
+    // InductiveConformalClassifier.Learner c = new InductiveConformalClassifier.Learner(nc);
+    // InductiveConformalClassifier icp = c.fit(x.loc().getRecord(train), y.loc().get(train));
+    // icp.calibrate(x.loc().getRecord(cal), y.loc().get(cal));
+    //
+    // DoubleArray prediction = icp.estimate(x.loc().getRecord(test));
+    // System.out.println(Arrays.mean(0, prediction));
+    // ConformalClassifierMeasure m =
+    // new ConformalClassifierMeasure(y.loc().get(test), prediction, 0.9, icp.getClasses());
+    // System.out.println(m.getError());
 
   }
 
@@ -94,26 +93,37 @@ public class LearnerTest {
 
 
     // Create a classifier learner to use for estimating the non-conformity scores
-    Predictor.Learner<? extends Classifier> classifier = new RandomForest.Learner(100);
+    Predictor.Learner<Vector, Object, ? extends Classifier<Vector>> classifier =
+        new RandomForest.Learner(100);
+
+    ClassifierValidator<Vector, RandomForest> rfv = ClassifierValidator.crossValidator(10);
+
+    System.out.println(rfv
+        .test(new RandomForest.Learner(100), new DataFrameInput(x), new ArrayOutput<>(y.toList()))
+        .getMeasures().mean());
 
     // System.out.println(ClassifierValidator.crossValidator(10).test(classifier, x,
     // y).getMeasures()
     // .mean());
     // Initialize the non-conformity learner using the margin as cost function
-    ClassifierNonconformity.Learner nc =
-        new ProbabilityEstimateNonconformity.Learner(classifier, ProbabilityCostFunction.margin());
+    ProbabilityEstimateNonconformity.Learner<Vector, Classifier<Vector>> nc =
+        new ProbabilityEstimateNonconformity.Learner<>(classifier,
+            ProbabilityCostFunction.margin());
 
     // Initialize an inductive conformal classifier using the non-conformity learner
-    InductiveConformalClassifier.Learner cp =
-        new InductiveConformalClassifier.Learner(nc, ClassifierCalibrator.classConditional(), false);
+    InductiveConformalClassifier.Learner<Vector> cp = new InductiveConformalClassifier.Learner<>(nc,
+        ClassifierCalibrator.classConditional(), false);
 
     // Create a validator for evaluating the validity and efficiency of the conformal classifier. In
     // this case, we evaluate the classifier using 10-fold cross-validation and 9 significance
     // levels between 0.1 and 0.1
-    Validator<InductiveConformalClassifier> validator =
-        ConformalClassifierValidator.crossValidator(10, 0.25, DoubleArray.range(0.05, 1.01, 0.1));
+    Validator<Vector, Object, InductiveConformalClassifier<Vector>> validator =
+        ConformalClassifierValidator.crossValidator(10, 0.25, DoubleArray.range(0.05, 1.01, 0.05));
 
-    Result result = validator.test(cp, x, y);
+    ArrayInput<Vector> x1 = new ArrayInput<>(x.getRecords());
+    x1.getProperties().set(Dataset.TYPES,
+        Arrays.asList(Number.class, Number.class, Number.class, Number.class));
+    Result<?> result = validator.test(cp, x1, new ArrayOutput<>(y.toList()));
 
     // Get the measures
     DataFrame measures = result.getMeasures();

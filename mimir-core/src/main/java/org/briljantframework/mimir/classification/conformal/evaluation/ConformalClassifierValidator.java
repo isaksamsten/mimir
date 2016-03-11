@@ -25,6 +25,7 @@ import java.util.function.DoubleFunction;
 import java.util.stream.Collectors;
 
 import org.briljantframework.array.DoubleArray;
+import org.briljantframework.mimir.ArrayOutput;
 import org.briljantframework.mimir.Input;
 import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.classification.conformal.BootstrapConformalClassifier;
@@ -71,8 +72,12 @@ public abstract class ConformalClassifierValidator<In, P extends ConformalClassi
   @Override
   protected void predict(MutableEvaluationContext<In, Object, ? extends P> ctx) {
     Input<? extends In> validationData = ctx.getPartition().getValidationData();
-    // TODO: 3/11/16 fix me
     // ctx.setPredictions(Vector.singleton(null, validationData.size()));
+    Output<Object> predictions = new ArrayOutput<>();
+    for (int i = 0; i < validationData.size(); i++) {
+      predictions.add(null);
+    }
+    ctx.setPredictions(predictions);
     ctx.setEstimates(ctx.getPredictor().estimate(validationData));
   }
 

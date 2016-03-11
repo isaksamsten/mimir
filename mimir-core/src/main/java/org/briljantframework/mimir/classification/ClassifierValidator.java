@@ -28,7 +28,7 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.Input;
 import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.OutputList;
+import org.briljantframework.mimir.ArrayOutput;
 import org.briljantframework.mimir.evaluation.Evaluator;
 import org.briljantframework.mimir.evaluation.MutableEvaluationContext;
 import org.briljantframework.mimir.evaluation.Validator;
@@ -61,7 +61,7 @@ public class ClassifierValidator<In, T extends Classifier<In>> extends Validator
     Partition<In, Object> partition = ctx.getEvaluationContext().getPartition();
     Input<In> x = partition.getValidationData();
     Output<Object> y = partition.getValidationTarget();
-    OutputList<Object> predictions = new OutputList<>();
+    ArrayOutput<Object> predictions = new ArrayOutput<>();
 
     // For the case where the classifier reports the ESTIMATOR characteristic
     // improve the performance by avoiding to recompute the classifications twice.

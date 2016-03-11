@@ -8,7 +8,15 @@ import java.util.Map;
  */
 public final class InputProperties {
 
-  private final Map<InputProperty<?>, Object> properties = new HashMap<>();
+  private final Map<InputProperty<?>, Object> properties;
+
+  public InputProperties(){
+    this.properties = new HashMap<>();
+  }
+
+  public InputProperties(InputProperties properties) {
+    this.properties = new HashMap<>(properties.properties);
+  }
 
   public <T> T get(InputProperty<T> property) {
     Object value = properties.get(property);

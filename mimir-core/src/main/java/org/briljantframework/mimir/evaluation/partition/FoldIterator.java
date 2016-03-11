@@ -27,9 +27,9 @@ import java.util.Objects;
 import org.briljantframework.Check;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.InputList;
+import org.briljantframework.mimir.ArrayInput;
 import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.OutputList;
+import org.briljantframework.mimir.ArrayOutput;
 import org.briljantframework.mimir.classification.ClassifierValidator;
 
 /**
@@ -129,11 +129,11 @@ public class FoldIterator<In, Out> implements Iterator<Partition<In, Out>> {
     }
 
     current += 1;
-    Input<In> xTraining = new InputList<>();
-    Output<Out> yTraining = new OutputList<>();
+    Input<In> xTraining = new ArrayInput<>(x.getProperties());
+    Output<Out> yTraining = new ArrayOutput<>();
 
-    Input<In> xValidation = new InputList<>();
-    Output<Out> yValidation = new OutputList<>();
+    Input<In> xValidation = new ArrayInput<>(x.getProperties());
+    Output<Out> yValidation = new ArrayOutput<>();
 
     int index = 0;
     int foldEnd = rows - foldSize * current;
@@ -159,8 +159,8 @@ public class FoldIterator<In, Out> implements Iterator<Partition<In, Out>> {
     // next foldSize * current examples until validation end
     int validationEnd = foldEnd + foldSize;
     for (int i = trainingEnd; i < validationEnd; i++) {
-      xTraining.add(x.get(index));
-      yTraining.add(y.get(index));
+      xValidation.add(x.get(index));
+      yValidation.add(y.get(index));
       index += 1;
     }
 

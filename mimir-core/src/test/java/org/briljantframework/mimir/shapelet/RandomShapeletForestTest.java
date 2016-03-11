@@ -23,18 +23,11 @@ package org.briljantframework.mimir.shapelet;
 import static org.briljantframework.mimir.classification.ClassifierValidator.crossValidator;
 
 import java.io.FileInputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
-import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.array.IntArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.dataseries.DataSeriesCollection;
@@ -46,13 +39,17 @@ import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.dataset.io.MatlabDatasetReader;
 import org.briljantframework.dataset.io.SequenceDatasetReader;
+import org.briljantframework.mimir.ArrayInput;
+import org.briljantframework.mimir.ArrayOutput;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.classification.RandomForest;
 import org.briljantframework.mimir.classification.RandomShapeletForest;
-import org.briljantframework.mimir.classification.conformal.ClassifierNonconformity;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
 import org.briljantframework.mimir.classification.conformal.DistanceNonconformity;
 import org.briljantframework.mimir.classification.conformal.InductiveConformalClassifier;
+import org.briljantframework.mimir.distance.EuclideanDistance;
 import org.briljantframework.mimir.evaluation.Evaluator;
 import org.briljantframework.mimir.evaluation.Result;
 import org.briljantframework.mimir.evaluation.Validator;
@@ -255,15 +252,15 @@ public class RandomShapeletForestTest {
     String fileName = "synthetic_control";
     String path = "/Users/isak-kar/Downloads/dataset";
     DataFrame train =
-        DataFrames.permuteRecords(Datasets.load(
-            (i) -> new DataSeriesCollection.Builder(double.class),
-            new MatlabDatasetReader(new FileInputStream(String.format("%s/%s/%s_TRAIN", path,
-                fileName, fileName)))), new Random(123));
-    DataFrame test =
-        Datasets.load(
-            (i) -> new DataSeriesCollection.Builder(double.class),
-            new MatlabDatasetReader(new FileInputStream(String.format("%s/%s/%s_TEST", path,
-                fileName, fileName))));
+        DataFrames
+            .permuteRecords(
+                Datasets.load((i) -> new DataSeriesCollection.Builder(double.class),
+                    new MatlabDatasetReader(new FileInputStream(
+                        String.format("%s/%s/%s_TRAIN", path, fileName, fileName)))),
+        new Random(123));
+    DataFrame test = Datasets.load((i) -> new DataSeriesCollection.Builder(double.class),
+        new MatlabDatasetReader(
+            new FileInputStream(String.format("%s/%s/%s_TEST", path, fileName, fileName))));
 
     train.setColumnIndex(Index.range(train.columns()));
     test.setColumnIndex(Index.range(test.columns()));
@@ -288,61 +285,66 @@ public class RandomShapeletForestTest {
     // Gun_Point = 0.3
     // Mote_strain = 0.5
     DataFrame x = train.drop(0);
-    Partition<Vector, Object> trainPart =
-        new SplitPartitioner(0.1).partition(x, y).iterator().next();
+    Input<Vector> input = new ArrayInput<>(x.getRecords());
+    Output<Object> output = new ArrayOutput<>(y.toList());
 
-    ClassifierNonconformity.Learner nc = new DistanceNonconformity.Learner(1);
+    SplitPartitioner<Vector, Object> partitioner = new SplitPartitioner<>(0.1);
+    Partition<Vector, Object> trainPart = partitioner.partition(input, output).iterator().next();
+
+    DistanceNonconformity.Learner<Vector> nc =
+        new DistanceNonconformity.Learner<>(1, EuclideanDistance.getInstance());
     // Nonconformity.Learner nc =
     // new ProbabilityEstimateNonconformity.Learner(
     // new
     // RandomShapeletForest.Configurator(100).setAssessment(ShapeletTree.Learner.Assessment.IG).configure(),
     // new Margin());
-    InductiveConformalClassifier.Learner learner = new InductiveConformalClassifier.Learner(nc);
-    InductiveConformalClassifier classifier =
+    InductiveConformalClassifier.Learner<Vector> learner =
+        new InductiveConformalClassifier.Learner<>(nc);
+    InductiveConformalClassifier<Vector> classifier =
         learner.fit(trainPart.getTrainingData(), trainPart.getTrainingTarget());
     classifier.calibrate(trainPart.getValidationData(), trainPart.getValidationTarget());
-    testEarlyClassification(test, classifier);
+    // testEarlyClassification(test, classifier);
   }
 
   private void testEarlyClassification(DataFrame test, ConformalClassifier classifier) {
-    Vector c = classifier.getClasses();
-    DataFrame x = test.drop(0);
-    Vector y = test.get(0);
+    // Vector c = classifier.getClasses();
+    // DataFrame x = test.drop(0);
+    // Vector y = test.get(0);
+    //
+    // IntArray d = Arrays.intArray(x.rows());
+    // double correct = 0;
+    // for (int i = 0; i < x.rows(); i++) {
+    // if (i % 100 == 0) {
+    // System.out.printf("Processing test instance %d/%d\n", i, x.rows());
+    // }
+    // Vector record = x.loc().getRecord(i);
+    // Object trueLabel = y.loc().get(Object.class, i);
+    // boolean found = false;
+    // for (int j = 5; j < record.size() && !found; j++) {
+    // double minSignificance = 0.05;
+    // double minConfidence = 0.95;
+    // DoubleArray estimates = classifier.estimate(record.select(0, j));
+    // int prediction = Arrays.argmax(estimates);
+    // double credibility = estimates.get(prediction);
+    // double confidence = 1 - maxnot(estimates, prediction);
+    // System.out.println(confidence + " " + credibility + " from " + estimates);
+    // if (confidence >= minConfidence && credibility >= minSignificance) {
+    // d.set(i, j);
+    // correct += Is.equal(c.loc().get(prediction), trueLabel) ? 1 : 0;
+    // found = true;
+    // }
+    // }
 
-    IntArray d = Arrays.intArray(x.rows());
-    double correct = 0;
-    for (int i = 0; i < x.rows(); i++) {
-      if (i % 100 == 0) {
-        System.out.printf("Processing test instance %d/%d\n", i, x.rows());
-      }
-      Vector record = x.loc().getRecord(i);
-      Object trueLabel = y.loc().get(Object.class, i);
-      boolean found = false;
-      for (int j = 5; j < record.size() && !found; j++) {
-        double minSignificance = 0.05;
-        double minConfidence = 0.95;
-        // DoubleArray estimates = classifier.estimate(record.select(0, j));
-        // int prediction = Arrays.argmax(estimates);
-        // double credibility = estimates.get(prediction);
-        // double confidence = 1 - maxnot(estimates, prediction);
-        // System.out.println(confidence + " " + credibility + " from " + estimates);
-        // if (confidence >= minConfidence && credibility >= minSignificance) {
-        // d.set(i, j);
-        // correct += Is.equal(c.loc().get(prediction), trueLabel) ? 1 : 0;
-        // found = true;
-        // }
-      }
-
-      // Classify it once all time has passed
-      // if (!found) {
-      // Object prediction = c.loc().get(Arrays.argmax(classifier.estimate(record)));
-      // correct += Is.equal(trueLabel, prediction) ? 1 : 0;
-      // d.set(i, record.size());
-      // }
-    }
-
-    System.out.println(correct / x.rows());
-    System.out.println(Arrays.mean(d.get(Arrays.range(5, x.rows())).asDouble()) / x.columns());
+    // Classify it once all time has passed
+    // if (!found) {
+    // Object prediction = c.loc().get(Arrays.argmax(classifier.estimate(record)));
+    // correct += Is.equal(trueLabel, prediction) ? 1 : 0;
+    // d.set(i, record.size());
+    // }
+    // }
+    //
+    // System.out.println(correct / x.rows());
+    // System.out.println(Arrays.mean(d.get(Arrays.range(5, x.rows())).asDouble()) / x.columns());
   }
 
   private Vector shift(Vector record) {
@@ -368,8 +370,8 @@ public class RandomShapeletForestTest {
     BooleanArray oob = predictor.getOobIndicator();
     for (int i = 0; i < x.rows(); i++) {
       Vector record = x.loc().getRecord(i);
-      List<Classifier> oobMembers = getOobMembers(oob.getRow(i), predictor.getEnsembleMembers());
-      DoubleArray estimate = predictOob(oobMembers, record);
+      // List<Classifier> oobMembers = getOobMembers(oob.getRow(i), predictor.getEnsembleMembers());
+      // DoubleArray estimate = predictOob(oobMembers, record);
 
     }
     return null;
@@ -417,9 +419,8 @@ public class RandomShapeletForestTest {
   @Test
   public void testSequences() throws Exception {
     String ade = "G444";
-    EntryReader in =
-        new SequenceDatasetReader(new FileInputStream("/Users/isak-kar/Desktop/sequences/" + ade
-            + ".seq"));
+    EntryReader in = new SequenceDatasetReader(
+        new FileInputStream("/Users/isak-kar/Desktop/sequences/" + ade + ".seq"));
 
     DataFrame frame = new DataSeriesCollection.Builder(VectorType.STRING).readAll(in).build();
     frame = vectorize(frame);
@@ -437,7 +438,7 @@ public class RandomShapeletForestTest {
     int min = freq.values().stream().min(Integer::min).get();
     System.out.println(freq + " => " + ((double) min / sum));
     //
-    Predictor.Learner<? extends Classifier> forest =
+    Predictor.Learner<Vector, Object, ? extends Classifier<Vector>> forest =
         new RandomForest.Configurator(100).setMaximumFeatures(100).configure();
     // new RandomShapeletForest.Configurator(100).setF.configure();
     // new RandomShapeletForest.Configurator(25).setDistance(
@@ -445,9 +446,10 @@ public class RandomShapeletForestTest {
     // new NearestNeighbours.Learner(1, new SimilarityDistance(
     // new SmithWatermanSimilarity(1, 0, 0)));
 
-    Validator<Classifier> cv = crossValidator(10);
+    Validator<Vector, Object, Classifier<Vector>> cv = crossValidator(10);
     cv.add(Evaluator.foldOutput(fold -> System.out.printf("Completed fold %d\n", fold)));
-    Result result = cv.test(forest, x, y);
+    Result<?> result =
+        cv.test(forest, new ArrayInput<>(x.getRecords()), new ArrayOutput<>(y.toList()));
     System.out.println(result.getMeasures().mean());
     // System.out.println(result.getAverageConfusionMatrix().getPrecision("ade"));
     // System.out.println(result.getAverageConfusionMatrix().getRecall("ade"));

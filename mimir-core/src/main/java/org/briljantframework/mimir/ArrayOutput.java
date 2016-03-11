@@ -7,9 +7,15 @@ import java.util.Iterator;
 /**
  * Created by isak on 3/10/16.
  */
-public class OutputList<T> implements Output<T> {
+public class ArrayOutput<T> implements Output<T> {
 
   private final ArrayList<T> values = new ArrayList<>();
+
+  public ArrayOutput(Collection<? extends T> collection) {
+    values.addAll(collection);
+  }
+
+  public ArrayOutput() {}
 
   public void clear() {
     values.clear();

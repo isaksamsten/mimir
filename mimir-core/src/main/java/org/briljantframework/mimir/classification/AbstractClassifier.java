@@ -25,10 +25,9 @@ import java.util.stream.IntStream;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.ClassifierOutput;
 import org.briljantframework.mimir.Input;
 import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.Outputs;
 import org.briljantframework.mimir.supervised.Characteristic;
 
 /**
@@ -65,7 +64,7 @@ public abstract class AbstractClassifier<In> implements Classifier<In> {
   public Output<Object> predict(Input<? extends In> x) {
     Object[] labels = new Object[x.size()];
     IntStream.range(0, x.size()).parallel().forEach(i -> labels[i] = predict(x.get(i)));
-    return new ClassifierOutput(labels);
+    return Outputs.asOutput(labels);
   }
 
   @Override
