@@ -20,32 +20,27 @@
  */
 package org.briljantframework.mimir.classification;
 
+import java.util.List;
+
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
 import org.briljantframework.array.Range;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
-import org.briljantframework.mimir.classification.tree.ClassSet;
-import org.briljantframework.mimir.classification.tree.Example;
-import org.briljantframework.mimir.classification.tree.Gain;
-import org.briljantframework.mimir.classification.tree.HyperPlaneThreshold;
-import org.briljantframework.mimir.classification.tree.TreeBranch;
-import org.briljantframework.mimir.classification.tree.TreeClassifier;
-import org.briljantframework.mimir.classification.tree.TreeLeaf;
-import org.briljantframework.mimir.classification.tree.TreeNode;
-import org.briljantframework.mimir.classification.tree.TreeSplit;
-import org.briljantframework.mimir.classification.tree.TreeVisitor;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Inputs;
+import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.Outputs;
+import org.briljantframework.mimir.classification.tree.*;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * Created by isak on 11/16/15.
  */
-public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
-  protected HyperPlaneTree(Vector classes, TreeNode<HyperPlaneThreshold> node,
-      TreeVisitor<HyperPlaneThreshold> predictionVisitor) {
+public class HyperPlaneTree extends TreeClassifier<Vector, HyperPlaneThreshold> {
+  protected HyperPlaneTree(List<?> classes, TreeNode<Vector, HyperPlaneThreshold> node,
+      TreeVisitor<Vector, HyperPlaneThreshold> predictionVisitor) {
     super(classes, node, predictionVisitor);
   }
 
@@ -70,14 +65,14 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
     return features.get(Arrays.range(0, end));
   }
 
-  private static class HyperPlaneTreeVisitor implements TreeVisitor<HyperPlaneThreshold> {
+  private static class HyperPlaneTreeVisitor implements TreeVisitor<Vector, HyperPlaneThreshold> {
     @Override
-    public DoubleArray visitLeaf(TreeLeaf<HyperPlaneThreshold> leaf, Vector example) {
+    public DoubleArray visitLeaf(TreeLeaf<Vector, HyperPlaneThreshold> leaf, Vector example) {
       return leaf.getProbabilities();
     }
 
     @Override
-    public DoubleArray visitBranch(TreeBranch<HyperPlaneThreshold> node, Vector example) {
+    public DoubleArray visitBranch(TreeBranch<Vector, HyperPlaneThreshold> node, Vector example) {
       DoubleArray row = DoubleArray.zeros(example.size() + 1);
       row.set(0, 1);
       Vectors.copy(example, row.getView(Range.of(1, row.size())));
@@ -92,36 +87,36 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
     }
   }
 
-  public static class Learner implements Predictor.Learner<HyperPlaneTree> {
+  public static class Learner implements Predictor.Learner<Vector, Object, HyperPlaneTree> {
     private final ClassSet set;
     private final Gain criterion = Gain.INFO;
-    private final Vector classes;
+    private final List<?> classes;
     private final int noHyperPlanes;
 
-    public Learner(ClassSet set, Vector classes, int noHyperPlanes) {
+    public Learner(ClassSet set, List<?> classes, int noHyperPlanes) {
       this.set = set;
       this.classes = classes;
       this.noHyperPlanes = noHyperPlanes;
     }
 
     @Override
-    public HyperPlaneTree fit(DataFrame x, Vector y) {
+    public HyperPlaneTree fit(Input<? extends Vector> x, Output<?> y) {
       ClassSet set = this.set;
-      Vector classes = this.classes == null ? Vectors.unique(y) : this.classes;
+      List<?> classes = this.classes == null ? Outputs.unique(y) : this.classes;
       if (set == null) {
         set = new ClassSet(y, classes);
       }
 
-      DoubleArray array = Arrays.hstack(DoubleArray.ones(x.rows(), 1), DataFrames.toDoubleArray(x));
-      TreeNode<HyperPlaneThreshold> root = build(array, y, set);
+      DoubleArray array = Arrays.hstack(DoubleArray.ones(x.size(), 1), Inputs.toDoubleArray(x));
+      TreeNode<Vector, HyperPlaneThreshold> root = build(array, y, set);
       return new HyperPlaneTree(classes, root, new HyperPlaneTreeVisitor());
     }
 
-    private TreeNode<HyperPlaneThreshold> build(DoubleArray x, Vector y, ClassSet set) {
+    private TreeNode<Vector, HyperPlaneThreshold> build(DoubleArray x, Output<?> y, ClassSet set) {
       if (set.getTotalWeight() <= 1.0 || set.getTargetCount() == 1) {
         return TreeLeaf.fromExamples(set);
       }
-      TreeSplit<HyperPlaneThreshold> maxSplit = findHyperPlaneRandomMeanPoint(set, x, y);
+      TreeSplit<HyperPlaneThreshold> maxSplit = findHyperPlaneRandomMeanPoint(set, x);
       if (maxSplit == null) {
         return TreeLeaf.fromExamples(set);
       } else {
@@ -132,8 +127,8 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
         } else if (right.isEmpty()) {
           return TreeLeaf.fromExamples(left);
         } else {
-          TreeNode<HyperPlaneThreshold> leftNode = build(x, y, left);
-          TreeNode<HyperPlaneThreshold> rightNode = build(x, y, right);
+          TreeNode<Vector, HyperPlaneThreshold> leftNode = build(x, y, left);
+          TreeNode<Vector, HyperPlaneThreshold> rightNode = build(x, y, right);
           return new TreeBranch<>(leftNode, rightNode, classes, maxSplit.getThreshold(), 1);
         }
       }
@@ -198,7 +193,7 @@ public class HyperPlaneTree extends TreeClassifier<HyperPlaneThreshold> {
     }
 
     private TreeSplit<HyperPlaneThreshold> findHyperPlaneRandomMeanPoint(ClassSet set,
-        DoubleArray x, Vector y) {
+        DoubleArray x) {
       TreeSplit<HyperPlaneThreshold> bestSplit = null;
       double bestImpurity = Double.POSITIVE_INFINITY;
       for (int i = 0; i < noHyperPlanes; i++) {

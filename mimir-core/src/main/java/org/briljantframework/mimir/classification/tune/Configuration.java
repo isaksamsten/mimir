@@ -27,14 +27,14 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson
  */
-public class Configuration<P extends Predictor> {
+public class Configuration<In, Out, P extends Predictor<In, Out>> {
 
-  private final Predictor.Learner<? extends P> classifier;
+  private final Predictor.Learner<In, Out, ? extends P> classifier;
   private final Result result;
   private final Vector parameters;
 
-  public Configuration(Predictor.Learner<? extends P> classifier, Result result,
-                       Vector parameters) {
+  public Configuration(Predictor.Learner<In, Out, ? extends P> classifier, Result<Out> result,
+      Vector parameters) {
     this.classifier = classifier;
     this.result = result;
     this.parameters = parameters;
@@ -45,7 +45,7 @@ public class Configuration<P extends Predictor> {
    *
    * @return the classifier
    */
-  public Predictor.Learner<? extends P> getClassifier() {
+  public Predictor.Learner<In, Out, ? extends P> getClassifier() {
     return classifier;
   }
 

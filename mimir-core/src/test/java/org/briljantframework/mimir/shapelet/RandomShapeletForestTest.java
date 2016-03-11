@@ -268,7 +268,8 @@ public class RandomShapeletForestTest {
     train.setColumnIndex(Index.range(train.columns()));
     test.setColumnIndex(Index.range(test.columns()));
     System.out.println(test.get(0).valueCounts());
-    System.out.println(train.get(0).valueCounts());
+    Vector y = train.get(0);
+    System.out.println(y.valueCounts());
 
     // System.out.println(train.head(5));
     // System.out.println(train.getRecord(0).asList(Double.class).subList(1, 85));
@@ -286,8 +287,9 @@ public class RandomShapeletForestTest {
     // synthetic_control = 0.1
     // Gun_Point = 0.3
     // Mote_strain = 0.5
-    Partition trainPart =
-        new SplitPartitioner(0.1).partition(train.drop(0), train.get(0)).iterator().next();
+    DataFrame x = train.drop(0);
+    Partition<Vector, Object> trainPart =
+        new SplitPartitioner(0.1).partition(x, y).iterator().next();
 
     ClassifierNonconformity.Learner nc = new DistanceNonconformity.Learner(1);
     // Nonconformity.Learner nc =

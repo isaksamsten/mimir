@@ -23,25 +23,26 @@ package org.briljantframework.mimir.evaluation;
 import java.util.Objects;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.evaluation.partition.Partition;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson
  */
-public class MutableEvaluationContext<P extends Predictor> implements EvaluationContext<P> {
+public class MutableEvaluationContext<In, Out, P extends Predictor<In, Out>>
+    implements EvaluationContext<In, Out, P> {
 
   private final ImmutableEvaluationContext evaluationContext = new ImmutableEvaluationContext();
 
-  private Vector predictions;
+  private Output<Out> predictions;
   private P predictor;
-  private Partition partition;
+  private Partition<In, Out> partition;
   private DoubleArray estimates;
 
   public MutableEvaluationContext() {}
 
-  public void setPartition(Partition partition) {
+  public void setPartition(Partition<In, Out> partition) {
     this.partition = Objects.requireNonNull(partition, "requires a partition");
   }
 
@@ -50,7 +51,7 @@ public class MutableEvaluationContext<P extends Predictor> implements Evaluation
    * 
    * @param predictions the out of sample predictions
    */
-  public void setPredictions(Vector predictions) {
+  public void setPredictions(Output<Out> predictions) {
     this.predictions = Objects.requireNonNull(predictions, "requires predictions");
   }
 
@@ -73,12 +74,12 @@ public class MutableEvaluationContext<P extends Predictor> implements Evaluation
   }
 
   @Override
-  public Partition getPartition() {
+  public Partition<In, Out> getPartition() {
     return partition;
   }
 
   @Override
-  public Vector getPredictions() {
+  public Output<Out> getPredictions() {
     return predictions;
   }
 
@@ -96,21 +97,21 @@ public class MutableEvaluationContext<P extends Predictor> implements Evaluation
     throw new UnsupportedOperationException();
   }
 
-  public EvaluationContext<P> getEvaluationContext() {
+  public EvaluationContext<In, Out, P> getEvaluationContext() {
     return evaluationContext;
   }
 
-  private class ImmutableEvaluationContext implements EvaluationContext<P> {
+  private class ImmutableEvaluationContext implements EvaluationContext<In, Out, P> {
 
     private final MeasureCollection measureCollection = new MeasureCollection();
 
     @Override
-    public Partition getPartition() {
+    public Partition<In, Out> getPartition() {
       return partition;
     }
 
     @Override
-    public Vector getPredictions() {
+    public Output<Out> getPredictions() {
       return predictions;
     }
 
@@ -119,29 +120,10 @@ public class MutableEvaluationContext<P extends Predictor> implements Evaluation
       return estimates;
     }
 
-    // @Override
-    // public <T extends Measure, C extends Measure.Builder<T>> C getOrDefault(Class<T> measure,
-    // Supplier<C> supplier) {
-    // C builder = get(measure);
-    // if (builder == null) {
-    // builder = supplier.get();
-    // builders.put(measure, builder);
-    // }
-    //
-    // return builder;
-    // }
-
     @Override
     public P getPredictor() {
       return predictor;
     }
-
-    // @Override
-    // public List<Measure> getMeasures() {
-    // List<Measure> measures = new ArrayList<>();
-    // getMeasureBuilders().forEachDouble(v -> measures.add(v.build()));
-    // return measures;
-    // }
 
     @Override
     public MeasureCollection getMeasureCollection() {

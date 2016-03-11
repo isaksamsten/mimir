@@ -36,7 +36,7 @@ import org.briljantframework.data.vector.Vector;
  * <p>
  * Created by Isak Karlsson on 01/09/14.
  */
-public class DynamicTimeWarping implements Distance {
+public class DynamicTimeWarping implements Distance<Vector> {
 
   /**
    * The Distance.

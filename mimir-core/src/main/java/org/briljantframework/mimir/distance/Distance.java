@@ -48,7 +48,7 @@ import org.briljantframework.data.vector.Vector;
  * 
  * @author Isak Karlsson
  */
-public interface Distance {
+public interface Distance<T> {
 
   /**
    * Calculate the distance between two scalar
@@ -66,7 +66,7 @@ public interface Distance {
    * @param b a vector
    * @return the distance
    */
-  double compute(Vector a, Vector b);
+  double compute(T a, T b);
 
   /**
    * Max double.

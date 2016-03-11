@@ -29,7 +29,7 @@ import org.briljantframework.mimir.shapelet.NormalizedShapelet;
 /**
  * Created by Isak Karlsson on 23/09/14.
  */
-public class EarlyAbandonSlidingDistance implements Distance {
+public class EarlyAbandonSlidingDistance implements Distance<Vector> {
 
   protected final Distance distance;
 

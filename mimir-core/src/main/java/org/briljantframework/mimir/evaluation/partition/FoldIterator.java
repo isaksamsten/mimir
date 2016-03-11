@@ -20,15 +20,16 @@
  */
 package org.briljantframework.mimir.evaluation.partition;
 
-import static org.briljantframework.data.vector.Vectors.transferableBuilder;
-
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import org.briljantframework.Check;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.InputList;
+import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.OutputList;
 import org.briljantframework.mimir.classification.ClassifierValidator;
 
 /**
@@ -95,22 +96,22 @@ import org.briljantframework.mimir.classification.ClassifierValidator;
  *
  * @author Isak Karlsson
  */
-public class FoldIterator implements Iterator<Partition> {
+public class FoldIterator<In, Out> implements Iterator<Partition<In, Out>> {
 
   private final int folds, foldSize, rows;
-  private final DataFrame x;
-  private final Vector y;
+  private final Input<? extends In> x;
+  private final Output<? extends Out> y;
   private final int reminder;
 
   private int current = 0;
 
-  public FoldIterator(DataFrame x, Vector y, int folds) {
-    Check.argument(x.rows() == y.size(), "Data and target must be of equal size.");
-    Check.argument(folds > 1 && folds <= x.rows(), "Invalid fold count.");
+  public FoldIterator(Input<? extends In> x, Output<? extends Out> y, int folds) {
+    Check.argument(x.size() == y.size(), "Data and target must be of equal size.");
+    Check.argument(folds > 1 && folds <= x.size(), "Invalid fold count.");
 
     this.x = Objects.requireNonNull(x);
     this.y = Objects.requireNonNull(y);
-    this.rows = x.rows();
+    this.rows = x.size();
     this.folds = folds;
     this.foldSize = rows / folds;
     this.reminder = rows % folds;
@@ -122,17 +123,17 @@ public class FoldIterator implements Iterator<Partition> {
   }
 
   @Override
-  public Partition next() {
+  public Partition<In, Out> next() {
     if (!hasNext()) {
       throw new NoSuchElementException();
     }
 
     current += 1;
-    DataFrame.Builder xTrainingBuilder = x.newBuilder();
-    Vector.Builder yTrainingBuilder = y.newBuilder();
+    Input<In> xTraining = new InputList<>();
+    Output<Out> yTraining = new OutputList<>();
 
-    DataFrame.Builder xValidationBuilder = x.newBuilder();
-    Vector.Builder yValidationBuilder = y.newBuilder();
+    Input<In> xValidation = new InputList<>();
+    Output<Out> yValidation = new OutputList<>();
 
     int index = 0;
     int foldEnd = rows - foldSize * current;
@@ -149,38 +150,27 @@ public class FoldIterator implements Iterator<Partition> {
     // foldSize * current examples as training examples
     int trainingEnd = foldEnd - pad;
     for (int i = 0; i < trainingEnd; i++) {
-      xTrainingBuilder.loc().setRecord(i, transferableBuilder(x.loc().getRecord(index)));
-      yTrainingBuilder.add(y, index);
+      xTraining.add(x.get(index));
+      yTraining.add(y.get(index));
       index += 1;
     }
 
     // Part 2: this is a validation part. Add the second
     // next foldSize * current examples until validation end
-    int newIndex = 0;
     int validationEnd = foldEnd + foldSize;
     for (int i = trainingEnd; i < validationEnd; i++) {
-      xValidationBuilder.loc().setRecord(newIndex, transferableBuilder(x.loc().getRecord(index)));
-      yValidationBuilder.add(y, index);
+      xTraining.add(x.get(index));
+      yTraining.add(y.get(index));
       index += 1;
-      newIndex += 1;
     }
 
     // Part 3: this is a training part
-    newIndex = trainingEnd;
     for (int i = validationEnd; i < rows; i++) {
-      xTrainingBuilder.loc().setRecord(newIndex, transferableBuilder(x.loc().getRecord(index)));
-      yTrainingBuilder.add(y, index);
+      xTraining.add(x.get(index));
+      yTraining.add(y.get(index));
       index += 1;
-      newIndex += 1;
     }
 
-    DataFrame trainingSet = xTrainingBuilder.build();
-    trainingSet.setColumnIndex(x.getColumnIndex());
-    DataFrame validationSet = xValidationBuilder.build();
-    validationSet.setColumnIndex(x.getColumnIndex());
-
-    Vector yTraining = yTrainingBuilder.build();
-    Vector yValidation = yValidationBuilder.build();
-    return new Partition(trainingSet, validationSet, yTraining, yValidation);
+    return new Partition<>(xTraining, xValidation, yTraining, yValidation);
   }
 }

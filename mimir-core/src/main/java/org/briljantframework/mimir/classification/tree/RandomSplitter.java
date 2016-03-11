@@ -1,17 +1,17 @@
 /**
  * The MIT License (MIT)
- *
+ * <p>
  * Copyright (c) 2016 Isak Karlsson
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  * associated documentation files (the "Software"), to deal in the Software without restriction,
  * including without limitation the rights to use, copy, modify, merge, publish, distribute,
  * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in all copies or
  * substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
  * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
@@ -20,9 +20,13 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
+import java.util.List;
+
 import org.briljantframework.data.Is;
-import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Dataset;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 import org.briljantframework.primitive.ArrayAllocations;
 
 /**
@@ -51,32 +55,25 @@ public class RandomSplitter extends AbstractSplitter {
   }
 
   @Override
-  public TreeSplit<ValueThreshold> find(ClassSet classSet, DataFrame dataFrame, Vector column) {
+  public TreeSplit<ValueThreshold> find(ClassSet classSet, Input<? extends Vector> x, Output<?> y) {
     // if (features == null) {
     // initialize(dataFrame);
     // }
 
-    int[] features = initialize(dataFrame);
-
+    int[] features = initialize(x);
     int maxFeatures =
-        this.maxFeatures > 0 ? this.maxFeatures
-            : (int) Math.round(Math.sqrt(dataFrame.columns())) + 1;
-
-    // TODO! Fix me!
-    // synchronized (features) {
-    // }
-
+        this.maxFeatures > 0 ? this.maxFeatures : (int) Math.round(Math.sqrt(x.get(0).size())) + 1;
     TreeSplit<ValueThreshold> bestSplit = null;
     double bestImpurity = Double.POSITIVE_INFINITY;
     for (int i = 0; i < features.length && i < maxFeatures; i++) {
       int axis = features[i];
 
-      Object threshold = search(dataFrame.loc().get(axis), classSet);
+      Object threshold = search(x, axis, classSet);
       if (Is.NA(threshold)) {
         continue;
       }
 
-      TreeSplit<ValueThreshold> split = split(dataFrame, classSet, axis, threshold);
+      TreeSplit<ValueThreshold> split = split(x, classSet, axis, threshold);
       double impurity = criterion.compute(split);
       if (impurity < bestImpurity) {
         bestSplit = split;
@@ -90,8 +87,8 @@ public class RandomSplitter extends AbstractSplitter {
     return bestSplit;
   }
 
-  private int[] initialize(DataFrame dataFrame) {
-    int[] features = new int[dataFrame.columns()];
+  private int[] initialize(Input<? extends Vector> dataFrame) {
+    int[] features = new int[dataFrame.get(0).size()];
     for (int i = 0; i < features.length; i++) {
       features[i] = i;
     }
@@ -102,32 +99,39 @@ public class RandomSplitter extends AbstractSplitter {
   /**
    * Search value.
    *
-   * @param axis the dataset
+   * @param axis     the dataset
    * @param classSet the examples
    * @return the value
    */
-  protected Object search(Vector axis, ClassSet classSet) {
-    boolean i = Is.numeric(axis);
+  protected Object search(Input<? extends Vector> in, int axis, ClassSet classSet) {
+    List types = in.getProperties().get(Dataset.TYPES);
+    boolean i = isNumeric(types.get(axis));
     if (i) {
-      return sampleNumericValue(axis, classSet);
+      return sampleNumericValue(in, axis, classSet);
     } else {
-      return sampleCategoricValue(axis, classSet);
+      return sampleCategoricValue(in, axis, classSet);
     }
+  }
+
+
+  private boolean isNumeric(Object cls) {
+    return cls instanceof Class && Number.class.isAssignableFrom((Class<?>) cls);
   }
 
   /**
    * Sample numeric value.
    *
-   * @param vector the dataset
    * @param classSet the examples
    * @return the value
    */
-  protected double sampleNumericValue(Vector vector, ClassSet classSet) {
+  protected double sampleNumericValue(Input<? extends Vector> in, int axis, ClassSet classSet) {
     Example a = classSet.getRandomSample().getRandomExample();
     Example b = classSet.getRandomSample().getRandomExample();
+    Vector exa = in.get(a.getIndex());
+    Vector exb = in.get(b.getIndex());
 
-    double valueA = vector.loc().getAsDouble(a.getIndex());
-    double valueB = vector.loc().getAsDouble(b.getIndex());
+    double valueA = exa.loc().getAsDouble(axis);
+    double valueB = exb.loc().getAsDouble(axis);
 
     // TODO - what if both A and B are missing?
     if (Is.NA(valueA)) {
@@ -143,13 +147,12 @@ public class RandomSplitter extends AbstractSplitter {
   /**
    * Sample categoric value.
    *
-   * @param axisVector the dataset
    * @param classSet the examples
    * @return the value
    */
-  protected Object sampleCategoricValue(Vector axisVector, ClassSet classSet) {
+  protected Object sampleCategoricValue(Input<? extends Vector> in, int axis, ClassSet classSet) {
     Example example = classSet.getRandomSample().getRandomExample();
-    return axisVector.get(Object.class, example.getIndex());
+    return in.get(example.getIndex()).loc().get(axis);
   }
 
   /**

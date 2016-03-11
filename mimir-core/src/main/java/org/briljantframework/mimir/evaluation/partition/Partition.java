@@ -23,17 +23,19 @@ package org.briljantframework.mimir.evaluation.partition;
 import org.briljantframework.Check;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 
 /**
  * @author Isak Karlsson
  */
-public final class Partition {
+public final class Partition<In, Out> {
 
-  private final DataFrame trainingX, validationX;
-  private final Vector trainingY, validationY;
+  private final Input<In> trainingX, validationX;
+  private final Output<Out> trainingY, validationY;
 
-  public Partition(DataFrame trainingX, DataFrame validationX, Vector trainingY,
-      Vector validationY) {
+  public Partition(Input<In> trainingX, Input<In> validationX,
+      Output<Out> trainingY, Output<Out> validationY) {
     this.trainingX = trainingX;
     this.validationX = validationX;
     this.trainingY = trainingY;
@@ -45,7 +47,7 @@ public final class Partition {
    *
    * @return the training data
    */
-  public DataFrame getTrainingData() {
+  public Input<In> getTrainingData() {
     Check.state(trainingX != null, "No training data available");
     return trainingX;
   }
@@ -55,7 +57,7 @@ public final class Partition {
    *
    * @return the training target
    */
-  public Vector getTrainingTarget() {
+  public Output<Out> getTrainingTarget() {
     Check.state(trainingY != null, "No training target available");
     return trainingY;
   }
@@ -65,7 +67,7 @@ public final class Partition {
    *
    * @return the validation data
    */
-  public DataFrame getValidationData() {
+  public Input<In> getValidationData() {
     Check.state(trainingY != null, "No validation data available");
     return validationX;
   }
@@ -75,7 +77,7 @@ public final class Partition {
    *
    * @return the validation target
    */
-  public Vector getValidationTarget() {
+  public Output<Out> getValidationTarget() {
     Check.state(trainingY != null, "No validation target available");
     return validationY;
   }

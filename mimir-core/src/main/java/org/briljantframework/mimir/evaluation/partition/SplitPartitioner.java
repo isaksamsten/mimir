@@ -25,8 +25,8 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.briljantframework.Check;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 
 /**
  * The split partitioner simply partitions the input {@code DataFrame} (with {@code m rows}) and
@@ -39,7 +39,7 @@ import org.briljantframework.data.vector.Vector;
  *
  * @author Isak Karlsson
  */
-public class SplitPartitioner implements Partitioner {
+public class SplitPartitioner<In, Out> implements Partitioner<In, Out> {
 
   private final double testFraction;
 
@@ -49,11 +49,11 @@ public class SplitPartitioner implements Partitioner {
   }
 
   @Override
-  public Collection<Partition> partition(DataFrame x, Vector y) {
-    return new AbstractCollection<Partition>() {
+  public Collection<Partition<In, Out>> partition(Input<In> x, Output<Out> y) {
+    return new AbstractCollection<Partition<In, Out>>() {
       @Override
-      public Iterator<Partition> iterator() {
-        return new SplitIterator(x, y, testFraction);
+      public Iterator<Partition<In, Out>> iterator() {
+        return new SplitIterator<>(x, y, testFraction);
       }
 
       @Override

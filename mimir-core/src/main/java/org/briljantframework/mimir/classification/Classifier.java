@@ -23,7 +23,11 @@ package org.briljantframework.mimir.classification;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.supervised.Predictor;
+
+import java.util.List;
 
 /**
  * <p>
@@ -54,33 +58,16 @@ import org.briljantframework.mimir.supervised.Predictor;
  *
  * @author Isak Karlsson
  */
-public interface Classifier extends Predictor {
+public interface Classifier<In> extends Predictor<In, Object> {
 
   /**
    * The classes this predictor is able to predict, i.e. its co-domain. Note that the i:th element
    * of the returned vector is the label of the j:th column in the probability matrix returned by
-   * {@link #estimate(DataFrame)}.
+   * {@link #estimate(Input)}.
    *
    * @return the vector of classes.
    */
-  Vector getClasses();
-
-  /**
-   * Determine the class label of every instance in {@code x}
-   *
-   * @param x to determine class labels for
-   * @return the predictions; shape = {@code [x.rows, 1]}.
-   */
-  @Override
-  Vector predict(DataFrame x);
-
-  /**
-   * Predict the class label of a specific {@link Vector}
-   *
-   * @param record to which the class label shall be assigned
-   * @return the prediction
-   */
-  Object predict(Vector record);
+  List<?> getClasses(); // TODO: 3/9/16 change to List<Object>
 
   /**
    * Estimates the posterior probabilities for all records in {@code x}.
@@ -93,7 +80,7 @@ public interface Classifier extends Predictor {
    * @param x the data frame of records to estimate the posterior probabilities for
    * @return a matrix with probability estimates; shape = {@code [x.rows(), getClasses().size()]}.
    */
-  DoubleArray estimate(DataFrame x);
+  DoubleArray estimate(Input<? extends In> x);
 
   /**
    * Estimates the posterior probability for the supplied vector.
@@ -102,9 +89,9 @@ public interface Classifier extends Predictor {
    * The i:th element in the returned array correspond to the probability of the i:th class in
    * {@linkplain #getClasses()} (using {@link Vector#loc()})
    *
-   * @param record the vector to estimate the posterior probability for
+   * @param input the vector to estimate the posterior probability for
    * @return a matrix with probability estimates; shape = {@code [1, this.getClasses().size()]}.
    */
-  DoubleArray estimate(Vector record);
+  DoubleArray estimate(In input);
 
 }

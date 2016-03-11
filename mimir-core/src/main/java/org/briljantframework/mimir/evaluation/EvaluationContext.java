@@ -22,17 +22,18 @@ package org.briljantframework.mimir.evaluation;
 
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.evaluation.partition.Partition;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface EvaluationContext<P extends Predictor> {
+public interface EvaluationContext<In, Out, P extends Predictor<?, Out>> {
 
-  Partition getPartition();
+  Partition<In, Out> getPartition();
 
-  Vector getPredictions();
+  Output<Out> getPredictions();
 
   DoubleArray getEstimates();
 

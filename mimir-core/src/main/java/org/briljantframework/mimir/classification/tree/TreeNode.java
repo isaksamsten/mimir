@@ -23,16 +23,18 @@ package org.briljantframework.mimir.classification.tree;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.vector.Vector;
 
+import java.util.List;
+
 /**
  * @author Isak Karlsson
  */
-public interface TreeNode<T> {
+public interface TreeNode<In, T> {
 
   double getWeight();
 
-  Vector getDomain();
+  List<?> getDomain();
 
   Vector getClassDistribution();
 
-  DoubleArray visit(TreeVisitor<T> visitor, Vector example);
+  DoubleArray visit(TreeVisitor<In, T> visitor, In example);
 }

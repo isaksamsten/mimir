@@ -27,7 +27,7 @@ import org.briljantframework.data.vector.Vector;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class HammingDistance implements Distance {
+public class HammingDistance implements Distance<Vector> {
 
   @Override
   public double compute(double a, double b) {

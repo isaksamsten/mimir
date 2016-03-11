@@ -22,12 +22,13 @@ package org.briljantframework.mimir.classification.conformal;
 
 import static org.briljantframework.mimir.classification.ClassifierCharacteristic.ESTIMATOR;
 
+import java.util.List;
 import java.util.Objects;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.classification.Classifier;
 
 /**
@@ -36,8 +37,8 @@ import org.briljantframework.mimir.classification.Classifier;
  * 
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class ProbabilityEstimateNonconformity<T extends Classifier> implements
-    ClassifierNonconformity {
+public class ProbabilityEstimateNonconformity<In, T extends Classifier<In>>
+    implements ClassifierNonconformity<In, Object> {
 
   private final T classifier;
   private final ProbabilityCostFunction probabilityCostFunction;
@@ -67,19 +68,19 @@ public class ProbabilityEstimateNonconformity<T extends Classifier> implements
   }
 
   @Override
-  public DoubleArray estimate(DataFrame x, Vector y) {
+  public DoubleArray estimate(Input<? extends In> x, Output<?> y) {
     Objects.requireNonNull(x, "Input data required.");
     Objects.requireNonNull(y, "Input target required.");
-    Check.argument(x.rows() == y.size(), "The size of input data and input target don't match.");
+    Check.argument(x.size() == y.size(), "The size of input data and input target don't match.");
     DoubleArray estimate = getClassifier().estimate(x);
-    return ProbabilityCostFunction
-        .estimate(getProbabilityCostFunction(), estimate, y, getClasses());
+    return ProbabilityCostFunction.estimate(getProbabilityCostFunction(), estimate, y,
+        getClasses());
   }
 
   @Override
-  public double estimate(Vector example, Object label) {
+  public double estimate(In example, Object label) {
     Objects.requireNonNull(example, "Require an example.");
-    int trueClassIndex = getClasses().loc().indexOf(label);
+    int trueClassIndex = getClasses().indexOf(label);
     if (trueClassIndex < 0) {
       return 0;
     } else {
@@ -88,17 +89,17 @@ public class ProbabilityEstimateNonconformity<T extends Classifier> implements
   }
 
   @Override
-  public Vector getClasses() {
+  public List<?> getClasses() {
     return getClassifier().getClasses();
   }
 
   /**
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  public static class Learner<T extends Classifier> implements
-      ClassifierNonconformity.Learner<ProbabilityEstimateNonconformity<T>> {
+  public static class Learner<In, T extends Classifier<In>> implements
+      ClassifierNonconformity.Learner<In, Object, ProbabilityEstimateNonconformity<In, T>> {
 
-    private final Classifier.Learner<? extends T> classifier;
+    private final Classifier.Learner<In, Object, ? extends T> classifier;
     private final ProbabilityCostFunction probabilityCostFunction;
 
     /**
@@ -107,7 +108,7 @@ public class ProbabilityEstimateNonconformity<T extends Classifier> implements
      * @param classifier the classifier
      * @param probabilityCostFunction the probability cost function
      */
-    public Learner(Classifier.Learner<? extends T> classifier,
+    public Learner(Classifier.Learner<In, Object, ? extends T> classifier,
         ProbabilityCostFunction probabilityCostFunction) {
       this.classifier = Objects.requireNonNull(classifier, "A classifier is required.");
       this.probabilityCostFunction =
@@ -119,7 +120,7 @@ public class ProbabilityEstimateNonconformity<T extends Classifier> implements
      * 
      * @return the classifier learner
      */
-    protected Classifier.Learner<? extends T> getClassifierLearner() {
+    protected Classifier.Learner<In, Object, ? extends T> getClassifierLearner() {
       return classifier;
     }
 
@@ -133,15 +134,14 @@ public class ProbabilityEstimateNonconformity<T extends Classifier> implements
     }
 
     @Override
-    public ProbabilityEstimateNonconformity<T> fit(DataFrame x, Vector y) {
+    public ProbabilityEstimateNonconformity<In, T> fit(Input<? extends In> x, Output<?> y) {
       Objects.requireNonNull(x, "Input data is required.");
       Objects.requireNonNull(y, "Input target is required.");
-      Check.argument(x.rows() == y.size(), "The size of input data and input target don't match");
+      Check.argument(x.size() == y.size(), "The size of input data and input target don't match");
       T pe = getClassifierLearner().fit(x, y);
       Check.state(pe != null && pe.getCharacteristics().contains(ESTIMATOR),
           "The produced classifier can't estimate probabilities");
       return new ProbabilityEstimateNonconformity<>(pe, getProbabilityCostFunction());
     }
-
   }
 }

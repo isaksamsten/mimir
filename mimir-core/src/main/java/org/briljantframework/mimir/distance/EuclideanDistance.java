@@ -28,7 +28,7 @@ import org.briljantframework.data.vector.Vector;
  * <p>
  * Created by Isak Karlsson on 01/09/14.
  */
-public class EuclideanDistance implements Distance {
+public class EuclideanDistance implements Distance<Vector> {
 
   private static final EuclideanDistance instance = new EuclideanDistance();
 

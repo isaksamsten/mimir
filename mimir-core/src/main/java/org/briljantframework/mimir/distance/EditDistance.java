@@ -28,7 +28,7 @@ import org.briljantframework.data.vector.Vector;
 /**
  * @author Isak Karlsson
  */
-public class EditDistance implements Distance {
+public class EditDistance implements Distance<Vector> {
 
   @Override
   public double compute(double a, double b) {

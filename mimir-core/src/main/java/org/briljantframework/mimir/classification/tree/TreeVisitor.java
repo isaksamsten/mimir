@@ -26,13 +26,13 @@ import org.briljantframework.data.vector.Vector;
 /**
  * @author Isak Karlsson
  */
-public interface TreeVisitor<T> {
+public interface TreeVisitor<In, T> {
 
-  default DoubleArray visit(TreeNode<T> node, Vector example) {
+  default DoubleArray visit(TreeNode<In, T> node, In example) {
     return node.visit(this, example);
   }
 
-  DoubleArray visitLeaf(TreeLeaf<T> leaf, Vector example);
+  DoubleArray visitLeaf(TreeLeaf<In, T> leaf, In example);
 
-  DoubleArray visitBranch(TreeBranch<T> node, Vector example);
+  DoubleArray visitBranch(TreeBranch<In, T> node, In example);
 }

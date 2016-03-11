@@ -20,26 +20,26 @@
  */
 package org.briljantframework.mimir.evaluation.partition;
 
-import static org.briljantframework.data.vector.Vectors.transferableBuilder;
-
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import org.briljantframework.Check;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.InputList;
+import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.OutputList;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class SplitIterator implements Iterator<Partition> {
+public class SplitIterator<In, Out> implements Iterator<Partition<In, Out>> {
 
   private boolean has = true;
-  private final DataFrame x;
-  private final Vector y;
+  private final Input<In> x;
+  private final Output<Out> y;
   private final double splitFraction;
 
-  public SplitIterator(DataFrame x, Vector y, double splitFraction) {
+  public SplitIterator(Input<In> x, Output<Out> y, double splitFraction) {
     Check.inRange(splitFraction, 0, 1);
     this.splitFraction = splitFraction;
     this.x = x;
@@ -53,31 +53,31 @@ public class SplitIterator implements Iterator<Partition> {
   }
 
   @Override
-  public Partition next() {
+  public Partition<In, Out> next() {
     if (!hasNext()) {
       throw new NoSuchElementException();
     }
     has = false;
-    int trainingSize = x.rows() - (int) Math.round(x.rows() * splitFraction);
+    int trainingSize = x.size() - (int) Math.round(x.size() * splitFraction);
 
-    DataFrame.Builder xTrainingBuilder = x.newBuilder();
-    Vector.Builder yTrainingBuilder = y.newBuilder();
+    Input<In> xTraining = new InputList<>();
+    Output<Out> yTraining = new OutputList<>();
+
     for (int i = 0; i < trainingSize; i++) {
-      xTrainingBuilder.addRecord(transferableBuilder(x.loc().getRecord(i)));
-      yTrainingBuilder.add(y, i);
+      xTraining.add(x.get(i));
+      yTraining.add(y.get(i));
     }
 
-    DataFrame.Builder xValidationBuilder = x.newBuilder();
-    Vector.Builder yValidationBuilder = y.newBuilder();
-    for (int i = trainingSize; i < x.rows(); i++) {
-      xValidationBuilder.addRecord(transferableBuilder(x.loc().getRecord(i)));
-      yValidationBuilder.add(y, i);
+    Input<In> xValidation = new InputList<>();
+    Output<Out> yValidation = new OutputList<>();
+    for (int i = trainingSize; i < x.size(); i++) {
+      xValidation.add(x.get(i));
+      yValidation.add(y.get(i));
     }
-    DataFrame trainingSet = xTrainingBuilder.build();
-    trainingSet.setColumnIndex(x.getColumnIndex());
-    DataFrame validationSet = xValidationBuilder.build();
-    validationSet.setColumnIndex(x.getColumnIndex());
-    return new Partition(trainingSet, validationSet, yTrainingBuilder.build(),
-        yValidationBuilder.build());
+    // DataFrame trainingSet = xTrainingBuilder.build();
+    // trainingSet.setColumnIndex(x.getColumnIndex());
+    // DataFrame validationSet = xValidationBuilder.build();
+    // validationSet.setColumnIndex(x.getColumnIndex());
+    return new Partition<>(xTraining, xValidation, yTraining, yValidation);
   }
 }

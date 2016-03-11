@@ -25,14 +25,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.OutputList;
 import org.briljantframework.mimir.classification.Classifier;
-import org.briljantframework.mimir.evaluation.partition.FoldPartitioner;
-import org.briljantframework.mimir.evaluation.partition.LeaveOneOutPartitioner;
-import org.briljantframework.mimir.evaluation.partition.Partition;
-import org.briljantframework.mimir.evaluation.partition.Partitioner;
-import org.briljantframework.mimir.evaluation.partition.SplitPartitioner;
+import org.briljantframework.mimir.evaluation.partition.*;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
@@ -76,22 +73,24 @@ import org.briljantframework.mimir.supervised.Predictor;
  * The above specified validator can be used to acceptEvaluators any classifier (i.e. any class
  * implementing the {@link Classifier} interface).
  */
-public abstract class Validator<P extends Predictor> {
+public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
 
   /**
    * The leave one out partitioner
    */
-  protected static final LeaveOneOutPartitioner LOO_PARTITIONER = new LeaveOneOutPartitioner();
+  protected static final LeaveOneOutPartitioner<?, ?> LOO_PARTITIONER =
+      new LeaveOneOutPartitioner<>();
 
-  private final Set<Evaluator<? super P>> evaluators;
-  private final Partitioner partitioner;
+  private final Set<Evaluator<In, Out, ? super P>> evaluators;
+  private final Partitioner<In, Out> partitioner;
 
-  public Validator(Set<? extends Evaluator<? super P>> evaluators, Partitioner partitioner) {
+  public Validator(Set<? extends Evaluator<In, Out, ? super P>> evaluators,
+      Partitioner<In, Out> partitioner) {
     this.evaluators = new HashSet<>(evaluators);
     this.partitioner = partitioner;
   }
 
-  public Validator(Partitioner partitioner) {
+  public Validator(Partitioner<In, Out> partitioner) {
     this(Collections.emptySet(), partitioner);
   }
 
@@ -103,19 +102,20 @@ public abstract class Validator<P extends Predictor> {
    * @param y the target to used during evaluation
    * @return a result
    */
-  public Result test(Predictor.Learner<? extends P> learner, DataFrame x, Vector y) {
-    Collection<Partition> partitions = getPartitioner().partition(x, y);
-    MutableEvaluationContext<P> ctx = new MutableEvaluationContext<>();
-    Vector.Builder actual = y.newBuilder();
-    Vector.Builder predictions = y.newBuilder();
+  public Result<Out> test(Predictor.Learner<In, Out, ? extends P> learner, Input<In> x,
+      Output<Out> y) {
+    Collection<Partition<In, Out>> partitions = getPartitioner().partition(x, y);
+    MutableEvaluationContext<In, Out, P> ctx = new MutableEvaluationContext<>();
+    Output<Out> actual = new OutputList<>();
+    Output<Out> predictions = new OutputList<>();
     double avgFitTime = 0, avgPredictTime = 0, avgTrainingSize = 0, avgValidationSize = 0;
     double noPartition = partitions.size();
     int iteration = 0;
-    for (Partition partition : partitions) {
-      DataFrame trainingData = partition.getTrainingData();
-      Vector trainingTarget = partition.getTrainingTarget();
-      DataFrame validationData = partition.getValidationData();
-      Vector validationTarget = partition.getValidationTarget();
+    for (Partition<In, Out> partition : partitions) {
+      Input<In> trainingData = partition.getTrainingData();
+      Output<Out> trainingTarget = partition.getTrainingTarget();
+      Input<In> validationData = partition.getValidationData();
+      Output<Out> validationTarget = partition.getValidationTarget();
       ctx.setPartition(partition);
 
       // Step 1: Fit the classifier using the training data
@@ -130,7 +130,7 @@ public abstract class Validator<P extends Predictor> {
       double predictTime = (System.nanoTime() - start) / 1e6;
 
       // Step 4: Compute the given measures
-      EvaluationContext<P> evaluationContext = ctx.getEvaluationContext();
+      EvaluationContext<In, Out, P> evaluationContext = ctx.getEvaluationContext();
       evaluate(evaluationContext, iteration++);
 
       actual.addAll(validationTarget);
@@ -138,12 +138,12 @@ public abstract class Validator<P extends Predictor> {
 
       avgFitTime += fitTime / noPartition;
       avgPredictTime += predictTime / noPartition;
-      avgTrainingSize += trainingData.rows() / noPartition;
-      avgValidationSize += validationData.rows() / noPartition;
+      avgTrainingSize += trainingData.size() / noPartition;
+      avgValidationSize += validationData.size() / noPartition;
     }
 
-    return new Result(ctx.getEvaluationContext().getMeasureCollection(), actual.build(),
-        predictions.build(), avgTrainingSize, avgValidationSize, avgFitTime, avgPredictTime);
+    return new Result<>(ctx.getEvaluationContext().getMeasureCollection(), actual, predictions,
+        avgTrainingSize, avgValidationSize, avgFitTime, avgPredictTime);
   }
 
   /**
@@ -152,7 +152,7 @@ public abstract class Validator<P extends Predictor> {
    * @param evaluationContext the evaluation context
    * @param fold the current partition number
    */
-  protected void evaluate(EvaluationContext<P> evaluationContext, int fold) {
+  protected void evaluate(EvaluationContext<In, Out, P> evaluationContext, int fold) {
     evaluationContext.getMeasureCollection().add("fold", fold);
     acceptEvaluators(evaluationContext);
   }
@@ -164,11 +164,12 @@ public abstract class Validator<P extends Predictor> {
    * @param x the input features
    * @param y the input label
    */
-  protected abstract P fit(Predictor.Learner<? extends P> learner, DataFrame x, Vector y);
+  protected abstract P fit(Predictor.Learner<In, Out, ? extends P> learner, Input<In> x,
+      Output<Out> y);
 
-  protected abstract void predict(MutableEvaluationContext<? extends P> ctx);
+  protected abstract void predict(MutableEvaluationContext<In, Out, ? extends P> ctx);
 
-  protected void acceptEvaluators(EvaluationContext<P> context) {
+  protected void acceptEvaluators(EvaluationContext<In, Out, P> context) {
     evaluators.forEach(evaluator -> evaluator.accept(context));
   }
 
@@ -178,7 +179,7 @@ public abstract class Validator<P extends Predictor> {
    * @param evaluator the evaluator
    * @return true if the validator contains the specified evaluator
    */
-  public final boolean contains(Evaluator<? super P> evaluator) {
+  public final boolean contains(Evaluator<In, Out, ? super P> evaluator) {
     return evaluators.contains(evaluator);
   }
 
@@ -188,7 +189,7 @@ public abstract class Validator<P extends Predictor> {
    * @param evaluator the evaluator to remove
    * @return boolean if the validator contained the specified evaluator
    */
-  public final boolean remove(Evaluator<? super P> evaluator) {
+  public final boolean remove(Evaluator<In, Out, ? super P> evaluator) {
     return evaluators.remove(evaluator);
   }
 
@@ -212,7 +213,7 @@ public abstract class Validator<P extends Predictor> {
    *
    * @param evaluator the evaluator
    */
-  public final void add(Evaluator<? super P> evaluator) {
+  public final void add(Evaluator<In, Out, ? super P> evaluator) {
     this.evaluators.add(evaluator);
   }
 
@@ -223,7 +224,7 @@ public abstract class Validator<P extends Predictor> {
    *
    * @return the partitioner used by this validator
    */
-  public final Partitioner getPartitioner() {
+  public final Partitioner<In, Out> getPartitioner() {
     return partitioner;
   }
 }

@@ -27,6 +27,8 @@ import java.util.Iterator;
 import org.briljantframework.Check;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 
 /**
  * Creates a k-fold partitioner
@@ -34,7 +36,7 @@ import org.briljantframework.data.vector.Vector;
  *
  * @author Isak Karlsson
  */
-public class FoldPartitioner implements Partitioner {
+public class FoldPartitioner<In, Out> implements Partitioner<In, Out> {
 
   private final int folds;
 
@@ -43,12 +45,12 @@ public class FoldPartitioner implements Partitioner {
   }
 
   @Override
-  public Collection<Partition> partition(DataFrame x, Vector y) {
-    Check.dimension(x.rows(), y.size());
-    return new AbstractCollection<Partition>() {
+  public Collection<Partition<In, Out>> partition(Input<In> x, Output<Out> y) {
+    Check.dimension(x.size(), y.size());
+    return new AbstractCollection<Partition<In, Out>>() {
       @Override
-      public Iterator<Partition> iterator() {
-        return new FoldIterator(x, y, folds);
+      public Iterator<Partition<In, Out>> iterator() {
+        return new FoldIterator<>(x, y, folds);
       }
 
       @Override

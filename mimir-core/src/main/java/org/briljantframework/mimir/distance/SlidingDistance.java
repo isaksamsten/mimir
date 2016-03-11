@@ -26,7 +26,7 @@ import org.briljantframework.mimir.shapelet.Shapelet;
 /**
  * @author Isak Karlsson
  */
-public class SlidingDistance implements Distance {
+public class SlidingDistance implements Distance<Vector> {
 
   private final Distance distanceMeasure;
 

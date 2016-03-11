@@ -25,7 +25,7 @@ import org.briljantframework.data.vector.Vector;
 /**
  * Created by isak on 10/03/15.
  */
-public class SimilarityDistance implements Distance {
+public class SimilarityDistance implements Distance<Vector> {
   private final Similarity similarity;
 
   public SimilarityDistance(Similarity similarity) {

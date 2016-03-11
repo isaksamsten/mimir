@@ -20,16 +20,17 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
+import java.util.List;
 import java.util.stream.IntStream;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface ClassifierNonconformity {
+public interface ClassifierNonconformity<In, Out> {
 
   /**
    * Estimate the nonconformity score for each example (record) in the given dataframe w.r.t. to the
@@ -39,11 +40,11 @@ public interface ClassifierNonconformity {
    * @param y the true class labels of the examples
    * @return a {@code [no examples]} double array of nonconformity scores
    */
-  default DoubleArray estimate(DataFrame x, Vector y) {
-    DoubleArray array = DoubleArray.zeros(x.rows());
+  default DoubleArray estimate(Input<? extends In> x, Output<? extends Out> y) {
+    DoubleArray array = DoubleArray.zeros(x.size());
     // Run in parallel
-    IntStream.range(0, x.rows()).parallel()
-        .forEach(i -> array.set(i, estimate(x.loc().getRecord(i), y.loc().get(i))));
+    IntStream.range(0, x.size()).parallel()
+        .forEach(i -> array.set(i, estimate(x.get(i), y.get(i))));
     return array;
   }
 
@@ -54,14 +55,14 @@ public interface ClassifierNonconformity {
    * @param label the given label
    * @return the nonconformity score of example w.r.t the
    */
-  double estimate(Vector example, Object label);
+  double estimate(In example, Out label);
 
   /**
    * Get the classes used by this nonconformity scorer
    * 
    * @return the classes
    */
-  Vector getClasses();
+  List<?> getClasses();
 
   /**
    * Learn a {@linkplain ClassifierNonconformity nonconformity score function} using the given data
@@ -69,7 +70,7 @@ public interface ClassifierNonconformity {
    *
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  interface Learner<T extends ClassifierNonconformity> {
+  interface Learner<In, Out, T extends ClassifierNonconformity<In, Out>> {
 
     /**
      * Fit a {@linkplain ClassifierNonconformity nonconformity score function} using the given data.
@@ -78,6 +79,6 @@ public interface ClassifierNonconformity {
      * @param y the input target
      * @return a nonconformity score function
      */
-    T fit(DataFrame x, Vector y);
+    T fit(Input<? extends In> x, Output<? extends Out> y);
   }
 }

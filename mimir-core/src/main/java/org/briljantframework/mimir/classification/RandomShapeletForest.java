@@ -29,9 +29,11 @@ import java.util.concurrent.Callable;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Inputs;
+import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.Outputs;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.classification.tree.Example;
 import org.briljantframework.mimir.distance.Distance;
@@ -46,13 +48,13 @@ import org.briljantframework.mimir.evaluation.EvaluationContext;
  *
  * @author Isak Karlsson
  */
-public class RandomShapeletForest extends Ensemble {
+public class RandomShapeletForest extends Ensemble<Vector> {
 
   private final DoubleArray lengthImportance;
   private final DoubleArray positionImportance;
 
-  private RandomShapeletForest(Vector classes, DoubleArray apriori,
-      List<? extends Classifier> members, DoubleArray lengthImportance,
+  private RandomShapeletForest(List<?> classes, DoubleArray apriori,
+      List<? extends Classifier<Vector>> members, DoubleArray lengthImportance,
       DoubleArray positionImportance, BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
     this.lengthImportance = lengthImportance;
@@ -82,7 +84,7 @@ public class RandomShapeletForest extends Ensemble {
     return depth / getEnsembleMembers().size();
   }
 
-  public static class Configurator implements Classifier.Configurator<Learner> {
+  public static class Configurator implements Classifier.Configurator<Vector, Object, Learner> {
 
     private final ShapeletTree.Configurator shapeletTree = new ShapeletTree.Configurator();
     private int size = 100;
@@ -143,15 +145,15 @@ public class RandomShapeletForest extends Ensemble {
   }
 
   public static class Evaluator implements
-      org.briljantframework.mimir.evaluation.Evaluator<RandomShapeletForest> {
+      org.briljantframework.mimir.evaluation.Evaluator<Vector, Object, RandomShapeletForest> {
 
     @Override
-    public void accept(EvaluationContext<? extends RandomShapeletForest> ctx) {
+    public void accept(EvaluationContext<Vector, Object, ? extends RandomShapeletForest> ctx) {
       ctx.getMeasureCollection().add("depth", ctx.getPredictor().getAverageDepth());
     }
   }
 
-  public static class Learner extends Ensemble.Learner<RandomShapeletForest> {
+  public static class Learner extends Ensemble.Learner<Vector, RandomShapeletForest> {
 
     private final ShapeletTree.Configurator configurator;
 
@@ -161,19 +163,21 @@ public class RandomShapeletForest extends Ensemble {
     }
 
     @Override
-    public RandomShapeletForest fit(DataFrame x, Vector y) {
-      Vector classes = Vectors.unique(y);
+    public RandomShapeletForest fit(Input<? extends Vector> x, Output<?> y) {
+      List<?> classes = Outputs.unique(y);
+
       ClassSet classSet = new ClassSet(y, classes);
       List<FitTask> tasks = new ArrayList<>();
-      BooleanArray oobIndicator = Arrays.booleanArray(x.rows(), size());
+      BooleanArray oobIndicator = Arrays.booleanArray(x.size(), size());
       for (int i = 0; i < size(); i++) {
         tasks.add(new FitTask(classSet, x, y, configurator, classes, oobIndicator.getColumn(i)));
       }
 
       try {
         List<ShapeletTree> models = Ensemble.Learner.execute(tasks);
-        DoubleArray lenSum = DoubleArray.zeros(x.columns());
-        DoubleArray posSum = DoubleArray.zeros(x.columns());
+        int features = Inputs.features(x);
+        DoubleArray lenSum = DoubleArray.zeros(features);
+        DoubleArray posSum = DoubleArray.zeros(features);
         for (ShapeletTree m : models) {
           lenSum.plusAssign(m.getLengthImportance());
           posSum.plusAssign(m.getPositionImportance());
@@ -208,10 +212,10 @@ public class RandomShapeletForest extends Ensemble {
         lenSum.apply(v -> v / size());
         posSum.apply(v -> v / size());
 
-        Map<Object, Integer> counts = Vectors.count(y);
+        Map<Object, Integer> counts = Outputs.valueCounts(y); // TODO: 3/11/16 might be wrong
         DoubleArray apriori = DoubleArray.zeros(classes.size());
         for (int i = 0; i < classes.size(); i++) {
-          apriori.set(i, counts.get(classes.loc().get(Object.class, i)) / (double) y.size());
+          apriori.set(i, counts.get(classes.get(i)) / (double) y.size());
         }
 
         return new RandomShapeletForest(classes, apriori, models, lenSum, posSum, oobIndicator);
@@ -230,15 +234,15 @@ public class RandomShapeletForest extends Ensemble {
     private static final class FitTask implements Callable<ShapeletTree> {
 
       private final ClassSet classSet;
-      private final DataFrame x;
-      private final Vector y;
-      private final Vector classes;
+      private final Input<? extends Vector> x;
+      private final Output<?> y;
+      private final List<?> classes;
       private final ShapeletTree.Configurator configurator;
       private final BooleanArray oobIndicator;
 
 
-      private FitTask(ClassSet classSet, DataFrame x, Vector y,
-          ShapeletTree.Configurator configurator, Vector classes, BooleanArray oobIndicator) {
+      private FitTask(ClassSet classSet, Input<? extends Vector> x, Output<?> y,
+          ShapeletTree.Configurator configurator, List<?> classes, BooleanArray oobIndicator) {
         this.classSet = classSet;
         this.x = x;
         this.y = y;
@@ -256,7 +260,7 @@ public class RandomShapeletForest extends Ensemble {
         return new ShapeletTree.Learner(low, high, configurator, sample, classes).fit(x, y);
       }
 
-//      public ClassSet sampleNoBootstrap(c)
+      // public ClassSet sampleNoBootstrap(c)
 
       public ClassSet sample(ClassSet classSet, Random random) {
         ClassSet inBag = new ClassSet(classSet.getDomain());

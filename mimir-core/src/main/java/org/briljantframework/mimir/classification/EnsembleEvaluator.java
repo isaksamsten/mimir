@@ -28,14 +28,12 @@ import org.briljantframework.mimir.evaluation.partition.Partition;
 /**
  * @author Isak Karlsson
  */
-public enum EnsembleEvaluator implements Evaluator<Ensemble> {
-
-  INSTANCE;
+public class EnsembleEvaluator<In> implements Evaluator<In, Object, Ensemble<In>> {
 
   @Override
-  public void accept(EvaluationContext<? extends Ensemble> ctx) {
-    Partition partition = ctx.getPartition();
-    EnsembleClassifierMeasure em = new EnsembleClassifierMeasure(ctx.getPredictor(),
+  public void accept(EvaluationContext<In, Object, ? extends Ensemble<In>> ctx) {
+    Partition<In, Object> partition = ctx.getPartition();
+    EnsembleClassifierMeasure em = new EnsembleClassifierMeasure<>(ctx.getPredictor(),
         partition.getTrainingData(), partition.getTrainingTarget(), partition.getValidationData(),
         partition.getValidationTarget());
 

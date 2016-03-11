@@ -20,28 +20,26 @@
  */
 package org.briljantframework.mimir.classification;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.IntStream;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.index.VectorLocationSetter;
 import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.ClassifierOutput;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.supervised.Characteristic;
 
 /**
  * Provides sane defaults for a predictor. Sub-classes only have to implement the
- * {@link #estimate(Vector)} method to have a sensible default predictor.
+ * {@link #estimate(In)} method to have a sensible default predictor.
  * 
  * <p/>
- * For a classifier unable to output probability estimates the {@linkplain #estimate(Vector)} should
+ * For a classifier unable to output probability estimates the {@linkplain #estimate(In)} should
  * return an array where the predicted class has probability {@code 1} and all other classes
  * probability {@code 0}. To improve performance, implementors of such predictors should consider
- * overriding the default {@linkplain #predict(Vector)} method.
+ * overriding the default {@linkplain #predict(In)} method.
  * 
  * <p/>
  * Predictors that produces probability estimates should make sure to include the
@@ -50,38 +48,35 @@ import org.briljantframework.mimir.supervised.Characteristic;
  *
  * @author Isak Karlsson
  */
-public abstract class AbstractClassifier implements Classifier {
+public abstract class AbstractClassifier<In> implements Classifier<In> {
 
-  private final Vector classes;
+  private final List<?> classes;
 
-  protected AbstractClassifier(Vector classes) {
+  protected AbstractClassifier(List<?> classes) {
     this.classes = Objects.requireNonNull(classes);
   }
 
   @Override
-  public final Vector getClasses() {
+  public final List<?> getClasses() {
     return classes;
   }
 
   @Override
-  public Vector predict(DataFrame x) {
-    // This is really only safe since Builder is initialized with a size i.e. filled with NA
-    Vector.Builder labels = Vector.Builder.withSize(Object.class, x.rows());
-    VectorLocationSetter loc = labels.loc();
-    IntStream.range(0, x.rows()).parallel().forEach(i -> loc.set(i, predict(x.loc().getRecord(i))));
-    return labels.build();
+  public Output<Object> predict(Input<? extends In> x) {
+    Object[] labels = new Object[x.size()];
+    IntStream.range(0, x.size()).parallel().forEach(i -> labels[i] = predict(x.get(i)));
+    return new ClassifierOutput(labels);
   }
 
   @Override
-  public Object predict(Vector record) {
-    return getClasses().loc().get(Object.class, Arrays.argmax(estimate(record)));
+  public Object predict(In input) {
+    return getClasses().get(Arrays.argmax(estimate(input)));
   }
 
   @Override
-  public DoubleArray estimate(DataFrame x) {
-    DoubleArray estimations = DoubleArray.zeros(x.rows(), getClasses().size());
-    IntStream.range(0, x.rows()).parallel()
-        .forEach(i -> estimations.setRow(i, estimate(x.loc().getRecord(i))));
+  public DoubleArray estimate(Input<? extends In> x) {
+    DoubleArray estimations = DoubleArray.zeros(x.size(), getClasses().size());
+    IntStream.range(0, x.size()).parallel().forEach(i -> estimations.setRow(i, estimate(x.get(i))));
     return estimations;
   }
 

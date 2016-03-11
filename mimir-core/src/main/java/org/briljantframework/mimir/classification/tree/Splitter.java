@@ -20,8 +20,9 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
-import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 
 /**
  * @author Isak Karlsson
@@ -33,7 +34,8 @@ public interface Splitter {
    *
    * @param classSet the examples
    * @param dataset the container
+   * @param target
    * @return the examples . split
    */
-  TreeSplit<ValueThreshold> find(ClassSet classSet, DataFrame dataset, Vector target);
+  TreeSplit<ValueThreshold> find(ClassSet classSet, Input<? extends Vector> dataset, Output<?> target);
 }

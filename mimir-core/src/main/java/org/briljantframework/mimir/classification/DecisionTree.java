@@ -21,35 +21,29 @@
 package org.briljantframework.mimir.classification;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
-import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Convert;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
-import org.briljantframework.mimir.classification.tree.ClassSet;
-import org.briljantframework.mimir.classification.tree.Splitter;
-import org.briljantframework.mimir.classification.tree.TreeBranch;
-import org.briljantframework.mimir.classification.tree.TreeClassifier;
-import org.briljantframework.mimir.classification.tree.TreeLeaf;
-import org.briljantframework.mimir.classification.tree.TreeNode;
-import org.briljantframework.mimir.classification.tree.TreeSplit;
-import org.briljantframework.mimir.classification.tree.TreeVisitor;
-import org.briljantframework.mimir.classification.tree.ValueThreshold;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.Outputs;
+import org.briljantframework.mimir.classification.tree.*;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class DecisionTree extends TreeClassifier<ValueThreshold> {
+public class DecisionTree extends TreeClassifier<Vector, ValueThreshold> {
 
   private final int depth;
 
-  private DecisionTree(Vector classes, TreeNode<ValueThreshold> node, int depth,
-      TreeVisitor<ValueThreshold> predictionVisitor) {
+  private DecisionTree(List<?> classes, TreeNode<Vector, ValueThreshold> node, int depth,
+      TreeVisitor<Vector, ValueThreshold> predictionVisitor) {
     super(classes, node, predictionVisitor);
     this.depth = depth;
   }
@@ -66,45 +60,45 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
   /**
    * @author Isak Karlsson
    */
-  public static class Learner implements Predictor.Learner<DecisionTree> {
+  public static class Learner implements Predictor.Learner<Vector, Object, DecisionTree> {
 
     protected final double mininumWeight = 1;
     protected final Splitter splitter;
 
     protected ClassSet classSet;
-    protected Vector classes = null;
+    protected List<?> classes = null;
 
     public Learner(Splitter splitter) {
       this(splitter, null, null);
     }
 
 
-    protected Learner(Splitter splitter, ClassSet classSet, Vector classes) {
+    protected Learner(Splitter splitter, ClassSet classSet, List<?> classes) {
       this.splitter = splitter;
       this.classSet = classSet;
       this.classes = classes;
     }
 
     @Override
-    public DecisionTree fit(DataFrame x, Vector y) {
+    public DecisionTree fit(Input<? extends Vector> in, Output<?> out) {
       ClassSet classSet = this.classSet;
-      Vector classes = this.classes != null ? this.classes : Vectors.unique(y);
+      List<?> classes = this.classes != null ? this.classes : Outputs.unique(out);
       if (classSet == null) {
-        classSet = new ClassSet(y, classes);
+        classSet = new ClassSet(out, classes);
       }
 
       Params p = new Params();
-      TreeNode<ValueThreshold> node = build(x, y, p, classSet);
+      TreeNode<Vector, ValueThreshold> node = build(in, out, p, classSet);
       return new DecisionTree(classes, node, p.depth, new SimplePredictionVisitor());
     }
 
-    protected TreeNode<ValueThreshold> build(DataFrame frame, Vector target, Params p,
-        ClassSet classSet) {
+    protected TreeNode<Vector, ValueThreshold> build(Input<? extends Vector> frame,
+        Output<?> target, Params p, ClassSet classSet) {
       return build(frame, target, p, classSet, 1);
     }
 
-    protected TreeNode<ValueThreshold> build(DataFrame frame, Vector target, Params p,
-        ClassSet classSet, int depth) {
+    protected TreeNode<Vector, ValueThreshold> build(Input<? extends Vector> frame,
+        Output<?> target, Params p, ClassSet classSet, int depth) {
 
       if (classSet.getTotalWeight() <= mininumWeight || classSet.getTargetCount() == 1) {
         p.depth = Math.max(p.depth, depth);
@@ -124,8 +118,8 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
           p.depth = Math.max(p.depth, depth);
           return TreeLeaf.fromExamples(left);
         } else {
-          TreeNode<ValueThreshold> leftNode = build(frame, target, p, left, depth + 1);
-          TreeNode<ValueThreshold> rightNode = build(frame, target, p, right, depth + 1);
+          TreeNode<Vector, ValueThreshold> leftNode = build(frame, target, p, left, depth + 1);
+          TreeNode<Vector, ValueThreshold> rightNode = build(frame, target, p, right, depth + 1);
           return new TreeBranch<>(leftNode, rightNode, classes, maxSplit.getThreshold(), 1);
         }
       }
@@ -137,17 +131,18 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
     }
   }
 
-  private static final class SimplePredictionVisitor implements TreeVisitor<ValueThreshold> {
+  private static final class SimplePredictionVisitor
+      implements TreeVisitor<Vector, ValueThreshold> {
 
     private static final int MISSING = 0, LEFT = -1, RIGHT = 1;
 
     @Override
-    public DoubleArray visitLeaf(TreeLeaf<ValueThreshold> leaf, Vector example) {
+    public DoubleArray visitLeaf(TreeLeaf<Vector, ValueThreshold> leaf, Vector example) {
       return leaf.getProbabilities();
     }
 
     @Override
-    public DoubleArray visitBranch(TreeBranch<ValueThreshold> node, Vector example) {
+    public DoubleArray visitBranch(TreeBranch<Vector, ValueThreshold> node, Vector example) {
       Object threshold = node.getThreshold().getValue();
       int axis = node.getThreshold().getAxis();
       int direction = MISSING;

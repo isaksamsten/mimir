@@ -20,56 +20,57 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
+import java.util.List;
 import java.util.Objects;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.classification.Ensemble;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson
  */
-public class BootstrapConformalClassifier extends AbstractConformalClassifier {
+public class BootstrapConformalClassifier<In> extends AbstractConformalClassifier<In> {
 
-  private final ClassifierCalibratorScores calibratorScores;
-  private final ClassifierNonconformity nonconformity;
+  private final ClassifierCalibratorScores<In> calibratorScores;
+  private final ClassifierNonconformity<In, Object> nonconformity;
 
-  protected BootstrapConformalClassifier(ClassifierCalibratorScores calibratorScores,
-      ClassifierNonconformity nonconformity, Vector classes) {
+  protected BootstrapConformalClassifier(ClassifierCalibratorScores<In> calibratorScores,
+      ClassifierNonconformity<In, Object> nonconformity, List<?> classes) {
     super(true, classes);
     this.calibratorScores = Objects.requireNonNull(calibratorScores);
     this.nonconformity = Objects.requireNonNull(nonconformity);
   }
 
   @Override
-  protected ClassifierNonconformity getClassifierNonconformity() {
+  protected ClassifierNonconformity<In, Object> getClassifierNonconformity() {
     return nonconformity;
   }
 
   @Override
-  protected ClassifierCalibratorScores getCalibrationScores() {
+  protected ClassifierCalibratorScores<In> getCalibrationScores() {
     return calibratorScores;
   }
 
-  public static class Learner implements Predictor.Learner<BootstrapConformalClassifier> {
+  public static class Learner<In>
+      implements Predictor.Learner<In, Object, BootstrapConformalClassifier<In>> {
 
-    private final ProbabilityEstimateNonconformity.Learner<? extends Ensemble> learner;
+    private final ProbabilityEstimateNonconformity.Learner<In, ? extends Ensemble<In>> learner;
 
-    public Learner(ProbabilityEstimateNonconformity.Learner<? extends Ensemble> learner) {
+    public Learner(ProbabilityEstimateNonconformity.Learner<In, ? extends Ensemble<In>> learner) {
       this.learner = learner;
     }
 
     @Override
-    public BootstrapConformalClassifier fit(DataFrame x, Vector y) {
-      ProbabilityEstimateNonconformity<? extends Ensemble> pen = learner.fit(x, y);
-      Ensemble ensemble = pen.getClassifier();
+    public BootstrapConformalClassifier<In> fit(Input<? extends In> x, Output<?> y) {
+      ProbabilityEstimateNonconformity<In, ? extends Ensemble<In>> pen = learner.fit(x, y);
+      Ensemble<In> ensemble = pen.getClassifier();
       DoubleArray estimate = Ensemble.oobEstimates(ensemble, x);
-      DoubleArray calibrationScores =
-          ProbabilityCostFunction.estimate(pen.getProbabilityCostFunction(), estimate, y,
-              ensemble.getClasses());
-      return new BootstrapConformalClassifier((example, label) -> calibrationScores, pen,
+      DoubleArray calibrationScores = ProbabilityCostFunction
+          .estimate(pen.getProbabilityCostFunction(), estimate, y, ensemble.getClasses());
+      return new BootstrapConformalClassifier<>((example, label) -> calibrationScores, pen,
           ensemble.getClasses());
     }
   }

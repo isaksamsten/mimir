@@ -25,8 +25,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.evaluation.Result;
 import org.briljantframework.mimir.evaluation.Validator;
 import org.briljantframework.mimir.supervised.Predictor;
@@ -34,26 +35,26 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson
  */
-public class GridSearch<P extends Predictor, O extends Predictor.Configurator<? extends Predictor.Learner<? extends P>>>
-    implements Tuner<P, O> {
+public class GridSearch<In, Out, P extends Predictor<In, Out>, O extends Predictor.Configurator<In, Out, ? extends Predictor.Learner<In, Out, ? extends P>>>
+    implements Tuner<In, Out, P, O> {
 
   private final List<UpdatableParameter<O>> updatables = new ArrayList<>();
   private final List<String> parameterNames = new ArrayList<>();
 
-  private Validator<P> validator;
+  private Validator<In, Out, P> validator;
 
-  public GridSearch(Validator<P> validator) {
+  public GridSearch(Validator<In, Out, P> validator) {
     this.validator = Objects.requireNonNull(validator, "validator required");
   }
 
-  private List<Configuration<P>> gridSearch(O builder, DataFrame x, Vector y) {
-    List<Configuration<P>> configurations = new ArrayList<>();
+  private List<Configuration<In, Out, P>> gridSearch(O builder, Input<In> x, Output<Out> y) {
+    List<Configuration<In, Out, P>> configurations = new ArrayList<>();
     gridSearch(builder, x, y, configurations, new Object[updatables.size()], 0);
     return configurations;
   }
 
-  private void gridSearch(O classifierBuilder, DataFrame x, Vector y,
-                          List<Configuration<P>> results, Object[] parameters, int n) {
+  private void gridSearch(O classifierBuilder, Input<In> x, Output<Out> y,
+      List<Configuration<In, Out, P>> results, Object[] parameters, int n) {
     if (n != updatables.size()) {
       ParameterUpdator<O> updater = updatables.get(n).updator();
       while (updater.hasUpdate()) {
@@ -62,8 +63,8 @@ public class GridSearch<P extends Predictor, O extends Predictor.Configurator<? 
         gridSearch(classifierBuilder, x, y, results, parameters, n + 1);
       }
     } else {
-      Predictor.Learner<? extends P> classifier = classifierBuilder.configure();
-      Result result = validator.test(classifier, x, y);
+      Predictor.Learner<In, Out, ? extends P> classifier = classifierBuilder.configure();
+      Result<Out> result = validator.test(classifier, x, y);
       System.out.println(Arrays.toString(parameters));
       Vector.Builder builder = Vector.Builder.of(Object.class);
       for (int i = 0; i < parameters.length; i++) {
@@ -74,13 +75,13 @@ public class GridSearch<P extends Predictor, O extends Predictor.Configurator<? 
   }
 
   @Override
-  public List<Configuration<P>> tune(O toOptimize, DataFrame x, Vector y) {
+  public List<Configuration<In, Out, P>> tune(O toOptimize, Input<In> x, Output<Out> y) {
     return gridSearch(toOptimize, x, y);
   }
 
 
   @Override
-  public Tuner<P, O> setParameter(String name, UpdatableParameter<O> updatable) {
+  public Tuner<In, Out, P, O> setParameter(String name, UpdatableParameter<O> updatable) {
     Objects.requireNonNull(name, "parameter name is required");
     Objects.requireNonNull(updatable, "updatable is required");
     int i = parameterNames.indexOf(name);
@@ -95,13 +96,13 @@ public class GridSearch<P extends Predictor, O extends Predictor.Configurator<? 
   }
 
   @Override
-  public Tuner<P, O> setValidator(Validator<P> validator) {
+  public Tuner<In, Out, P, O> setValidator(Validator<In, Out, P> validator) {
     this.validator = Objects.requireNonNull(validator, "validator required");
     return this;
   }
 
   @Override
-  public Validator<P> getValidator() {
+  public Validator<In, Out, P> getValidator() {
     return validator;
   }
 }

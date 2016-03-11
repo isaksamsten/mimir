@@ -22,13 +22,15 @@ package org.briljantframework.mimir.supervised;
 
 import java.util.Set;
 
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface Predictor {
+public interface Predictor<In, Out> {
+
+  Out predict(In in);
 
   /**
    * Return a vector of predictions for the rows in the given data frame.
@@ -36,7 +38,7 @@ public interface Predictor {
    * @param x the data frame
    * @return a vector of predictions
    */
-  Vector predict(DataFrame x);
+  Output<Out> predict(Input<? extends In> x);
 
   /**
    * Get a set of characteristics for this particular predictor
@@ -45,11 +47,11 @@ public interface Predictor {
    */
   Set<Characteristic> getCharacteristics();
 
-  interface Learner<P extends Predictor> {
-    P fit(DataFrame x, Vector y);
+  interface Learner<In, Out, P extends Predictor<In, Out>> {
+    P fit(Input<? extends In> in, Output<? extends Out> out);
   }
 
-  interface Configurator<C extends Learner<? extends Predictor>> {
+  interface Configurator<In, Out, C extends Learner<In, Out, ? extends Predictor<In, Out>>> {
     C configure();
   }
 }

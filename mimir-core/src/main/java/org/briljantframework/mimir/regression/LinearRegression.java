@@ -25,14 +25,18 @@ import java.util.Set;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Inputs;
+import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.Outputs;
 import org.briljantframework.mimir.supervised.Characteristic;
+import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public final class LinearRegression implements Regression {
+public final class LinearRegression implements Regression<Vector> {
 
   private final DoubleArray theta;
 
@@ -45,12 +49,12 @@ public final class LinearRegression implements Regression {
   }
 
   @Override
-  public double predict(Vector y) {
-    return 0;
+  public Double predict(Vector y) {
+    return 0.0;
   }
 
   @Override
-  public Vector predict(DataFrame x) {
+  public Output<Double> predict(Input<? extends Vector> x) {
     throw new UnsupportedOperationException();
   }
 
@@ -62,12 +66,16 @@ public final class LinearRegression implements Regression {
   /**
    * @author Isak Karlsson
    */
-  public static class Learner implements Regression.Learner<LinearRegression> {
+  public static class Learner implements Predictor.Learner<Vector, Double, LinearRegression> {
 
     public Learner() {}
 
     @Override
-    public LinearRegression fit(DoubleArray x, DoubleArray y) {
+    public LinearRegression fit(Input<? extends Vector> in, Output<? extends Double> out) {
+      DoubleArray x = Inputs.toDoubleArray(in);
+      DoubleArray y = Outputs.toDoubleArray(out);
+
+
       x = Arrays.vstack(Arrays.ones(x.rows()), x);
       DoubleArray inner =
           Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.eye(x.columns()).times(1));

@@ -27,7 +27,7 @@ import org.briljantframework.data.vector.Vector;
  * <p>
  * Created by Isak Karlsson on 01/09/14.
  */
-public class ManhattanDistance implements Distance {
+public class ManhattanDistance implements Distance<Vector> {
 
   private static Distance instance = new ManhattanDistance();
 

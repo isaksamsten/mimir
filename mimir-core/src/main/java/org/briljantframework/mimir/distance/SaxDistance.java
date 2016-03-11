@@ -31,7 +31,7 @@ import org.briljantframework.data.vector.Vector;
 /**
  * @author Isak Karlsson
  */
-public class SaxDistance implements Distance {
+public class SaxDistance implements Distance<Vector> {
 
   private final Map<String, Map<String, Double>> lookup;
   private final double n;

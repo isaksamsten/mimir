@@ -22,21 +22,21 @@ package org.briljantframework.mimir.classification.tune;
 
 import java.util.List;
 
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.evaluation.Validator;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson
  */
-public interface Tuner<P extends Predictor, O extends Predictor.Configurator<? extends Predictor.Learner<? extends P>>> {
+public interface Tuner<In, Out, P extends Predictor<In, Out>, O extends Predictor.Configurator<In, Out, ? extends Predictor.Learner<In, Out, ? extends P>>> {
 
-  Tuner<P, O> setParameter(String name, UpdatableParameter<O> updater);
+  Tuner<In, Out, P, O> setParameter(String name, UpdatableParameter<O> updater);
 
-  Tuner<P, O> setValidator(Validator<P> validator);
+  Tuner<In, Out, P, O> setValidator(Validator<In, Out, P> validator);
 
-  Validator<P> getValidator();
+  Validator<In, Out, P> getValidator();
 
   /**
    * Optimize the paramters of the specified classifier over the specified data frame and labels
@@ -44,6 +44,6 @@ public interface Tuner<P extends Predictor, O extends Predictor.Configurator<? e
    * @param toOptimize the classifier to optimize
    * @return the classifier configurations which has been optimized
    */
-  List<Configuration<P>> tune(O toOptimize, DataFrame x, Vector y);
+  List<Configuration<In, Out, P>> tune(O toOptimize, Input<In> x, Output<Out> y);
 
 }

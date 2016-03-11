@@ -24,19 +24,22 @@ import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.classification.AbstractClassifier;
 
+import java.util.List;
+
 /**
  * Represents a Tree based predictor. Uses a {@link TreeVisitor} to make predictions.
  * 
  * @author Isak Karlsson
  */
-public class TreeClassifier<T> extends AbstractClassifier {
+public class TreeClassifier<In, T> extends AbstractClassifier<In> {
 
-  private final TreeVisitor<T> predictionVisitor;
-  private final TreeNode<T> node;
+  private final TreeVisitor<In, T> predictionVisitor;
+  private final TreeNode<In, T> root;
 
-  protected TreeClassifier(Vector classes, TreeNode<T> node, TreeVisitor<T> predictionVisitor) {
+  protected TreeClassifier(List<?> classes, TreeNode<In, T> node,
+      TreeVisitor<In, T> predictionVisitor) {
     super(classes);
-    this.node = node;
+    this.root = node;
     this.predictionVisitor = predictionVisitor;
   }
 
@@ -45,12 +48,12 @@ public class TreeClassifier<T> extends AbstractClassifier {
    *
    * @return the node
    */
-  public TreeNode<T> getTree() {
-    return node;
+  public TreeNode<In, T> getTree() {
+    return root;
   }
 
   @Override
-  public DoubleArray estimate(Vector record) {
+  public DoubleArray estimate(In record) {
     return predictionVisitor.visit(getTree(), record);
   }
 }
