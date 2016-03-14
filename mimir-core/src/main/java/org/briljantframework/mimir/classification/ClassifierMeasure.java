@@ -52,7 +52,7 @@ public class ClassifierMeasure {
    * @param predicted the predicated values
    * @param truth the true values
    */
-  public ClassifierMeasure(Output<Object> predicted, Output<Object> truth) {
+  public ClassifierMeasure(Output<?> predicted, Output<?> truth) {
     this(predicted, truth, null, null);
   }
 
@@ -64,7 +64,7 @@ public class ClassifierMeasure {
    * @param scores an array of scores (one column per class; one row per instance)
    * @param classes a set of classes
    */
-  public ClassifierMeasure(Output<Object> predicted, Output<Object> truth, DoubleArray scores,
+  public ClassifierMeasure(Output<?> predicted, Output<?> truth, DoubleArray scores,
       List<?> classes) {
     Check.argument(predicted.size() == truth.size(),
         "The predicted and actual values must have the same size.");
@@ -160,15 +160,16 @@ public class ClassifierMeasure {
   }
 
   /**
-   * Returns the prediction accuracy, i.e., the fraction of correctly classified examples.
-   *
+   * Returns the prediction accuracy, i.e., the fraction of correctly classified examples. Object
+   * 
    * @param p the predicted values; shape {@code [no sample]}
    * @param t the actual values; shape {@code [no samples]}
    * @return the accuracy
    */
-  public static double accuracy(Output<Object> p, Output<Object> t) {
+  public static double accuracy(Output<?> p, Output<?> t) {
     Check.argument(p.size() == t.size(), PREDICTED_ACTUAL_SIZE);
     double accuracy = 0;
+
     int n = p.size();
     for (int i = 0; i < n; i++) {
       if (Is.equal(p.get(i), t.get(i))) {
@@ -189,10 +190,10 @@ public class ClassifierMeasure {
    *        {@code scores}
    * @return the brier score
    */
-  public static double brierScore(Output<Object> p, Output<Object> t, DoubleArray scores,
-      List<?> c) {
+  public static double brierScore(Output<?> p, Output<?> t, DoubleArray scores, List<?> c) {
     Check.argument(scores.isMatrix() && scores.columns() == c.size() && scores.rows() == p.size(),
         ILLEGAL_SCORE_MATRIX);
+
     Check.argument(p.size() == t.size(), PREDICTED_ACTUAL_SIZE);
 
     int n = p.size();
@@ -223,8 +224,8 @@ public class ClassifierMeasure {
    * @param c the classes
    * @return the weighted area under ROC curve
    */
-  public static double averageAreaUnderRocCurve(Output<Object> p, Output<Object> a,
-      DoubleArray score, List<?> c) {
+  public static double averageAreaUnderRocCurve(Output<?> p, Output<?> a, DoubleArray score,
+      List<?> c) {
     Vector auc = areaUnderRocCurve(p, a, score, c);
     Map<Object, Integer> dist = Outputs.valueCounts(a);
     double averageAuc = 0;
@@ -246,8 +247,7 @@ public class ClassifierMeasure {
    *        the j:th column of the score matrix
    * @return a vector of labels (from {@code c}) and its associated area under roc-curve
    */
-  public static Vector areaUnderRocCurve(Output<Object> p, Output<Object> t, DoubleArray score,
-      List<?> c) {
+  public static Vector areaUnderRocCurve(Output<?> p, Output<?> t, DoubleArray score, List<?> c) {
     Check.argument(score.isMatrix() && score.columns() == c.size() && score.rows() == p.size(),
         ILLEGAL_SCORE_MATRIX);
     Check.argument(p.size() == t.size(), PREDICTED_ACTUAL_SIZE);
@@ -260,8 +260,7 @@ public class ClassifierMeasure {
     return builder.build();
   }
 
-  private static double computeAuc(Output<Object> p, Output<Object> t, DoubleArray score,
-      Object label) {
+  private static double computeAuc(Output<?> p, Output<?> t, DoubleArray score, Object label) {
     double truePositives = 0, falsePositives = 0, positives = 0;
     PredictionProbability[] pairs = new PredictionProbability[p.size()];
     for (int i = 0; i < t.size(); i++) {

@@ -3,9 +3,17 @@ package org.briljantframework.mimir;
 import java.util.Collection;
 
 /**
- * Output variables
+ * An output represents a collection of indexed output variables.
+ * 
+ * @author Isak Karlsson
  */
 public interface Output<T> extends Collection<T> {
 
-  T get(int i);
+  /**
+   * Return the output variable at the specified index.
+   * 
+   * @param index the
+   * @return the output at the specified position
+   */
+  T get(int index);
 }

@@ -49,7 +49,7 @@ public class SplitPartitioner<In, Out> implements Partitioner<In, Out> {
   }
 
   @Override
-  public Collection<Partition<In, Out>> partition(Input<In> x, Output<Out> y) {
+  public Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y) {
     return new AbstractCollection<Partition<In, Out>>() {
       @Override
       public Iterator<Partition<In, Out>> iterator() {

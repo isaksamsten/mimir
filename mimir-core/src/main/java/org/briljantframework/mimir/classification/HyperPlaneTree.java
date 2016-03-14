@@ -28,19 +28,16 @@ import org.briljantframework.array.IntArray;
 import org.briljantframework.array.Range;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.data.vector.Vectors;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Inputs;
-import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.Outputs;
+import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.tree.*;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * Created by isak on 11/16/15.
  */
-public class HyperPlaneTree extends TreeClassifier<Vector, HyperPlaneThreshold> {
-  protected HyperPlaneTree(List<?> classes, TreeNode<Vector, HyperPlaneThreshold> node,
-      TreeVisitor<Vector, HyperPlaneThreshold> predictionVisitor) {
+public class HyperPlaneTree extends TreeClassifier<Instance, HyperPlaneThreshold> {
+  protected HyperPlaneTree(List<?> classes, TreeNode<Instance, HyperPlaneThreshold> node,
+      TreeVisitor<Instance, HyperPlaneThreshold> predictionVisitor) {
     super(classes, node, predictionVisitor);
   }
 
@@ -65,17 +62,19 @@ public class HyperPlaneTree extends TreeClassifier<Vector, HyperPlaneThreshold> 
     return features.get(Arrays.range(0, end));
   }
 
-  private static class HyperPlaneTreeVisitor implements TreeVisitor<Vector, HyperPlaneThreshold> {
+  private static class HyperPlaneTreeVisitor implements TreeVisitor<Instance, HyperPlaneThreshold> {
     @Override
-    public DoubleArray visitLeaf(TreeLeaf<Vector, HyperPlaneThreshold> leaf, Vector example) {
+    public DoubleArray visitLeaf(TreeLeaf<Instance, HyperPlaneThreshold> leaf, Instance example) {
       return leaf.getProbabilities();
     }
 
     @Override
-    public DoubleArray visitBranch(TreeBranch<Vector, HyperPlaneThreshold> node, Vector example) {
+    public DoubleArray visitBranch(TreeBranch<Instance, HyperPlaneThreshold> node,
+        Instance example) {
       DoubleArray row = DoubleArray.zeros(example.size() + 1);
       row.set(0, 1);
-      Vectors.copy(example, row.getView(Range.of(1, row.size())));
+      // TODO: 3/14/16 FIX ME!
+      // Vectors.copy(example, row.getView(Range.of(1, row.size())));
 
       row = take(row, node.getThreshold().getFeatures());
       DoubleArray weights = node.getThreshold().getWeights();
@@ -87,7 +86,7 @@ public class HyperPlaneTree extends TreeClassifier<Vector, HyperPlaneThreshold> 
     }
   }
 
-  public static class Learner implements Predictor.Learner<Vector, Object, HyperPlaneTree> {
+  public static class Learner implements Predictor.Learner<Instance, Object, HyperPlaneTree> {
     private final ClassSet set;
     private final Gain criterion = Gain.INFO;
     private final List<?> classes;
@@ -100,7 +99,7 @@ public class HyperPlaneTree extends TreeClassifier<Vector, HyperPlaneThreshold> 
     }
 
     @Override
-    public HyperPlaneTree fit(Input<? extends Vector> x, Output<?> y) {
+    public HyperPlaneTree fit(Input<? extends Instance> x, Output<?> y) {
       ClassSet set = this.set;
       List<?> classes = this.classes == null ? Outputs.unique(y) : this.classes;
       if (set == null) {
@@ -108,11 +107,12 @@ public class HyperPlaneTree extends TreeClassifier<Vector, HyperPlaneThreshold> 
       }
 
       DoubleArray array = Arrays.hstack(DoubleArray.ones(x.size(), 1), Inputs.toDoubleArray(x));
-      TreeNode<Vector, HyperPlaneThreshold> root = build(array, y, set);
+      TreeNode<Instance, HyperPlaneThreshold> root = build(array, y, set);
       return new HyperPlaneTree(classes, root, new HyperPlaneTreeVisitor());
     }
 
-    private TreeNode<Vector, HyperPlaneThreshold> build(DoubleArray x, Output<?> y, ClassSet set) {
+    private TreeNode<Instance, HyperPlaneThreshold> build(DoubleArray x, Output<?> y,
+        ClassSet set) {
       if (set.getTotalWeight() <= 1.0 || set.getTargetCount() == 1) {
         return TreeLeaf.fromExamples(set);
       }
@@ -127,8 +127,8 @@ public class HyperPlaneTree extends TreeClassifier<Vector, HyperPlaneThreshold> 
         } else if (right.isEmpty()) {
           return TreeLeaf.fromExamples(left);
         } else {
-          TreeNode<Vector, HyperPlaneThreshold> leftNode = build(x, y, left);
-          TreeNode<Vector, HyperPlaneThreshold> rightNode = build(x, y, right);
+          TreeNode<Instance, HyperPlaneThreshold> leftNode = build(x, y, left);
+          TreeNode<Instance, HyperPlaneThreshold> rightNode = build(x, y, right);
           return new TreeBranch<>(leftNode, rightNode, classes, maxSplit.getThreshold(), 1);
         }
       }

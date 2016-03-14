@@ -72,6 +72,7 @@ public class NearestNeighbours<In> extends AbstractClassifier<In> {
   @Override
   public DoubleArray estimate(In record) {
     // Only 1nn
+    // TODO: 3/14/16 fix k
     Object cls = null;
     double bestSoFar = Double.POSITIVE_INFINITY;
     for (int i = 0; i < x.size(); i++) {

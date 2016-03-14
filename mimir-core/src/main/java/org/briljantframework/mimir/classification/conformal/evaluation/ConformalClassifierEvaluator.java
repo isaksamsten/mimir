@@ -20,16 +20,15 @@
  */
 package org.briljantframework.mimir.classification.conformal.evaluation;
 
+import java.util.List;
+
 import org.apache.commons.math3.util.Precision;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.Evaluator;
 import org.briljantframework.mimir.evaluation.MeasureCollection;
-
-import java.util.List;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -61,7 +60,7 @@ public class ConformalClassifierEvaluator<In>
   }
 
   @Override
-  public void accept(EvaluationContext<In, Object, ? extends ConformalClassifier<In>> ctx) {
+  public void accept(EvaluationContext<? extends In, ?, ? extends ConformalClassifier<In>> ctx) {
     Output<?> truth = ctx.getPartition().getValidationTarget();
     List<?> classes = ctx.getPredictor().getClasses();
     DoubleArray scores = ctx.getEstimates();

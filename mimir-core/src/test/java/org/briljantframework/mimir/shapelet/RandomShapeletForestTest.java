@@ -39,10 +39,7 @@ import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.dataset.io.MatlabDatasetReader;
 import org.briljantframework.dataset.io.SequenceDatasetReader;
-import org.briljantframework.mimir.ArrayInput;
-import org.briljantframework.mimir.ArrayOutput;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.classification.RandomForest;
 import org.briljantframework.mimir.classification.RandomShapeletForest;
@@ -438,7 +435,7 @@ public class RandomShapeletForestTest {
     int min = freq.values().stream().min(Integer::min).get();
     System.out.println(freq + " => " + ((double) min / sum));
     //
-    Predictor.Learner<Vector, Object, ? extends Classifier<Vector>> forest =
+    Predictor.Learner<Instance, Object, ? extends Classifier<Instance>> forest =
         new RandomForest.Configurator(100).setMaximumFeatures(100).configure();
     // new RandomShapeletForest.Configurator(100).setF.configure();
     // new RandomShapeletForest.Configurator(25).setDistance(
@@ -446,10 +443,9 @@ public class RandomShapeletForestTest {
     // new NearestNeighbours.Learner(1, new SimilarityDistance(
     // new SmithWatermanSimilarity(1, 0, 0)));
 
-    Validator<Vector, Object, Classifier<Vector>> cv = crossValidator(10);
+    Validator<Instance, Object, Classifier<Instance>> cv = crossValidator(10);
     cv.add(Evaluator.foldOutput(fold -> System.out.printf("Completed fold %d\n", fold)));
-    Result<?> result =
-        cv.test(forest, new ArrayInput<>(x.getRecords()), new ArrayOutput<>(y.toList()));
+    Result<?> result = cv.test(forest, Inputs.newInput(x), Outputs.newOutput(y));
     System.out.println(result.getMeasures().mean());
     // System.out.println(result.getAverageConfusionMatrix().getPrecision("ade"));
     // System.out.println(result.getAverageConfusionMatrix().getRecall("ade"));

@@ -31,7 +31,6 @@ import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Inputs;
 import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.Outputs;
 import org.briljantframework.mimir.classification.tree.ClassSet;
@@ -113,12 +112,12 @@ public class RandomShapeletForest extends Ensemble<Vector> {
       return this;
     }
 
-    public Configurator setDistance(Distance distance) {
+    public Configurator setDistance(Distance<Vector> distance) {
       shapeletTree.setDistance(distance);
       return this;
     }
 
-    public Configurator setCategoricDistance(Distance categoricDistance) {
+    public Configurator setCategoricDistance(Distance<Vector> categoricDistance) {
       shapeletTree.setCategoricDistance(categoricDistance);
       return this;
     }
@@ -148,7 +147,7 @@ public class RandomShapeletForest extends Ensemble<Vector> {
       org.briljantframework.mimir.evaluation.Evaluator<Vector, Object, RandomShapeletForest> {
 
     @Override
-    public void accept(EvaluationContext<Vector, Object, ? extends RandomShapeletForest> ctx) {
+    public void accept(EvaluationContext<? extends Vector, ?, ? extends RandomShapeletForest> ctx) {
       ctx.getMeasureCollection().add("depth", ctx.getPredictor().getAverageDepth());
     }
   }
@@ -175,13 +174,14 @@ public class RandomShapeletForest extends Ensemble<Vector> {
 
       try {
         List<ShapeletTree> models = Ensemble.Learner.execute(tasks);
-        int features = Inputs.features(x);
-        DoubleArray lenSum = DoubleArray.zeros(features);
-        DoubleArray posSum = DoubleArray.zeros(features);
-        for (ShapeletTree m : models) {
-          lenSum.plusAssign(m.getLengthImportance());
-          posSum.plusAssign(m.getPositionImportance());
-        }
+        // TODO: 3/14/16 add computation of importances
+        // int features = Inputs.features(x);
+        // DoubleArray lenSum = DoubleArray.zeros(features);
+        // DoubleArray posSum = DoubleArray.zeros(features);
+        // for (ShapeletTree m : models) {
+        // lenSum.plusAssign(m.getLengthImportance());
+        // posSum.plusAssign(m.getPositionImportance());
+        // }
 
         // // ShapeletTree.ShapeStore store = new ShapeletTree.ShapeStore();
         // // ShapeletTree.ShapeStore store1 = models.get(0).getStore();
@@ -209,8 +209,8 @@ public class RandomShapeletForest extends Ensemble<Vector> {
         // System.out.println(store1.shapes.stream().map(Vector::size).collect(Collectors.toList()));
         // System.out.println(store1.counts);
         // System.out.println(store1.scores.size());
-        lenSum.apply(v -> v / size());
-        posSum.apply(v -> v / size());
+        // lenSum.apply(v -> v / size());
+        // posSum.apply(v -> v / size());
 
         Map<Object, Integer> counts = Outputs.valueCounts(y); // TODO: 3/11/16 might be wrong
         DoubleArray apriori = DoubleArray.zeros(classes.size());
@@ -218,7 +218,7 @@ public class RandomShapeletForest extends Ensemble<Vector> {
           apriori.set(i, counts.get(classes.get(i)) / (double) y.size());
         }
 
-        return new RandomShapeletForest(classes, apriori, models, lenSum, posSum, oobIndicator);
+        return new RandomShapeletForest(classes, apriori, models, null, null, oobIndicator);
       } catch (Exception e) {
         e.printStackTrace();
         throw new RuntimeException(e);

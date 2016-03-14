@@ -7,7 +7,28 @@ import java.util.Collection;
  */
 public interface Input<T> extends Collection<T> {
 
-  InputProperties getProperties();
+  /**
+   * Returns a collection of properties for the given input.
+   * 
+   * @return the collection of properties for the input.
+   */
+  Properties getProperties();
 
-  T get(int row);
+  /**
+   * Returns the specified property.
+   * 
+   * @param property the property
+   * @return the value for the given property
+   */
+  default <E> E getProperty(Property<E> property) {
+    return getProperties().get(property);
+  }
+
+  /**
+   * Returns the input data at the specified index.
+   * 
+   * @param index the index
+   * @return the input data at the specified index.
+   */
+  T get(int index);
 }

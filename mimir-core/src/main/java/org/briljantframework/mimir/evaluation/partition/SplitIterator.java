@@ -35,11 +35,11 @@ import org.briljantframework.mimir.ArrayOutput;
 public class SplitIterator<In, Out> implements Iterator<Partition<In, Out>> {
 
   private boolean has = true;
-  private final Input<In> x;
-  private final Output<Out> y;
+  private final Input<? extends In> x;
+  private final Output<? extends Out> y;
   private final double splitFraction;
 
-  public SplitIterator(Input<In> x, Output<Out> y, double splitFraction) {
+  public SplitIterator(Input<? extends In> x, Output<? extends Out> y, double splitFraction) {
     Check.inRange(splitFraction, 0, 1);
     this.splitFraction = splitFraction;
     this.x = x;

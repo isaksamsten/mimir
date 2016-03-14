@@ -25,11 +25,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.briljantframework.mimir.ArrayOutput;
 import org.briljantframework.mimir.Input;
 import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.ArrayOutput;
 import org.briljantframework.mimir.classification.Classifier;
-import org.briljantframework.mimir.evaluation.partition.*;
+import org.briljantframework.mimir.evaluation.partition.FoldPartitioner;
+import org.briljantframework.mimir.evaluation.partition.Partition;
+import org.briljantframework.mimir.evaluation.partition.Partitioner;
+import org.briljantframework.mimir.evaluation.partition.SplitPartitioner;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
@@ -38,25 +41,22 @@ import org.briljantframework.mimir.supervised.Predictor;
  * {@link Partitioner} into {@linkplain Partition partitions}. Finally, the validator can also be
  * given a set of {@linkplain Evaluator evaluators} responsible for measuring the performance of the
  * given predictor.
- * <p>
- * <p>
  * 
  * <pre>
  * // We use 10 train and test partitions
- * Partitioner partitioner = new FoldPartitioner(10);
+ * ClassifierValidator<Instance, Classifier<Instance>> validator =
+ *     ClassifierValidator.crossValidator(10);
  * LogisticRegression.Learner learner = new LogisticRegression.Learner();
  * DataFrame iris = Datasets.loadIris();
  * DataFrame x = iris.drop(&quot;Class&quot;).apply(v -&gt; v.set(v.where(Is::NA), v.mean()));
  * Vector y = iris.get(&quot;Class&quot;);
  * 
- * Result&lt;Classifier&gt; result = validator.test(learner, x, y);
+ * Result&lt;?&gt; result = validator.test(learner, Inputs.newInput(x), Outputs.newOutput(y));
  * DataFrame measures = result.getMeasures();
  * measures.mean();
  * </pre>
- * <p>
+ * 
  * produces, something like:
- * <p>
- * <p>
  * 
  * <pre>
  * ACCURACY         0.96
@@ -70,16 +70,10 @@ import org.briljantframework.mimir.supervised.Predictor;
  * type: double
  * </pre>
  * <p>
- * The above specified validator can be used to acceptEvaluators any classifier (i.e. any class
- * implementing the {@link Classifier} interface).
+ * The above specified validator can be used to evaluate any classifier (i.e. any class implementing
+ * the {@link Classifier} interface).
  */
 public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
-
-  /**
-   * The leave one out partitioner
-   */
-  protected static final LeaveOneOutPartitioner<?, ?> LOO_PARTITIONER =
-      new LeaveOneOutPartitioner<>();
 
   private final Set<Evaluator<In, Out, ? super P>> evaluators;
   private final Partitioner<In, Out> partitioner;
@@ -102,8 +96,8 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
    * @param y the target to used during evaluation
    * @return a result
    */
-  public Result<Out> test(Predictor.Learner<In, Out, ? extends P> learner, Input<In> x,
-      Output<Out> y) {
+  public Result<Out> test(Predictor.Learner<In, Out, ? extends P> learner, Input<? extends In> x,
+      Output<? extends Out> y) {
     Collection<Partition<In, Out>> partitions = getPartitioner().partition(x, y);
     MutableEvaluationContext<In, Out, P> ctx = new MutableEvaluationContext<>();
     Output<Out> actual = new ArrayOutput<>();

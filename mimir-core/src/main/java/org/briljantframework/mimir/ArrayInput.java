@@ -5,21 +5,24 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * Created by isak on 3/10/16.
+ * @author Isak Karlsson
  */
 public class ArrayInput<T> extends AbstractInput<T> {
 
+  private final Properties properties;
   private final ArrayList<T> inputs = new ArrayList<>();
 
-
-  public ArrayInput() {}
+  public ArrayInput() {
+    this.properties = new Properties();
+  }
 
   public ArrayInput(Collection<? extends T> collection) {
+    this();
     inputs.addAll(collection);
   }
 
-  public ArrayInput(InputProperties properties) {
-    super(new InputProperties(properties));
+  public ArrayInput(Properties properties) {
+    this.properties = new Properties(properties);
   }
 
   public ArrayInput(Input<? extends T> input) {
@@ -48,7 +51,12 @@ public class ArrayInput<T> extends AbstractInput<T> {
   }
 
   @Override
-  public T get(int row) {
-    return inputs.get(row);
+  public Properties getProperties() {
+    return properties;
+  }
+
+  @Override
+  public T get(int index) {
+    return inputs.get(index);
   }
 }

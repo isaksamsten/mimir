@@ -27,10 +27,7 @@ import java.util.Set;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.vector.Convert;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.Outputs;
+import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.tree.*;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;
@@ -38,12 +35,12 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class DecisionTree extends TreeClassifier<Vector, ValueThreshold> {
+public class DecisionTree extends TreeClassifier<Instance, ValueThreshold> {
 
   private final int depth;
 
-  private DecisionTree(List<?> classes, TreeNode<Vector, ValueThreshold> node, int depth,
-      TreeVisitor<Vector, ValueThreshold> predictionVisitor) {
+  private DecisionTree(List<?> classes, TreeNode<Instance, ValueThreshold> node, int depth,
+      TreeVisitor<Instance, ValueThreshold> predictionVisitor) {
     super(classes, node, predictionVisitor);
     this.depth = depth;
   }
@@ -60,7 +57,7 @@ public class DecisionTree extends TreeClassifier<Vector, ValueThreshold> {
   /**
    * @author Isak Karlsson
    */
-  public static class Learner implements Predictor.Learner<Vector, Object, DecisionTree> {
+  public static class Learner implements Predictor.Learner<Instance, Object, DecisionTree> {
 
     protected final double mininumWeight = 1;
     protected final Splitter splitter;
@@ -80,7 +77,8 @@ public class DecisionTree extends TreeClassifier<Vector, ValueThreshold> {
     }
 
     @Override
-    public DecisionTree fit(Input<? extends Vector> in, Output<?> out) {
+    public DecisionTree fit(Input<? extends Instance> in, Output<?> out) {
+      PropertyPreconditions.checkParameters(getRequiredInputProperties(), in);
       ClassSet classSet = this.classSet;
       List<?> classes = this.classes != null ? this.classes : Outputs.unique(out);
       if (classSet == null) {
@@ -88,16 +86,16 @@ public class DecisionTree extends TreeClassifier<Vector, ValueThreshold> {
       }
 
       Params p = new Params();
-      TreeNode<Vector, ValueThreshold> node = build(in, out, p, classSet);
+      TreeNode<Instance, ValueThreshold> node = build(in, out, p, classSet);
       return new DecisionTree(classes, node, p.depth, new SimplePredictionVisitor());
     }
 
-    protected TreeNode<Vector, ValueThreshold> build(Input<? extends Vector> frame,
+    protected TreeNode<Instance, ValueThreshold> build(Input<? extends Instance> frame,
         Output<?> target, Params p, ClassSet classSet) {
       return build(frame, target, p, classSet, 1);
     }
 
-    protected TreeNode<Vector, ValueThreshold> build(Input<? extends Vector> frame,
+    protected TreeNode<Instance, ValueThreshold> build(Input<? extends Instance> frame,
         Output<?> target, Params p, ClassSet classSet, int depth) {
 
       if (classSet.getTotalWeight() <= mininumWeight || classSet.getTargetCount() == 1) {
@@ -118,8 +116,8 @@ public class DecisionTree extends TreeClassifier<Vector, ValueThreshold> {
           p.depth = Math.max(p.depth, depth);
           return TreeLeaf.fromExamples(left);
         } else {
-          TreeNode<Vector, ValueThreshold> leftNode = build(frame, target, p, left, depth + 1);
-          TreeNode<Vector, ValueThreshold> rightNode = build(frame, target, p, right, depth + 1);
+          TreeNode<Instance, ValueThreshold> leftNode = build(frame, target, p, left, depth + 1);
+          TreeNode<Instance, ValueThreshold> rightNode = build(frame, target, p, right, depth + 1);
           return new TreeBranch<>(leftNode, rightNode, classes, maxSplit.getThreshold(), 1);
         }
       }
@@ -132,29 +130,29 @@ public class DecisionTree extends TreeClassifier<Vector, ValueThreshold> {
   }
 
   private static final class SimplePredictionVisitor
-      implements TreeVisitor<Vector, ValueThreshold> {
+      implements TreeVisitor<Instance, ValueThreshold> {
 
     private static final int MISSING = 0, LEFT = -1, RIGHT = 1;
 
     @Override
-    public DoubleArray visitLeaf(TreeLeaf<Vector, ValueThreshold> leaf, Vector example) {
+    public DoubleArray visitLeaf(TreeLeaf<Instance, ValueThreshold> leaf, Instance example) {
       return leaf.getProbabilities();
     }
 
     @Override
-    public DoubleArray visitBranch(TreeBranch<Vector, ValueThreshold> node, Vector example) {
+    public DoubleArray visitBranch(TreeBranch<Instance, ValueThreshold> node, Instance example) {
       Object threshold = node.getThreshold().getValue();
       int axis = node.getThreshold().getAxis();
       int direction = MISSING;
-      if (!example.loc().isNA(axis)) {
+      if (!Is.NA(example.get(axis))) {
         if (Is.nominal(threshold)) {
-          direction = example.loc().get(Object.class, axis).equals(threshold) ? LEFT : RIGHT;
+          direction = Is.equal(example.get(axis), threshold) ? LEFT : RIGHT;
         } else {
           // note: Is.nominal return true for any non-number and Number is always comparable
           // @SuppressWarnings("unchecked")
           // Comparable<Object> leftComparable = example.loc().get(Comparable.class, axis);
           // direction = leftComparable.compareTo(threshold) <= 0 ? LEFT : RIGHT;
-          double left = example.loc().getAsDouble(axis);
+          double left = example.getAsDouble(axis);
           double right = Convert.to(Double.class, threshold);
           direction = Double.compare(left, right) <= 0 ? LEFT : RIGHT;
         }

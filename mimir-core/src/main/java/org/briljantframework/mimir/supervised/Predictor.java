@@ -20,16 +20,25 @@
  */
 package org.briljantframework.mimir.supervised;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 
 import org.briljantframework.mimir.Input;
 import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.Property;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public interface Predictor<In, Out> {
 
+  /**
+   * Predict the output given the input.
+   *
+   * @param in the input
+   * @return the predicted output
+   */
   Out predict(In in);
 
   /**
@@ -47,8 +56,28 @@ public interface Predictor<In, Out> {
    */
   Set<Characteristic> getCharacteristics();
 
+  /**
+   * A Learner represents a generator predictors.
+   */
   interface Learner<In, Out, P extends Predictor<In, Out>> {
+
+    /**
+     * Fit a predictor to the given input data.
+     * 
+     * @param in the input data
+     * @param out the output target
+     * @return a predictor for predicting the output value of an input
+     */
     P fit(Input<? extends In> in, Output<? extends Out> out);
+
+    /**
+     * Reports the requirements imposed on the input.
+     * 
+     * @return a collection of input properties.
+     */
+    default Collection<Property<?>> getRequiredInputProperties() {
+      return Collections.emptySet();
+    }
   }
 
   interface Configurator<In, Out, C extends Learner<In, Out, ? extends Predictor<In, Out>>> {

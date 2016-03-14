@@ -71,8 +71,8 @@ public class Ensemble<In> extends AbstractClassifier<In> {
 
   /**
    * Shape = {@code [no training samples, no members]}, if element e<sup>i,j</sup> is {@code true}
-   * the i:th training sample is out of the j:th members training sample.
-   *
+   * the i:th training sample is out of the j:th members training sample. Vector
+   * 
    * @return the out of bag indicator matrix
    */
   public BooleanArray getOobIndicator() {

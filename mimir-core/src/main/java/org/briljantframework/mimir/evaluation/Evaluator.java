@@ -35,7 +35,8 @@ public interface Evaluator<In, Out, P extends Predictor<In, Out>> {
       private int fold = 0;
 
       @Override
-      public void accept(EvaluationContext<In, Out, ? extends Predictor<In, Out>> ctx) {
+      public void accept(
+          EvaluationContext<? extends In, ? extends Out, ? extends Predictor<In, Out>> ctx) {
         consumer.accept(fold++);
       }
     };
@@ -46,5 +47,5 @@ public interface Evaluator<In, Out, P extends Predictor<In, Out>> {
    *
    * @param ctx the evaluation context
    */
-  void accept(EvaluationContext<In, Out, ? extends P> ctx);
+  void accept(EvaluationContext<? extends In, ? extends Out, ? extends P> ctx);
 }

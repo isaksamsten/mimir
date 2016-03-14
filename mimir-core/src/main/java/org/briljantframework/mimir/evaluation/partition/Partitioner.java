@@ -44,5 +44,5 @@ public interface Partitioner<In, Out> {
    * @param y the target
    * @return an iterable representing over the partitions
    */
-  Collection<Partition<In, Out>> partition(Input<In> x, Output<Out> y);
+  Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y);
 }

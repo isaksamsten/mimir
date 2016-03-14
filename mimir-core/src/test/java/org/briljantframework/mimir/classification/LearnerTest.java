@@ -22,7 +22,6 @@ package org.briljantframework.mimir.classification;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
@@ -34,10 +33,10 @@ import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.DatasetReader;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.dataset.io.MatlabDatasetReader;
-import org.briljantframework.mimir.ArrayInput;
 import org.briljantframework.mimir.ArrayOutput;
-import org.briljantframework.mimir.DataFrameInput;
-import org.briljantframework.mimir.Dataset;
+import org.briljantframework.mimir.Inputs;
+import org.briljantframework.mimir.Instance;
+import org.briljantframework.mimir.Outputs;
 import org.briljantframework.mimir.classification.conformal.ClassifierCalibrator;
 import org.briljantframework.mimir.classification.conformal.InductiveConformalClassifier;
 import org.briljantframework.mimir.classification.conformal.ProbabilityCostFunction;
@@ -45,7 +44,6 @@ import org.briljantframework.mimir.classification.conformal.ProbabilityEstimateN
 import org.briljantframework.mimir.classification.conformal.evaluation.ConformalClassifierValidator;
 import org.briljantframework.mimir.evaluation.Result;
 import org.briljantframework.mimir.evaluation.Validator;
-import org.briljantframework.mimir.supervised.Predictor;
 import org.junit.Test;
 
 /**
@@ -93,37 +91,32 @@ public class LearnerTest {
 
 
     // Create a classifier learner to use for estimating the non-conformity scores
-    Predictor.Learner<Vector, Object, ? extends Classifier<Vector>> classifier =
-        new RandomForest.Learner(100);
+    RandomForest.Learner classifier = new RandomForest.Learner(100);
+    ClassifierValidator<Instance, RandomForest> rfv = ClassifierValidator.crossValidator(10);
 
-    ClassifierValidator<Vector, RandomForest> rfv = ClassifierValidator.crossValidator(10);
-
-    System.out.println(rfv
-        .test(new RandomForest.Learner(100), new DataFrameInput(x), new ArrayOutput<>(y.toList()))
-        .getMeasures().mean());
+    System.out.println(
+        rfv.test(new RandomForest.Learner(100), Inputs.newInput(x), new ArrayOutput<>(y.toList()))
+            .getMeasures().mean());
 
     // System.out.println(ClassifierValidator.crossValidator(10).test(classifier, x,
     // y).getMeasures()
     // .mean());
     // Initialize the non-conformity learner using the margin as cost function
-    ProbabilityEstimateNonconformity.Learner<Vector, Classifier<Vector>> nc =
+    ProbabilityEstimateNonconformity.Learner<Instance, Classifier<Instance>> nc =
         new ProbabilityEstimateNonconformity.Learner<>(classifier,
             ProbabilityCostFunction.margin());
 
     // Initialize an inductive conformal classifier using the non-conformity learner
-    InductiveConformalClassifier.Learner<Vector> cp = new InductiveConformalClassifier.Learner<>(nc,
-        ClassifierCalibrator.classConditional(), false);
+    InductiveConformalClassifier.Learner<Instance> cp = new InductiveConformalClassifier.Learner<>(
+        nc, ClassifierCalibrator.classConditional(), false);
 
     // Create a validator for evaluating the validity and efficiency of the conformal classifier. In
     // this case, we evaluate the classifier using 10-fold cross-validation and 9 significance
     // levels between 0.1 and 0.1
-    Validator<Vector, Object, InductiveConformalClassifier<Vector>> validator =
+    Validator<Instance, Object, InductiveConformalClassifier<Instance>> validator =
         ConformalClassifierValidator.crossValidator(10, 0.25, DoubleArray.range(0.05, 1.01, 0.05));
 
-    ArrayInput<Vector> x1 = new ArrayInput<>(x.getRecords());
-    x1.getProperties().set(Dataset.TYPES,
-        Arrays.asList(Number.class, Number.class, Number.class, Number.class));
-    Result<?> result = validator.test(cp, x1, new ArrayOutput<>(y.toList()));
+    Result<?> result = validator.test(cp, Inputs.newInput(x), Outputs.newOutput(y));
 
     // Get the measures
     DataFrame measures = result.getMeasures();

@@ -245,7 +245,11 @@ public class ShapeletTree extends TreeClassifier<Vector, ShapeletThreshold> {
         classSet = new ClassSet(y, classes);
       }
 
-      int features = Inputs.features(x);
+      int features = 0;
+      for (int i = 0; i < x.size(); i++) {
+        Vector vector = x.get(i);
+        features = Math.max(vector.size(), features);
+      }
       Params params = new Params();
       params.features = features;
       params.noExamples = classSet.getTotalWeight();

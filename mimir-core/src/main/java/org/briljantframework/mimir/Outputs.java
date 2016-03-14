@@ -3,6 +3,7 @@ package org.briljantframework.mimir;
 import java.util.*;
 
 import org.briljantframework.array.DoubleArray;
+import org.briljantframework.data.vector.Vector;
 
 /**
  * Utilities for output variables
@@ -11,10 +12,59 @@ public final class Outputs {
 
   private Outputs() {}
 
+  public static <T> Output<T> unmodifiableOutput(Output<? extends T> output) {
+    return new AbstractOutput<T>() {
+      @Override
+      public int size() {
+        return output.size();
+      }
+
+      @Override
+      public T get(int index) {
+        return output.get(index);
+      }
+    };
+  }
+
   @SafeVarargs
   @SuppressWarnings("varargs")
-  public static <T> Output<T> asOutput(T... values) {
+  public static <T> Output<T> newOutput(T... values) {
     return new UnmodifiableArrayOutput<>(values);
+  }
+
+  public static <T> Output<T> newOutput(Class<T> cls, Vector vector) {
+    Objects.requireNonNull(vector);
+    Objects.requireNonNull(cls, "illegal class");
+    return new AbstractOutput<T>() {
+      @Override
+      public int size() {
+        return vector.size();
+      }
+
+      @Override
+      public T get(int index) {
+        return vector.loc().get(cls, index);
+      }
+    };
+  }
+
+  public static Output<?> newOutput(Vector vector) {
+    return newOutput(Object.class, vector);
+  }
+
+  public static Output<Double> newDoubleOutput(Vector vector) {
+    Objects.requireNonNull(vector);
+    return new AbstractOutput<Double>() {
+      @Override
+      public int size() {
+        return vector.size();
+      }
+
+      @Override
+      public Double get(int index) {
+        return vector.loc().getAsDouble(index);
+      }
+    };
   }
 
   public static <T> List<T> unique(Output<? extends T> output) {
@@ -70,8 +120,8 @@ public final class Outputs {
     }
 
     @Override
-    public T get(int i) {
-      return values[i];
+    public T get(int index) {
+      return values[index];
     }
   }
 }

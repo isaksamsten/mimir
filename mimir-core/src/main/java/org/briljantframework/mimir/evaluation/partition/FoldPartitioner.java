@@ -45,7 +45,7 @@ public class FoldPartitioner<In, Out> implements Partitioner<In, Out> {
   }
 
   @Override
-  public Collection<Partition<In, Out>> partition(Input<In> x, Output<Out> y) {
+  public Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y) {
     Check.dimension(x.size(), y.size());
     return new AbstractCollection<Partition<In, Out>>() {
       @Override

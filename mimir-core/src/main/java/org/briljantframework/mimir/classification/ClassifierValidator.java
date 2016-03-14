@@ -20,15 +20,14 @@
  */
 package org.briljantframework.mimir.classification;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.ArrayOutput;
+import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.evaluation.Evaluator;
 import org.briljantframework.mimir.evaluation.MutableEvaluationContext;
 import org.briljantframework.mimir.evaluation.Validator;
@@ -60,7 +59,6 @@ public class ClassifierValidator<In, T extends Classifier<In>> extends Validator
     T p = ctx.getPredictor();
     Partition<In, Object> partition = ctx.getEvaluationContext().getPartition();
     Input<In> x = partition.getValidationData();
-    Output<Object> y = partition.getValidationTarget();
     ArrayOutput<Object> predictions = new ArrayOutput<>();
 
     // For the case where the classifier reports the ESTIMATOR characteristic
@@ -79,8 +77,15 @@ public class ClassifierValidator<In, T extends Classifier<In>> extends Validator
   }
 
   public static <In, T extends Classifier<In>> ClassifierValidator<In, T> holdoutValidator(
-      Input<In> testX, Output<Object> testY) {
-    return createValidator((x, y) -> Collections.singleton(new Partition<>(x, testX, y, testY)));
+      Input<? extends In> testX, Output<?> testY) {
+    return createValidator(new Partitioner<In, Object>() {
+      @Override
+      public Collection<Partition<In, Object>> partition(Input<? extends In> x, Output<?> y) {
+        return Collections
+            .singleton(new Partition<>(Inputs.unmodifiableInput(x), Inputs.unmodifiableInput(testX),
+                Outputs.unmodifiableOutput(y), Outputs.unmodifiableOutput(testY)));
+      }
+    });
   }
 
   public static <In, T extends Classifier<In>> ClassifierValidator<In, T> splitValidator(

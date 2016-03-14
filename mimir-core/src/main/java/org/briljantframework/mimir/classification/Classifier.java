@@ -20,14 +20,13 @@
  */
 package org.briljantframework.mimir.classification;
 
+import java.util.List;
+
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.supervised.Predictor;
-
-import java.util.List;
 
 /**
  * <p>
@@ -65,12 +64,12 @@ public interface Classifier<In> extends Predictor<In, Object> {
    * of the returned vector is the label of the j:th column in the probability matrix returned by
    * {@link #estimate(Input)}.
    *
-   * @return the vector of classes.
+   * @return the list of classes.
    */
-  List<?> getClasses(); // TODO: 3/9/16 change to List<Object>
+  List<?> getClasses();
 
   /**
-   * Estimates the posterior probabilities for all records in {@code x}.
+   * Estimates the posterior probabilities for all objects in the given input
    *
    * <p>
    * Each column corresponds to the probability of a particular class (the j:th column correspond to
@@ -83,14 +82,14 @@ public interface Classifier<In> extends Predictor<In, Object> {
   DoubleArray estimate(Input<? extends In> x);
 
   /**
-   * Estimates the posterior probability for the supplied vector.
+   * Estimates the posterior probability for the supplied input.
    *
    * <p>
    * The i:th element in the returned array correspond to the probability of the i:th class in
-   * {@linkplain #getClasses()} (using {@link Vector#loc()})
+   * {@linkplain #getClasses()}
    *
-   * @param input the vector to estimate the posterior probability for
-   * @return a matrix with probability estimates; shape = {@code [1, this.getClasses().size()]}.
+   * @param input the input to estimate the posterior probability for
+   * @return an array with probability estimates; shape = {@code [1, this.getClasses().size()]}.
    */
   DoubleArray estimate(In input);
 

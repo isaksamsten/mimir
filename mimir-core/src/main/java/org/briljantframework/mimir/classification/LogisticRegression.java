@@ -22,10 +22,7 @@ package org.briljantframework.mimir.classification;
 
 import static org.briljantframework.mimir.classification.optimization.OptimizationUtils.logistic;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.Arrays;
@@ -33,10 +30,7 @@ import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Inputs;
-import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.Outputs;
+import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.optimization.BinaryLogisticFunction;
 import org.briljantframework.mimir.classification.optimization.MultiClassLogisticFunction;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
@@ -50,7 +44,7 @@ import org.briljantframework.optimize.NonlinearOptimizer;
 /**
  * @author Isak Karlsson
  */
-public class LogisticRegression extends AbstractClassifier<Vector> {
+public class LogisticRegression extends AbstractClassifier<Instance> {
 
   public enum Measure {
     LOG_LOSS
@@ -77,11 +71,11 @@ public class LogisticRegression extends AbstractClassifier<Vector> {
   }
 
   @Override
-  public DoubleArray estimate(Vector record) {
+  public DoubleArray estimate(Instance record) {
     DoubleArray x = DoubleArray.zeros(record.size() + 1);
     x.set(0, 1); // set the intercept
     for (int i = 0; i < record.size(); i++) {
-      x.set(i + 1, record.loc().getAsDouble(i));
+      x.set(i + 1, record.getAsDouble(i));
     }
 
     List<?> classes = getClasses();
@@ -146,7 +140,7 @@ public class LogisticRegression extends AbstractClassifier<Vector> {
   }
 
   public static final class Configurator
-      implements Classifier.Configurator<Vector, Object, Learner> {
+      implements Classifier.Configurator<Instance, Object, Learner> {
 
     private int iterations = 100;
     private double regularization = 0.01;
@@ -184,10 +178,10 @@ public class LogisticRegression extends AbstractClassifier<Vector> {
   }
 
   public static class Evaluator implements
-      org.briljantframework.mimir.evaluation.Evaluator<Vector, Object, LogisticRegression> {
+      org.briljantframework.mimir.evaluation.Evaluator<Instance, Object, LogisticRegression> {
 
     @Override
-    public void accept(EvaluationContext<Vector, Object, ? extends LogisticRegression> ctx) {
+    public void accept(EvaluationContext<? extends Instance, ?, ? extends LogisticRegression> ctx) {
       ctx.getMeasureCollection().add("logLoss", MeasureSample.IN_SAMPLE,
           ctx.getPredictor().getLogLoss());
     }
@@ -205,7 +199,7 @@ public class LogisticRegression extends AbstractClassifier<Vector> {
    *
    * @author Isak Karlsson
    */
-  public static class Learner implements Predictor.Learner<Vector, Object, LogisticRegression> {
+  public static class Learner implements Predictor.Learner<Instance, Object, LogisticRegression> {
 
     public static final double GRADIENT_TOLERANCE = 1E-5;
     public static final int MAX_ITERATIONS = 100;
@@ -238,9 +232,13 @@ public class LogisticRegression extends AbstractClassifier<Vector> {
     }
 
     @Override
-    public LogisticRegression fit(Input<? extends Vector> in, Output<?> out) {
+    public LogisticRegression fit(Input<? extends Instance> in, Output<?> out) {
+      PropertyPreconditions.checkParameters(getRequiredInputProperties(), in);
+      Check.argument(Dataset.isAllNumeric(in.getProperty(Dataset.FEATURE_TYPES)),
+          "require all numeric features");
+
       int n = in.size();
-      int m = Inputs.features(in);
+      int m = in.getProperty(Dataset.FEATURES);
       Check.argument(n == out.size(),
           "The number of training instances must equal the number of targets");
       List<?> classes = Outputs.unique(out);
@@ -263,18 +261,29 @@ public class LogisticRegression extends AbstractClassifier<Vector> {
       }
       double logLoss = optimizer.optimize(objective, theta);
 
-      // Vector.Builder names = Vector.Builder.of(Object.class).add("(Intercept)");
-      // x.getColumnIndex().keySet().forEach(names::add);
-      return new LogisticRegression(null, theta, logLoss, classes);
+      Vector.Builder names = Vector.Builder.of(Object.class).add("(Intercept)");
+      if (in.getProperties().contains(Dataset.FEATURE_NAMES)) {
+        in.getProperty(Dataset.FEATURE_NAMES).forEach(names::add);
+      } else {
+        for (int i = 0; i < m; i++) {
+          names.add(String.valueOf(i));
+        }
+      }
+      return new LogisticRegression(names.build(), theta, logLoss, classes);
     }
 
-    protected DoubleArray constructInputMatrix(Input<? extends Vector> input, int n, int m) {
+    @Override
+    public Collection<Property<?>> getRequiredInputProperties() {
+      return java.util.Arrays.asList(Dataset.FEATURES, Dataset.FEATURE_TYPES);
+    }
+
+    protected DoubleArray constructInputMatrix(Input<? extends Instance> input, int n, int m) {
       DoubleArray x = DoubleArray.zeros(n, m + 1);
       for (int i = 0; i < n; i++) {
         x.set(i, 0, 1);
-        Vector record = input.get(i);
+        Instance record = input.get(i);
         for (int j = 0; j < m; j++) {
-          double v = record.loc().getAsDouble(j);
+          double v = record.getAsDouble(j);
           if (Is.NA(v) || Double.isNaN(v)) {
             throw new IllegalArgumentException(
                 String.format("Illegal input value at (%d, %d)", i, j - 1));

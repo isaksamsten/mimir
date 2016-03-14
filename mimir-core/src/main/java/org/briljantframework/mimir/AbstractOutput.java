@@ -6,12 +6,11 @@ import java.util.Iterator;
 /**
  * @author Isak Karlsson
  */
-public abstract class AbstractInput<T> extends AbstractCollection<T> implements Input<T> {
-
+public abstract class AbstractOutput<T> extends AbstractCollection<T> implements Output<T> {
   @Override
   public Iterator<T> iterator() {
     return new Iterator<T>() {
-      public int current = 0;
+      private int current = 0;
 
       @Override
       public boolean hasNext() {

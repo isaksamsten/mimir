@@ -5,16 +5,26 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * Created by isak on 3/10/16.
+ * A mutable set of arbitrary outputs.
+ * 
+ * @author Isak Karlsson
  */
-public class ArrayOutput<T> implements Output<T> {
+public class ArrayOutput<T> extends AbstractOutput<T> {
 
   private final ArrayList<T> values = new ArrayList<>();
 
+  /**
+   * Creates a new output based on the given collection.
+   * 
+   * @param collection the collection of values.
+   */
   public ArrayOutput(Collection<? extends T> collection) {
     values.addAll(collection);
   }
 
+  /**
+   * Creates a new output with initial capacity.
+   */
   public ArrayOutput() {}
 
   public void clear() {
@@ -95,8 +105,8 @@ public class ArrayOutput<T> implements Output<T> {
   }
 
   @Override
-  public T get(int i) {
-    return values.get(i);
+  public T get(int index) {
+    return values.get(index);
   }
 
   @Override
