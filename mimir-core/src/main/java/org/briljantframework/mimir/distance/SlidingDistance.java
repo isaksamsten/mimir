@@ -28,15 +28,10 @@ import org.briljantframework.mimir.shapelet.Shapelet;
  */
 public class SlidingDistance implements Distance<Vector> {
 
-  private final Distance distanceMeasure;
+  private final Distance<Vector> distanceMeasure;
 
-  public SlidingDistance(Distance instance) {
+  public SlidingDistance(Distance<Vector> instance) {
     this.distanceMeasure = instance;
-  }
-
-  @Override
-  public double compute(double a, double b) {
-    return 0;
   }
 
   @Override
@@ -56,13 +51,4 @@ public class SlidingDistance implements Distance<Vector> {
     return Math.sqrt(minDistance / candidate.size());
   }
 
-  @Override
-  public double max() {
-    return 0;
-  }
-
-  @Override
-  public double min() {
-    return 0;
-  }
 }

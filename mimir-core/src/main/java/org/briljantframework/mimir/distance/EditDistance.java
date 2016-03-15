@@ -31,11 +31,6 @@ import org.briljantframework.data.vector.Vector;
 public class EditDistance implements Distance<Vector> {
 
   @Override
-  public double compute(double a, double b) {
-    return 0;
-  }
-
-  @Override
   public double compute(Vector a, Vector b) {
     if (a.size() < b.size()) {
       return compute(b, a);
@@ -71,13 +66,4 @@ public class EditDistance implements Distance<Vector> {
     return previousRow.get(previousRow.size() - 1);
   }
 
-  @Override
-  public double max() {
-    return 0;
-  }
-
-  @Override
-  public double min() {
-    return 0;
-  }
 }

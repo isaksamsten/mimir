@@ -43,8 +43,7 @@ public class EuclideanDistance implements Distance<Vector> {
     return instance;
   }
 
-  @Override
-  public double compute(double a, double b) {
+  private double compute(double a, double b) {
     double r = a - b;
     return r * r;
   }
@@ -59,16 +58,6 @@ public class EuclideanDistance implements Distance<Vector> {
     }
 
     return Math.sqrt(residual);
-  }
-
-  @Override
-  public double max() {
-    return Double.POSITIVE_INFINITY;
-  }
-
-  @Override
-  public double min() {
-    return 0;
   }
 
   @Override

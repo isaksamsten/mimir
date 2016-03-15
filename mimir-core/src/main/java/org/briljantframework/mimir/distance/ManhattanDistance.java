@@ -31,17 +31,10 @@ public class ManhattanDistance implements Distance<Vector> {
 
   private static Distance instance = new ManhattanDistance();
 
-  private ManhattanDistance() {
-
-  }
+  private ManhattanDistance() {}
 
   public static Distance getInstance() {
     return instance;
-  }
-
-  @Override
-  public double compute(double a, double b) {
-    return Math.abs(a - b);
   }
 
   @Override
@@ -52,16 +45,6 @@ public class ManhattanDistance implements Distance<Vector> {
       distance += Math.abs(a.loc().getAsDouble(i) - b.loc().getAsDouble(i));
     }
     return distance;
-  }
-
-  @Override
-  public double max() {
-    return Double.POSITIVE_INFINITY;
-  }
-
-  @Override
-  public double min() {
-    return 0;
   }
 
   @Override

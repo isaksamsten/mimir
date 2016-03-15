@@ -38,25 +38,10 @@ import org.briljantframework.data.vector.Vector;
  */
 public class DynamicTimeWarping implements Distance<Vector> {
 
-  /**
-   * The Distance.
-   */
-  protected final Distance distance;
   private final int constraint;
 
-  /**
-   * Instantiates a new Dynamic time warping.
-   *
-   * @param distance the local distance function
-   * @param constraint the local constraint (i.e. width of the band)
-   */
-  public DynamicTimeWarping(Distance distance, int constraint) {
-    this.distance = distance;
-    this.constraint = constraint;
-  }
-
   public DynamicTimeWarping(int constraint) {
-    this(EuclideanDistance.getInstance(), constraint);
+    this.constraint = constraint;
   }
 
   /**
@@ -66,9 +51,9 @@ public class DynamicTimeWarping implements Distance<Vector> {
    * @param b scalar
    * @return the distance between a and b
    */
-  @Override
   public final double compute(double a, double b) {
-    return distance.compute(a, b);
+    double r = a - b;
+    return r * r;
   }
 
   @Override
@@ -83,23 +68,13 @@ public class DynamicTimeWarping implements Distance<Vector> {
       int end = constraint <= -1 ? m : Math.min(m, i + width);
       int start = constraint <= -1 ? 1 : Math.max(1, i - width);
       for (int j = start; j < end; j++) {
-        double cost = distance.compute(a.loc().getAsDouble(i), b.loc().getAsDouble(j));
+        double cost = compute(a.loc().getAsDouble(i), b.loc().getAsDouble(j));
         dtw.set(i, j,
             cost + Math.min(dtw.get(i - 1, j), Math.min(dtw.get(i, j - 1), dtw.get(i - 1, j - 1))));
       }
     }
 
     return dtw.get(n - 1, m - 1);
-  }
-
-  @Override
-  public double max() {
-    return distance.max();
-  }
-
-  @Override
-  public double min() {
-    return distance.min();
   }
 
   @Override

@@ -259,8 +259,8 @@ public final class Outputs {
 
 
   private static class VectorOutput<T> extends AbstractOutput<T> {
-    private final Vector vector;
-    private final Class<T> cls;
+    protected final Vector vector;
+    protected final Class<T> cls;
 
     public VectorOutput(Vector vector, Class<T> cls) {
       this.vector = vector;

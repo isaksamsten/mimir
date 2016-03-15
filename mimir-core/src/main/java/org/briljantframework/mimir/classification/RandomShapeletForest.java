@@ -22,20 +22,16 @@ package org.briljantframework.mimir.classification;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
-import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.Input;
 import org.briljantframework.mimir.Output;
 import org.briljantframework.mimir.Outputs;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.classification.tree.Example;
-import org.briljantframework.mimir.distance.Distance;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 
 /**
@@ -47,178 +43,98 @@ import org.briljantframework.mimir.evaluation.EvaluationContext;
  *
  * @author Isak Karlsson
  */
-public class RandomShapeletForest extends Ensemble<Vector> {
+public class RandomShapeletForest<In> extends Ensemble<In> {
 
-  private final DoubleArray lengthImportance;
-  private final DoubleArray positionImportance;
-
-  private RandomShapeletForest(List<?> classes, DoubleArray apriori,
-      List<? extends Classifier<Vector>> members, DoubleArray lengthImportance,
-      DoubleArray positionImportance, BooleanArray oobIndicator) {
+  private RandomShapeletForest(List<?> classes, List<? extends Classifier<In>> members,
+      BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
-    this.lengthImportance = lengthImportance;
-    this.positionImportance = positionImportance;
-  }
-
-  public static Configurator withSize(int size) {
-    return new Configurator(size);
-  }
-
-  public DoubleArray getLengthImportance() {
-    return lengthImportance;
-  }
-
-  public DoubleArray getPositionImportance() {
-    return positionImportance;
   }
 
   public double getAverageDepth() {
     double depth = 0;
     for (Classifier classifier : getEnsembleMembers()) {
-      if (classifier instanceof ShapeletTree) {
-        int d = ((ShapeletTree) classifier).getDepth();
+      if (classifier instanceof PatternTree) {
+        int d = ((PatternTree) classifier).getDepth();
         depth += d;
       }
     }
     return depth / getEnsembleMembers().size();
   }
 
-  public static class Configurator implements Classifier.Configurator<Vector, Object, Learner> {
+  public static class Configurator<In, E>
+      implements Classifier.Configurator<In, Object, Learner<In, E>> {
 
-    private final ShapeletTree.Configurator shapeletTree = new ShapeletTree.Configurator();
+    private final PatternTree.Configurator<In, E> shapeletTree;
     private int size = 100;
 
-    public Configurator(int size) {
+    public Configurator(PatternTree.DistanceStrategy<? super In, E> distanceStrategy, int size) {
       this.size = size;
+      this.shapeletTree = new PatternTree.Configurator<>(distanceStrategy);
     }
 
-    public Configurator setMinimumSplitSize(double minSplitSize) {
+    public Configurator<In, E> setMinimumSplitSize(double minSplitSize) {
       shapeletTree.setMinimumSplit(minSplitSize);
       return this;
     }
 
-    public Configurator setLowerLength(double lower) {
-      shapeletTree.setLowerLength(lower);
+    public PatternTree.Configurator setDistanceStrategy(
+        PatternTree.DistanceStrategy<In, E> distanceStrategy) {
+      return shapeletTree.setDistanceStrategy(distanceStrategy);
+    }
+
+    public Configurator<In, E> setMaximumShapelets(int maxShapelets) {
+      shapeletTree.setPatternCount(maxShapelets);
       return this;
     }
 
-    public Configurator setUpperLength(double upper) {
-      shapeletTree.setUpperLength(upper);
-      return this;
-    }
-
-    public Configurator setMaximumShapelets(int maxShapelets) {
-      shapeletTree.setMaximumShapelets(maxShapelets);
-      return this;
-    }
-
-    public Configurator setDistance(Distance<Vector> distance) {
-      shapeletTree.setDistance(distance);
-      return this;
-    }
-
-    public Configurator setCategoricDistance(Distance<Vector> categoricDistance) {
-      shapeletTree.setCategoricDistance(categoricDistance);
-      return this;
-    }
-
-    public Configurator setSize(int size) {
+    public Configurator<In, E> setSize(int size) {
       this.size = size;
       return this;
     }
 
-    public Configurator setSampleMode(ShapeletTree.Learner.SampleMode sampleMode) {
-      shapeletTree.setSampleMode(sampleMode);
-      return this;
-    }
-
-    public Configurator setAssessment(ShapeletTree.Learner.Assessment assessment) {
+    public Configurator<In, E> setAssessment(PatternTree.Learner.Assessment assessment) {
       shapeletTree.setAssessment(assessment);
       return this;
     }
 
     @Override
-    public Learner configure() {
-      return new Learner(shapeletTree, size);
+    public Learner<In, E> configure() {
+      return new Learner<>(shapeletTree, size);
     }
   }
 
-  public static class Evaluator implements
-      org.briljantframework.mimir.evaluation.Evaluator<Vector, Object, RandomShapeletForest> {
+  public static class Evaluator<In> implements
+      org.briljantframework.mimir.evaluation.Evaluator<In, Object, RandomShapeletForest<In>> {
 
     @Override
-    public void accept(EvaluationContext<? extends Vector, ?, ? extends RandomShapeletForest> ctx) {
+    public void accept(EvaluationContext<? extends In, ?, ? extends RandomShapeletForest<In>> ctx) {
       ctx.getMeasureCollection().add("depth", ctx.getPredictor().getAverageDepth());
     }
   }
 
-  public static class Learner extends Ensemble.Learner<Vector, RandomShapeletForest> {
+  public static class Learner<In, E> extends Ensemble.Learner<In, RandomShapeletForest<In>> {
 
-    private final ShapeletTree.Configurator configurator;
+    private final PatternTree.Configurator<In, E> configurator;
 
-    private Learner(ShapeletTree.Configurator configurator, int size) {
+    private Learner(PatternTree.Configurator<In, E> configurator, int size) {
       super(size);
       this.configurator = configurator;
     }
 
     @Override
-    public RandomShapeletForest fit(Input<? extends Vector> x, Output<?> y) {
+    public RandomShapeletForest<In> fit(Input<? extends In> x, Output<?> y) {
       List<?> classes = Outputs.unique(y);
 
       ClassSet classSet = new ClassSet(y, classes);
-      List<FitTask> tasks = new ArrayList<>();
+      List<FitTask<In, E>> tasks = new ArrayList<>();
       BooleanArray oobIndicator = Arrays.booleanArray(x.size(), size());
       for (int i = 0; i < size(); i++) {
-        tasks.add(new FitTask(classSet, x, y, configurator, classes, oobIndicator.getColumn(i)));
+        tasks.add(new FitTask<>(classSet, x, y, configurator, classes, oobIndicator.getColumn(i)));
       }
 
       try {
-        List<ShapeletTree> models = Ensemble.Learner.execute(tasks);
-        // TODO: 3/14/16 add computation of importances
-        // int features = Inputs.features(x);
-        // DoubleArray lenSum = DoubleArray.zeros(features);
-        // DoubleArray posSum = DoubleArray.zeros(features);
-        // for (ShapeletTree m : models) {
-        // lenSum.plusAssign(m.getLengthImportance());
-        // posSum.plusAssign(m.getPositionImportance());
-        // }
-
-        // // ShapeletTree.ShapeStore store = new ShapeletTree.ShapeStore();
-        // // ShapeletTree.ShapeStore store1 = models.get(0).getStore();
-        // // for (int i = 0; i < store1.shapes.size(); i++) {
-        // // store.shapes.add(store1.shapes.get(i));
-        // // store.scores.add(store1.scores.get(i));
-        // // }
-        // // for (int i = 1; i < models.size(); i++) {
-        // // ShapeletTree tree = models.get(i);
-        // // ShapeletTree.ShapeStore store2 = tree.getStore();
-        // // for (int j = 0; j < store2.scores.size(); j++) {
-        // // store1.add(store2.shapes.get(j), store2.scores.get(j));
-        // // }
-        // // }
-        // //
-        // // QuickSort.quickSort(0, store1.scores.size(),
-        // // (a, b) -> Double.compare(store1.scores.get(b), store1.scores.get(a)), (a, b) -> {
-        // // Collections.swap(store1.scores, a, b);
-        // // Collections.swap(store1.shapes, a, b);
-        // // Collections.swap(store1.counts, a, b);
-        // // Collections.swap(store1.normalizedShapes, a, b);
-        // // });
-        //
-        // System.out.println(store1.scores);
-        // System.out.println(store1.shapes.stream().map(Vector::size).collect(Collectors.toList()));
-        // System.out.println(store1.counts);
-        // System.out.println(store1.scores.size());
-        // lenSum.apply(v -> v / size());
-        // posSum.apply(v -> v / size());
-
-        Map<Object, Integer> counts = Outputs.valueCounts(y); // TODO: 3/11/16 might be wrong
-        DoubleArray apriori = DoubleArray.zeros(classes.size());
-        for (int i = 0; i < classes.size(); i++) {
-          apriori.set(i, counts.get(classes.get(i)) / (double) y.size());
-        }
-
-        return new RandomShapeletForest(classes, apriori, models, null, null, oobIndicator);
+        List<PatternTree<In, E>> models = Ensemble.Learner.execute(tasks);
+        return new RandomShapeletForest<>(classes, models, oobIndicator);
       } catch (Exception e) {
         e.printStackTrace();
         throw new RuntimeException(e);
@@ -231,18 +147,19 @@ public class RandomShapeletForest extends Ensemble<Vector> {
       return "Ensemble of Randomized Shapelet Trees";
     }
 
-    private static final class FitTask implements Callable<ShapeletTree> {
+    private static final class FitTask<In, E> implements Callable<PatternTree<In, E>> {
 
       private final ClassSet classSet;
-      private final Input<? extends Vector> x;
+      private final Input<? extends In> x;
       private final Output<?> y;
       private final List<?> classes;
-      private final ShapeletTree.Configurator configurator;
+      private final PatternTree.Configurator<In, E> configurator;
       private final BooleanArray oobIndicator;
 
 
-      private FitTask(ClassSet classSet, Input<? extends Vector> x, Output<?> y,
-          ShapeletTree.Configurator configurator, List<?> classes, BooleanArray oobIndicator) {
+      private FitTask(ClassSet classSet, Input<? extends In> x, Output<?> y,
+          PatternTree.Configurator<In, E> configurator, List<?> classes,
+          BooleanArray oobIndicator) {
         this.classSet = classSet;
         this.x = x;
         this.y = y;
@@ -252,12 +169,10 @@ public class RandomShapeletForest extends Ensemble<Vector> {
       }
 
       @Override
-      public ShapeletTree call() throws Exception {
+      public PatternTree<In, E> call() throws Exception {
         Random random = new Random(Thread.currentThread().getId() * System.nanoTime());
         ClassSet sample = sample(classSet, random);
-        double low = configurator.lowerLength;
-        double high = configurator.upperLength;
-        return new ShapeletTree.Learner(low, high, configurator, sample, classes).fit(x, y);
+        return new PatternTree.Learner<>(configurator, sample, classes).fit(x, y);
       }
 
       // public ClassSet sampleNoBootstrap(c)

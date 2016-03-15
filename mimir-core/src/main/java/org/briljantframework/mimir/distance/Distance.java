@@ -51,34 +51,11 @@ import org.briljantframework.data.vector.Vector;
 public interface Distance<T> {
 
   /**
-   * Calculate the distance between two scalar
-   *
-   * @param a scalar
-   * @param b scalar
-   * @return distance double
-   */
-  double compute(double a, double b);
-
-  /**
-   * Compute the distance between two vectors
+   * Compute the distance between two points
    *
    * @param a a vector
    * @param b a vector
    * @return the distance
    */
   double compute(T a, T b);
-
-  /**
-   * Max double.
-   *
-   * @return the maximum possible distance
-   */
-  double max();
-
-  /**
-   * Min double.
-   *
-   * @return the minimum possible distance
-   */
-  double min();
 }

@@ -31,14 +31,14 @@ import org.briljantframework.mimir.shapelet.NormalizedShapelet;
  */
 public class EarlyAbandonSlidingDistance implements Distance<Vector> {
 
-  protected final Distance distance;
+  protected final Distance<Vector> distance;
 
   /**
    * Instantiates a new Early abandon sliding distance.
    *
    * @param distance the distance
    */
-  public EarlyAbandonSlidingDistance(Distance distance) {
+  public EarlyAbandonSlidingDistance(Distance<Vector> distance) {
     this.distance = Objects.requireNonNull(distance, "Requires a distance measure");
   }
 
@@ -48,13 +48,8 @@ public class EarlyAbandonSlidingDistance implements Distance<Vector> {
    * @param distance the distance
    * @return the early abandon sliding distance
    */
-  public static EarlyAbandonSlidingDistance create(Distance distance) {
+  public static EarlyAbandonSlidingDistance create(Distance<Vector> distance) {
     return new EarlyAbandonSlidingDistance(distance);
-  }
-
-  @Override
-  public double compute(double a, double b) {
-    return distance.compute(a, b);
   }
 
   /**
@@ -77,10 +72,8 @@ public class EarlyAbandonSlidingDistance implements Distance<Vector> {
       if (!(vector instanceof NormalizedShapelet)) {
         vector = new NormalizedShapelet(0, vector.size(), vector);
       }
-      return new SlidingDistance(EuclideanDistance.getInstance()).compute(vector, new NormalizedShapelet(0,
-                                                                                                 candidate
-                                                                                                     .size(),
-                                                                                                 candidate));
+      return new SlidingDistance(EuclideanDistance.getInstance()).compute(vector,
+          new NormalizedShapelet(0, candidate.size(), candidate));
       // candidate = new NormalizedShapelet(0, candidate.size(), candidate);
       // throw new IllegalArgumentException("Candidate shapelet must be z-normalized");
     }
@@ -118,16 +111,6 @@ public class EarlyAbandonSlidingDistance implements Distance<Vector> {
       }
     }
     return Math.sqrt(minDistance / candidate.size());
-  }
-
-  @Override
-  public double max() {
-    return distance.max();
-  }
-
-  @Override
-  public double min() {
-    return distance.min();
   }
 
   double distance(Vector c, double[] t, int j, int m, int[] order, double mean, double std,

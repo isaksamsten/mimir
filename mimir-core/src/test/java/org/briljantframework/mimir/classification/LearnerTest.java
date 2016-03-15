@@ -33,10 +33,7 @@ import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.DatasetReader;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.dataset.io.MatlabDatasetReader;
-import org.briljantframework.mimir.ArrayOutput;
-import org.briljantframework.mimir.Inputs;
-import org.briljantframework.mimir.Instance;
-import org.briljantframework.mimir.Outputs;
+import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.conformal.ClassifierCalibrator;
 import org.briljantframework.mimir.classification.conformal.InductiveConformalClassifier;
 import org.briljantframework.mimir.classification.conformal.ProbabilityCostFunction;
@@ -44,6 +41,7 @@ import org.briljantframework.mimir.classification.conformal.ProbabilityEstimateN
 import org.briljantframework.mimir.classification.conformal.evaluation.ConformalClassifierValidator;
 import org.briljantframework.mimir.evaluation.Result;
 import org.briljantframework.mimir.evaluation.Validator;
+import org.briljantframework.mimir.shapelet.Shapelet;
 import org.junit.Test;
 
 /**
@@ -53,6 +51,21 @@ public class LearnerTest {
 
   @Test
   public void testTesda2() throws Exception {
+    DataFrame data = DataFrames.permuteRecords(Datasets.loadSyntheticControl());
+    Input<Vector> x = new ArrayInput<>(data.drop(0).getRecords());
+    Output<?> y = Outputs.newOutput(data.get(0));
+
+    ClassifierValidator<Vector, RandomShapeletForest<Vector>> v =
+        ClassifierValidator.splitValidator(0.33);
+
+    RandomShapeletForest.Learner<Vector, Shapelet> rfl =
+        new RandomShapeletForest.Configurator<>(new PatternTree.ShapeletDistanceStrategy(), 100)
+            .configure();
+
+    System.out.println(v.test(rfl, x, y).getMeasures().mean());
+
+
+
     // ArrayPrinter.setMinimumTruncateSize(100000);
     // DataFrame iris = DataFrames.permuteRecords(Datasets.loadIris());
     // DataFrame x = iris.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean()));

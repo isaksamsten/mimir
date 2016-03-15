@@ -30,11 +30,6 @@ import org.briljantframework.data.vector.Vector;
 public class HammingDistance implements Distance<Vector> {
 
   @Override
-  public double compute(double a, double b) {
-    return a == b ? 0 : 1;
-  }
-
-  @Override
   public double compute(Vector a, Vector b) {
     int size = Math.min(a.size(), b.size());
     double distance = 0;
@@ -47,13 +42,4 @@ public class HammingDistance implements Distance<Vector> {
     return distance / size;
   }
 
-  @Override
-  public double max() {
-    return Double.POSITIVE_INFINITY;
-  }
-
-  @Override
-  public double min() {
-    return Double.NEGATIVE_INFINITY;
-  }
 }

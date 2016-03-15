@@ -50,11 +50,6 @@ public class SaxDistance implements Distance<Vector> {
   }
 
   @Override
-  public double compute(double a, double b) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public double compute(Vector a, Vector b) {
     Check.dimension(a.size(), b.size());
 
@@ -70,13 +65,4 @@ public class SaxDistance implements Distance<Vector> {
     return Math.sqrt(n / w) * Math.sqrt(sum);
   }
 
-  @Override
-  public double max() {
-    return Double.POSITIVE_INFINITY;
-  }
-
-  @Override
-  public double min() {
-    return Double.NEGATIVE_INFINITY;
-  }
 }
