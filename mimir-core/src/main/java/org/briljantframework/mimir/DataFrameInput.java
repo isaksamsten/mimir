@@ -11,7 +11,7 @@ import org.briljantframework.data.vector.Vector;
  * Converts a {@link DataFrame} to an input, automatically setting the properties
  * 
  * <ul>
- * <li>{@link Dataset#FEATURES}</li>
+ * <li>{@link Dataset#FEATURE_SIZE}</li>
  * <li>{@link Dataset#FEATURE_TYPES}</li>
  * </ul>
  * 
@@ -35,7 +35,9 @@ class DataFrameInput extends AbstractInput<Instance> {
     List<Class<?>> types =
         df.getColumns().stream().map(v -> v.getType().getDataClass()).collect(Collectors.toList());
     properties.set(Dataset.FEATURE_TYPES, types);
-    properties.set(Dataset.FEATURES, df.columns());
+    properties.set(Dataset.FEATURE_NAMES,
+        df.getColumnIndex().keySet().stream().map(Object::toString).collect(Collectors.toList()));
+    properties.set(Dataset.FEATURE_SIZE, df.columns());
     return properties;
   }
 
@@ -51,13 +53,13 @@ class DataFrameInput extends AbstractInput<Instance> {
 
   @Override
   public Instance get(int index) {
-    return new VectorInstance(df.loc().getRecord(index));
+    return new RecordInstance(df.loc().getRecord(index));
   }
 
-  private static class VectorInstance implements Instance {
+  private static class RecordInstance implements Instance {
     private final Vector record;
 
-    public VectorInstance(Vector record) {
+    public RecordInstance(Vector record) {
       this.record = record;
     }
 

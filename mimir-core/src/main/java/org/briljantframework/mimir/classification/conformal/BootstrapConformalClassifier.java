@@ -35,17 +35,17 @@ import org.briljantframework.mimir.supervised.Predictor;
 public class BootstrapConformalClassifier<In> extends AbstractConformalClassifier<In> {
 
   private final ClassifierCalibratorScores<In> calibratorScores;
-  private final ClassifierNonconformity<In, Object> nonconformity;
+  private final ClassifierNonconformity<In> nonconformity;
 
   protected BootstrapConformalClassifier(ClassifierCalibratorScores<In> calibratorScores,
-      ClassifierNonconformity<In, Object> nonconformity, List<?> classes) {
+      ClassifierNonconformity<In> nonconformity, List<?> classes) {
     super(true, classes);
     this.calibratorScores = Objects.requireNonNull(calibratorScores);
     this.nonconformity = Objects.requireNonNull(nonconformity);
   }
 
   @Override
-  protected ClassifierNonconformity<In, Object> getClassifierNonconformity() {
+  protected ClassifierNonconformity<In> getClassifierNonconformity() {
     return nonconformity;
   }
 

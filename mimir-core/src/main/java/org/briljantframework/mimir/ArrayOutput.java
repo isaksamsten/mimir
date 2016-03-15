@@ -87,7 +87,7 @@ public class ArrayOutput<T> extends AbstractOutput<T> {
   }
 
   @Override
-  public <T1> T1[] toArray(T1[] a) {
+  public <E> E[] toArray(E[] a) {
     return values.toArray(a);
   }
 

@@ -78,6 +78,6 @@ public interface ClassifierCalibrator<In> {
    * @param x the calibration data
    * @param y the calibration target
    */
-  ClassifierCalibratorScores<In> calibrate(ClassifierNonconformity<In, Object> nc,
-      Input<? extends In> x, Output<?> y);
+  ClassifierCalibratorScores<In> calibrate(ClassifierNonconformity<In> nc, Input<? extends In> x,
+      Output<?> y);
 }

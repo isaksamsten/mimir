@@ -78,7 +78,7 @@ public class DecisionTree extends TreeClassifier<Instance, ValueThreshold> {
 
     @Override
     public DecisionTree fit(Input<? extends Instance> in, Output<?> out) {
-      PropertyPreconditions.checkParameters(getRequiredInputProperties(), in);
+      PropertyPreconditions.checkProperties(getRequiredInputProperties(), in);
       ClassSet classSet = this.classSet;
       List<?> classes = this.classes != null ? this.classes : Outputs.unique(out);
       if (classSet == null) {

@@ -38,7 +38,7 @@ import org.briljantframework.mimir.classification.Classifier;
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public class ProbabilityEstimateNonconformity<In, T extends Classifier<In>>
-    implements ClassifierNonconformity<In, Object> {
+    implements ClassifierNonconformity<In> {
 
   private final T classifier;
   private final ProbabilityCostFunction probabilityCostFunction;
@@ -96,8 +96,8 @@ public class ProbabilityEstimateNonconformity<In, T extends Classifier<In>>
   /**
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  public static class Learner<In, T extends Classifier<In>> implements
-      ClassifierNonconformity.Learner<In, Object, ProbabilityEstimateNonconformity<In, T>> {
+  public static class Learner<In, T extends Classifier<In>>
+      implements ClassifierNonconformity.Learner<In, ProbabilityEstimateNonconformity<In, T>> {
 
     private final Classifier.Learner<In, Object, ? extends T> classifier;
     private final ProbabilityCostFunction probabilityCostFunction;

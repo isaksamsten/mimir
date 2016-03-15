@@ -4,7 +4,7 @@ import org.briljantframework.data.vector.Convert;
 
 /**
  * An m-feature vector of heterogeneous values. Generally, an input collection of instances should
- * report the {@link Dataset#FEATURES} and {@link Dataset#FEATURE_TYPES} properties, where the
+ * report the {@link Dataset#FEATURE_SIZE} and {@link Dataset#FEATURE_TYPES} properties, where the
  * former reports the number of features in a dataset and the latter the types of values in the
  * dataset.
  * 

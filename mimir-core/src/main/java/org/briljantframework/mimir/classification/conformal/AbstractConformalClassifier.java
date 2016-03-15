@@ -62,7 +62,7 @@ public abstract class AbstractConformalClassifier<In> extends AbstractClassifier
    * 
    * @return a classifier nonconformity
    */
-  protected abstract ClassifierNonconformity<In, Object> getClassifierNonconformity();
+  protected abstract ClassifierNonconformity<In> getClassifierNonconformity();
 
   /**
    * Get the calibration

@@ -34,7 +34,7 @@ import org.briljantframework.mimir.distance.Distance;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class DistanceNonconformity<In> implements ClassifierNonconformity<In, Object> {
+public class DistanceNonconformity<In> implements ClassifierNonconformity<In> {
 
   private final NearestNeighbours<In> classifier;
   private final int k;
@@ -96,7 +96,7 @@ public class DistanceNonconformity<In> implements ClassifierNonconformity<In, Ob
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
   public static class Learner<In>
-      implements ClassifierNonconformity.Learner<In, Object, DistanceNonconformity<In>> {
+      implements ClassifierNonconformity.Learner<In, DistanceNonconformity<In>> {
 
     private final NearestNeighbours.Learner<In> nearestNeighbors;
     private final int k;

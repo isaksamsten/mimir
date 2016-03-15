@@ -7,6 +7,9 @@ import java.util.List;
  * @author Isak Karlsson
  */
 public final class Dataset {
+  /**
+   * Castable class instance (it is used for 'reified' generic parameters)
+   */
   private final static Class<? extends List> CLASS = List.class;
 
   /**
@@ -20,10 +23,20 @@ public final class Dataset {
   }
 
   /**
+   * Returns true if all features (as defined by the {@link #FEATURE_TYPES} property) are numeric.
+   * 
+   * @param input the input
+   * @return true if all features are numeric
+   */
+  public static boolean isAllNumeric(Input<?> input) {
+    return isAllNumeric(input.getProperty(Dataset.FEATURE_TYPES));
+  }
+
+  /**
    * This property denotes the number of features in an input dataset. Often, this is the number of
    * columns.
    */
-  public static final Property<Integer> FEATURES = new Property<Integer>() {
+  public static final Property<Integer> FEATURE_SIZE = new Property<Integer>() {
     @Override
     public Class<Integer> getType() {
       return Integer.class;

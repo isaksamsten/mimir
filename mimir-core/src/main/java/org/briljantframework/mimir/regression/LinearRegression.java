@@ -69,11 +69,9 @@ public final class LinearRegression implements Regression<Instance> {
 
     @Override
     public LinearRegression fit(Input<? extends Instance> in, Output<? extends Double> out) {
-      DoubleArray x = Inputs.toDoubleArray(in);
-      DoubleArray y = Outputs.toDoubleArray(out);
+      DoubleArray x = Arrays.vstack(Arrays.ones(in.size()), Inputs.toDoubleArray(in));
+      DoubleArray y = DoubleArray.copyOf(out);
 
-
-      x = Arrays.vstack(Arrays.ones(x.rows()), x);
       DoubleArray inner =
           Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.eye(x.columns()).times(1));
       DoubleArray v = Arrays.dot(Arrays.linalg.pinv(inner), x.transpose());

@@ -8,16 +8,17 @@ import java.util.Collection;
 public final class PropertyPreconditions {
   private PropertyPreconditions() {}
 
-  public static void checkParameters(Collection<? extends Property<?>> required,
+  public static void checkProperties(Collection<? extends Property<?>> required,
       Properties properties) {
     for (Property<?> property : required) {
       if (!properties.contains(property)) {
-        throw new IllegalInputException(required, properties.keySet());
+        throw new IllegalArgumentException(
+            String.format("Required property '%s' not set.", property.getName()));
       }
     }
   }
 
-  public static void checkParameters(Collection<? extends Property<?>> required, Input<?> input) {
-    checkParameters(required, input.getProperties());
+  public static void checkProperties(Collection<? extends Property<?>> required, Input<?> input) {
+    checkProperties(required, input.getProperties());
   }
 }

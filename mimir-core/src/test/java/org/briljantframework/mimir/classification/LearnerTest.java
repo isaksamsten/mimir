@@ -102,7 +102,7 @@ public class LearnerTest {
     // y).getMeasures()
     // .mean());
     // Initialize the non-conformity learner using the margin as cost function
-    ProbabilityEstimateNonconformity.Learner<Instance, Classifier<Instance>> nc =
+    ProbabilityEstimateNonconformity.Learner<Instance, RandomForest> nc =
         new ProbabilityEstimateNonconformity.Learner<>(classifier,
             ProbabilityCostFunction.margin());
 

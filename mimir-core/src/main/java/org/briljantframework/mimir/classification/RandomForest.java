@@ -74,7 +74,7 @@ public final class RandomForest extends Ensemble<Instance> {
 
     @Override
     public RandomForest fit(Input<? extends Instance> x, Output<?> y) {
-      PropertyPreconditions.checkParameters(getRequiredInputProperties(), x);
+      PropertyPreconditions.checkProperties(getRequiredInputProperties(), x);
       Check.argument(x.size() == y.size());
 
       List<?> classes = Outputs.unique(y);
@@ -97,7 +97,7 @@ public final class RandomForest extends Ensemble<Instance> {
 
     @Override
     public Collection<Property<?>> getRequiredInputProperties() {
-      return java.util.Arrays.asList(Dataset.FEATURES, Dataset.FEATURE_TYPES);
+      return java.util.Arrays.asList(Dataset.FEATURE_SIZE, Dataset.FEATURE_TYPES);
     }
 
     @Override

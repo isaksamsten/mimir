@@ -233,12 +233,11 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
 
     @Override
     public LogisticRegression fit(Input<? extends Instance> in, Output<?> out) {
-      PropertyPreconditions.checkParameters(getRequiredInputProperties(), in);
-      Check.argument(Dataset.isAllNumeric(in.getProperty(Dataset.FEATURE_TYPES)),
-          "require all numeric features");
+      PropertyPreconditions.checkProperties(getRequiredInputProperties(), in);
+      Check.argument(Dataset.isAllNumeric(in), "All features must be numeric.");
 
       int n = in.size();
-      int m = in.getProperty(Dataset.FEATURES);
+      int m = in.getProperty(Dataset.FEATURE_SIZE);
       Check.argument(n == out.size(),
           "The number of training instances must equal the number of targets");
       List<?> classes = Outputs.unique(out);
@@ -274,7 +273,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
 
     @Override
     public Collection<Property<?>> getRequiredInputProperties() {
-      return java.util.Arrays.asList(Dataset.FEATURES, Dataset.FEATURE_TYPES);
+      return java.util.Arrays.asList(Dataset.FEATURE_SIZE, Dataset.FEATURE_TYPES);
     }
 
     protected DoubleArray constructInputMatrix(Input<? extends Instance> input, int n, int m) {
