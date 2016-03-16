@@ -1,5 +1,7 @@
 package org.briljantframework.mimir;
 
+import org.briljantframework.data.vector.Convert;
+
 import java.util.Collection;
 
 /**
@@ -16,4 +18,8 @@ public interface Output<T> extends Collection<T> {
    * @return the output at the specified position
    */
   T get(int index);
+
+  default <E> E get(Class<? extends E> cls, int index) {
+    return Convert.to(cls, index);
+  }
 }

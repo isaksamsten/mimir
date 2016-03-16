@@ -90,7 +90,7 @@ public class RandomPatternForest<In> extends Ensemble<In> {
       return this;
     }
 
-    public Configurator<In, E> setMaximumShapelets(int maxShapelets) {
+    public Configurator<In, E> setPatternCount(int maxShapelets) {
       shapeletTree.setPatternCount(maxShapelets);
       return this;
     }
@@ -129,6 +129,11 @@ public class RandomPatternForest<In> extends Ensemble<In> {
       this.configurator = configurator;
     }
 
+    public <E> Learner(PatternTree.PatternFactory<In, E> patternFactory,
+        PatternTree.PatternDistance<In, E> patternDistance, int size) {
+      this(new PatternTree.Configurator<>(patternFactory, patternDistance), size);
+    }
+
     @Override
     public RandomPatternForest<In> fit(Input<? extends In> x, Output<?> y) {
       List<?> classes = Outputs.unique(y);
@@ -141,7 +146,7 @@ public class RandomPatternForest<In> extends Ensemble<In> {
       }
 
       try {
-        List<PatternTree<In, ?>> models = Ensemble.Learner.execute(tasks);
+        List<PatternTree<In>> models = Ensemble.Learner.execute(tasks);
         return new RandomPatternForest<>(classes, models, oobIndicator);
       } catch (Exception e) {
         e.printStackTrace();
@@ -155,7 +160,7 @@ public class RandomPatternForest<In> extends Ensemble<In> {
       return "Ensemble of Randomized Shapelet Trees";
     }
 
-    private static final class FitTask<In> implements Callable<PatternTree<In, ?>> {
+    private static final class FitTask<In> implements Callable<PatternTree<In>> {
 
       private final ClassSet classSet;
       private final Input<? extends In> x;
@@ -177,7 +182,7 @@ public class RandomPatternForest<In> extends Ensemble<In> {
       }
 
       @Override
-      public PatternTree<In, ?> call() throws Exception {
+      public PatternTree<In> call() throws Exception {
         Random random = new Random(Thread.currentThread().getId() * System.nanoTime());
         ClassSet sample = sample(classSet, random);
         return new PatternTree.Learner<>(configurator, sample, classes).fit(x, y);

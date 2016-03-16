@@ -22,10 +22,15 @@ package org.briljantframework.mimir.classification;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
+import org.apache.commons.math3.ml.clustering.DoublePoint;
+import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.SortOrder;
@@ -43,15 +48,66 @@ import org.briljantframework.mimir.classification.conformal.InductiveConformalCl
 import org.briljantframework.mimir.classification.conformal.ProbabilityCostFunction;
 import org.briljantframework.mimir.classification.conformal.ProbabilityEstimateNonconformity;
 import org.briljantframework.mimir.classification.conformal.evaluation.ConformalClassifierValidator;
+import org.briljantframework.mimir.classification.tree.Example;
 import org.briljantframework.mimir.evaluation.Result;
 import org.briljantframework.mimir.evaluation.Validator;
-import org.briljantframework.mimir.shapelet.Shapelet;
 import org.junit.Test;
 
 /**
  * Created by isak on 11/16/15.
  */
 public class LearnerTest {
+
+  @Test
+  public void testKernelTree() throws Exception {
+
+    DataFrame data = DataFrames.permuteRecords(Datasets.loadIris());
+    Input<Instance> x =
+        Inputs.newInput(data.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean())));
+    Output<?> y = Outputs.newOutput(data.get("Class"));
+
+    PatternTree.PatternFactory<Instance, double[]> identity = (inputs, classSet) -> {
+      int k = 10;
+      KMeansPlusPlusClusterer<DoublePoint> clusterer = new KMeansPlusPlusClusterer<>(k, 100);
+      List<DoublePoint> points = new ArrayList<>();
+      for (Example example : classSet) {
+        points.add(new DoublePoint(toArray(inputs.get(example.getIndex()))));
+      }
+      if (points.size() < k) {
+        return toArray(inputs.get(classSet.getRandomSample().getRandomExample().getIndex()));
+      }
+      List<CentroidCluster<DoublePoint>> cluster = clusterer.cluster(points);
+      return cluster.get(ThreadLocalRandom.current().nextInt(cluster.size())).getCenter()
+          .getPoint();
+    };
+    PatternTree.PatternDistance<Instance, double[]> rbfKernel = (a, b) -> {
+      double e = 0;
+      int size = Math.min(a.size(), b.length);
+      for (int i = 0; i < size; i++) {
+        double ad = a.getAsDouble(i);
+        double bd = b[i];
+        if (!Double.isNaN(ad) && !Double.isNaN(bd)) {
+          e += Math.pow(ad - bd, 2);
+        }
+      }
+      return Math.exp(-0.01 * Math.sqrt(e));
+    };
+
+    RandomPatternForest.Learner<Instance> rbfForest =
+        new RandomPatternForest.Configurator<>(identity, rbfKernel, 100).setPatternCount(100)
+            .configure();
+    ClassifierValidator<Instance, Classifier<Instance>> v = ClassifierValidator.crossValidator(10);
+    System.out.println(v.test(rbfForest, x, y).getMeasures().mean());
+
+  }
+
+  private double[] toArray(Instance instance) {
+    double[] e = new double[instance.size()];
+    for (int i = 0; i < instance.size(); i++) {
+      e[i] = instance.getAsDouble(i);
+    }
+    return e;
+  }
 
   @Test
   public void testTestda3() throws Exception {
@@ -69,14 +125,18 @@ public class LearnerTest {
       }
     };
 
-    PatternTree.PatternFactory<Instance, Pair<Integer, Object>> featureFactory = input -> {
-      int axis = ThreadLocalRandom.current().nextInt(input.size());
-      return new ImmutablePair<>(axis, input.get(axis));
-    };
+    PatternTree.SamplingPatternFactory<Instance, Pair<Integer, Object>> featureFactory =
+        new PatternTree.SamplingPatternFactory<Instance, Pair<Integer, Object>>() {
+
+          @Override
+          protected Pair<Integer, Object> createPattern(Instance input) {
+            int axis = ThreadLocalRandom.current().nextInt(input.size());
+            return new ImmutablePair<>(axis, input.get(axis));
+          }
+        };
 
     RandomPatternForest.Learner<Instance> rfl =
-        new RandomPatternForest.Configurator<>(featureFactory, zeroOneDistance, 100)
-            .setMaximumShapelets(20).configure();
+        new RandomPatternForest.Learner<>(featureFactory, zeroOneDistance, 100);
 
     ClassifierValidator<Instance, RandomPatternForest<Instance>> v =
         ClassifierValidator.crossValidator(10);
@@ -95,7 +155,7 @@ public class LearnerTest {
 
     RandomPatternForest.Learner<Vector> rfl =
         new RandomPatternForest.Configurator<>(new PatternTree.ShapeletFactory(),
-            new PatternTree.ShapeletDistanceStrategy(), 100).configure();
+            new PatternTree.ShapeletDistance(), 100).configure();
 
     System.out.println(v.test(rfl, x, y).getMeasures().mean());
 

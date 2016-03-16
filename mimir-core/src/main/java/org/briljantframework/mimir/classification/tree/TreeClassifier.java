@@ -30,29 +30,17 @@ import org.briljantframework.mimir.classification.AbstractClassifier;
  * 
  * @author Isak Karlsson
  */
-public class TreeClassifier<In, T> extends AbstractClassifier<In> {
+public class TreeClassifier<In> extends AbstractClassifier<In> {
 
-  private final TreeVisitor<In, T> predictionVisitor;
-  private final TreeNode<In, T> root;
+  private final TreeVisitor<In, ?> predictionVisitor;
 
-  protected TreeClassifier(List<?> classes, TreeNode<In, T> node,
-      TreeVisitor<In, T> predictionVisitor) {
+  protected TreeClassifier(List<?> classes, TreeVisitor<In, ?> predictionVisitor) {
     super(classes);
-    this.root = node;
     this.predictionVisitor = predictionVisitor;
-  }
-
-  /**
-   * Get the root-node of this tree
-   *
-   * @return the node
-   */
-  public TreeNode<In, T> getTree() {
-    return root;
   }
 
   @Override
   public DoubleArray estimate(In record) {
-    return predictionVisitor.visit(getTree(), record);
+    return predictionVisitor.visit(record);
   }
 }

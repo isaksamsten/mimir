@@ -35,13 +35,13 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class DecisionTree extends TreeClassifier<Instance, ValueThreshold> {
+public class DecisionTree extends TreeClassifier<Instance> {
 
   private final int depth;
 
-  private DecisionTree(List<?> classes, TreeNode<Instance, ValueThreshold> node, int depth,
+  private DecisionTree(List<?> classes, int depth,
       TreeVisitor<Instance, ValueThreshold> predictionVisitor) {
-    super(classes, node, predictionVisitor);
+    super(classes, predictionVisitor);
     this.depth = depth;
   }
 
@@ -87,7 +87,7 @@ public class DecisionTree extends TreeClassifier<Instance, ValueThreshold> {
 
       Params p = new Params();
       TreeNode<Instance, ValueThreshold> node = build(in, out, p, classSet);
-      return new DecisionTree(classes, node, p.depth, new SimplePredictionVisitor());
+      return new DecisionTree(classes, p.depth, new SimplePredictionVisitor(node));
     }
 
     protected TreeNode<Instance, ValueThreshold> build(Input<? extends Instance> frame,
@@ -133,6 +133,16 @@ public class DecisionTree extends TreeClassifier<Instance, ValueThreshold> {
       implements TreeVisitor<Instance, ValueThreshold> {
 
     private static final int MISSING = 0, LEFT = -1, RIGHT = 1;
+    private final TreeNode<Instance, ValueThreshold> root;
+
+    public SimplePredictionVisitor(TreeNode<Instance, ValueThreshold> node) {
+      this.root = node;
+    }
+
+    @Override
+    public TreeNode<Instance, ValueThreshold> getRoot() {
+      return root;
+    }
 
     @Override
     public DoubleArray visitLeaf(TreeLeaf<Instance, ValueThreshold> leaf, Instance example) {

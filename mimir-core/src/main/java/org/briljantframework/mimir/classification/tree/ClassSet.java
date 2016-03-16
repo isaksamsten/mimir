@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
@@ -39,9 +40,6 @@ import org.briljantframework.mimir.Output;
  * @author Isak Karlsson
  */
 public final class ClassSet implements Iterable<Example> {
-
-  private static final Random RANDOM = new Random();
-
   private final Map<Object, Sample> samples;
 
   private final List<Object> targets;
@@ -112,7 +110,7 @@ public final class ClassSet implements Iterable<Example> {
   }
 
   public Sample getRandomSample() {
-    return samples.get(targets.get(RANDOM.nextInt(targets.size())));
+    return samples.get(targets.get(ThreadLocalRandom.current().nextInt(targets.size())));
   }
 
   public boolean isEmpty() {
@@ -221,7 +219,7 @@ public final class ClassSet implements Iterable<Example> {
     }
 
     public Example getRandomExample() {
-      return examples.get(RANDOM.nextInt(examples.size()));
+      return examples.get(ThreadLocalRandom.current().nextInt(examples.size()));
     }
 
     @Override

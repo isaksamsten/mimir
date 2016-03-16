@@ -28,6 +28,12 @@ import org.briljantframework.data.vector.Vector;
  */
 public interface TreeVisitor<In, T> {
 
+  TreeNode<In, T> getRoot();
+
+  default DoubleArray visit(In example) {
+    return getRoot().visit(this, example);
+  }
+
   default DoubleArray visit(TreeNode<In, T> node, In example) {
     return node.visit(this, example);
   }

@@ -48,16 +48,27 @@ import com.carrotsearch.hppc.cursors.ObjectDoubleCursor;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold<E>> {
+public class PatternTree<In> extends TreeClassifier<In> {
 
   public interface PatternDistance<T, S> {
     double computeDistance(T a, S b);
   }
 
   public interface PatternFactory<T, S> {
-    S createPattern(T input);
+    S createPattern(Input<? extends T> inputs, ClassSet classSet);
+
   }
 
+  public static abstract class SamplingPatternFactory<T, S> implements PatternFactory<T, S> {
+
+    @Override
+    public S createPattern(Input<? extends T> inputs, ClassSet classSet) {
+      return createPattern(inputs.get(classSet.getRandomSample().getRandomExample().getIndex()));
+    }
+
+    protected abstract S createPattern(T input);
+
+  }
 
   private static class CategoricShapelet extends Shapelet {
 
@@ -70,7 +81,7 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
     }
   }
 
-  public static class ShapeletFactory implements PatternFactory<Vector, Shapelet> {
+  public static class ShapeletFactory extends SamplingPatternFactory<Vector, Shapelet> {
     private final double lowerLength = 0.025, upperLength = 1;
 
     private static IntList nonNaIndicies(Vector vector) {
@@ -154,7 +165,7 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
   }
 
 
-  public static class ShapeletDistanceStrategy implements PatternDistance<Vector, Shapelet> {
+  public static class ShapeletDistance implements PatternDistance<Vector, Shapelet> {
     private final Distance<Vector> categoricDistance = new ZeroOneDistance();
     private final Distance<Vector> numericDistance =
         EarlyAbandonSlidingDistance.create(EuclideanDistance.getInstance());
@@ -200,9 +211,9 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
   public final ClassSet classSet;
   private final int depth;
 
-  private PatternTree(List<?> classes, TreeNode<In, Threshold<E>> node,
-      TreeVisitor<In, Threshold<E>> predictionVisitor, int depth, ClassSet classSet) {
-    super(classes, node, predictionVisitor);
+  private PatternTree(List<?> classes, TreeVisitor<In, ?> predictionVisitor, int depth,
+      ClassSet classSet) {
+    super(classes, predictionVisitor);
     this.depth = depth;
     this.classSet = classSet;
   }
@@ -218,7 +229,7 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
    *
    * @author Isak Karlsson
    */
-  public static class Learner<In, E> implements Predictor.Learner<In, Object, PatternTree<In, E>> {
+  public static class Learner<In, E> implements Predictor.Learner<In, Object, PatternTree<In>> {
 
     protected final Gain gain = Gain.INFO;
 
@@ -251,7 +262,7 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
     }
 
     @Override
-    public PatternTree<In, E> fit(Input<? extends In> x, Output<?> y) {
+    public PatternTree<In> fit(Input<? extends In> x, Output<?> y) {
       ClassSet classSet = this.classSet;
       List<?> classes = this.classes != null ? this.classes : Outputs.unique(y);
       if (classSet == null) {
@@ -261,8 +272,9 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
       Params params = new Params();
       params.noExamples = classSet.getTotalWeight();
       TreeNode<In, PatternTree.Threshold<E>> node = build(x, y, classSet, params);
-      DefaultPatternTreeVisitor<In, E> visitor = new DefaultPatternTreeVisitor<>(patternDistance);
-      return new PatternTree<>(classes, node, visitor, params.depth, classSet);
+      DefaultPatternTreeVisitor<In, E> visitor =
+          new DefaultPatternTreeVisitor<>(node, patternDistance);
+      return new PatternTree<>(classes, visitor, params.depth, classSet);
     }
 
     protected TreeNode<In, PatternTree.Threshold<E>> build(Input<? extends In> x, Output<?> y,
@@ -304,9 +316,9 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
         Output<?> y) {
       List<E> shapelets = new ArrayList<>(this.inspectedPatterns);
       for (int i = 0; i < this.inspectedPatterns; i++) {
-        int index = c.getRandomSample().getRandomExample().getIndex();
-        In timeSeries = x.get(index);
-        shapelets.add(patternFactory.createPattern(timeSeries));
+        // int index = c.getRandomSample().getRandomExample().getIndex();
+        // In timeSeries = x.get(index);
+        shapelets.add(patternFactory.createPattern(x, c));
       }
 
       if (shapelets.isEmpty()) {
@@ -683,22 +695,6 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
       }
     }
 
-    private static class DownsampledShapelet extends IndexSortedNormalizedShapelet {
-
-      private final int start;
-      private final int length;
-      private final int index;
-
-      public DownsampledShapelet(int index, int start, int length, int downStart, int downLength,
-          Vector vector) {
-        super(downStart, downLength, vector);
-
-        this.start = start;
-        this.length = length;
-        this.index = index;
-      }
-    }
-
     protected static class Threshold {
 
       public double threshold, impurity, gap, margin;
@@ -730,10 +726,18 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
     private static class GuessVisitor
         implements TreeVisitor<Vector, PatternTree.Threshold<Shapelet>> {
 
+      private final TreeNode<Vector, PatternTree.Threshold<Shapelet>> root;
       private final Distance<Vector> distanceMeasure;
 
-      private GuessVisitor(Distance<Vector> distanceMeasure) {
+      private GuessVisitor(TreeNode<Vector, PatternTree.Threshold<Shapelet>> root,
+          Distance<Vector> distanceMeasure) {
+        this.root = root;
         this.distanceMeasure = distanceMeasure;
+      }
+
+      @Override
+      public TreeNode<Vector, PatternTree.Threshold<Shapelet>> getRoot() {
+        return root;
       }
 
       @Override
@@ -813,16 +817,23 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
         implements TreeVisitor<Vector, PatternTree.Threshold<Shapelet>> {
 
       public static final EuclideanDistance EUCLIDEAN = EuclideanDistance.getInstance();
+      private final TreeNode<Vector, PatternTree.Threshold<Shapelet>> root;
       private final Distance<Vector> distanceMeasure;
       private final DataFrame x;
       private final Vector y;
 
-      private OneNnVisitor(Distance<Vector> distanceMeasure, DataFrame x, Vector y) {
+      private OneNnVisitor(TreeNode<Vector, PatternTree.Threshold<Shapelet>> root,
+          Distance<Vector> distanceMeasure, DataFrame x, Vector y) {
+        this.root = root;
         this.distanceMeasure = distanceMeasure;
         this.x = x;
         this.y = y;
       }
 
+      @Override
+      public TreeNode<Vector, PatternTree.Threshold<Shapelet>> getRoot() {
+        return root;
+      }
 
       @Override
       public DoubleArray visitLeaf(TreeLeaf<Vector, PatternTree.Threshold<Shapelet>> leaf,
@@ -886,16 +897,25 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
     private static class WeightVisitor
         implements TreeVisitor<Vector, PatternTree.Threshold<Shapelet>> {
 
+      private final TreeNode<Vector, PatternTree.Threshold<Shapelet>> root;
       private final Distance<Vector> distanceMeasure;
       private final double weight;
 
-      public WeightVisitor(Distance<Vector> distanceMeasure) {
-        this(distanceMeasure, 1);
+      public WeightVisitor(TreeNode<Vector, PatternTree.Threshold<Shapelet>> root,
+          Distance<Vector> distanceMeasure) {
+        this(root, distanceMeasure, 1);
       }
 
-      private WeightVisitor(Distance<Vector> distanceMeasure, double weight) {
+      private WeightVisitor(TreeNode<Vector, PatternTree.Threshold<Shapelet>> root,
+          Distance<Vector> distanceMeasure, double weight) {
+        this.root = root;
         this.distanceMeasure = distanceMeasure;
         this.weight = weight;
+      }
+
+      @Override
+      public TreeNode<Vector, PatternTree.Threshold<Shapelet>> getRoot() {
+        return root;
       }
 
       @Override
@@ -918,14 +938,15 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
 
         if (shapelet.size() > useExample.size()) {
           WeightVisitor leftVisitor =
-              new WeightVisitor(distanceMeasure, node.getLeft().getWeight());
+              new WeightVisitor(root, distanceMeasure, node.getLeft().getWeight());
           WeightVisitor rightVisitor =
-              new WeightVisitor(distanceMeasure, node.getRight().getWeight());
+              new WeightVisitor(root, distanceMeasure, node.getRight().getWeight());
+
           DoubleArray leftProbabilities = leftVisitor.visit(node.getLeft(), example);
           DoubleArray rightProbabilities = rightVisitor.visit(node.getRight(), example);
           return leftProbabilities.plus(rightProbabilities);
         } else {
-          WeightVisitor visitor = new WeightVisitor(distanceMeasure, weight);
+          WeightVisitor visitor = new WeightVisitor(root, distanceMeasure, weight);
           double computedDistance;
           computedDistance = distanceMeasure.compute(useExample, shapelet);
           if (computedDistance < threshold) {
@@ -939,10 +960,19 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
 
     private static class DefaultPatternTreeVisitor<In, E>
         implements TreeVisitor<In, PatternTree.Threshold<E>> {
+
+      private final TreeNode<In, PatternTree.Threshold<E>> root;
       private final PatternDistance<? super In, ? super E> patternDistance;
 
-      private DefaultPatternTreeVisitor(PatternDistance<? super In, ? super E> patternDistance) {
+      private DefaultPatternTreeVisitor(TreeNode<In, PatternTree.Threshold<E>> root,
+          PatternDistance<? super In, ? super E> patternDistance) {
+        this.root = root;
         this.patternDistance = patternDistance;
+      }
+
+      @Override
+      public TreeNode<In, PatternTree.Threshold<E>> getRoot() {
+        return root;
       }
 
       @Override

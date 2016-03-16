@@ -26,10 +26,8 @@ import java.util.Set;
 
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
-import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Convert;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
+import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.AbstractClassifier;
 import org.briljantframework.mimir.classification.ClassifierCharacteristic;
 import org.briljantframework.mimir.supervised.Characteristic;
@@ -43,12 +41,13 @@ import weka.core.Instances;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class WekaClassifier<T extends weka.classifiers.Classifier> extends AbstractClassifier {
+public class WekaClassifier<T extends weka.classifiers.Classifier>
+    extends AbstractClassifier<org.briljantframework.mimir.Instance> {
 
   private final T classifier;
   private final FastVector names;
 
-  protected WekaClassifier(T classifier, FastVector names, Vector classes) {
+  protected WekaClassifier(T classifier, FastVector names, List<?> classes) {
     super(classes);
     this.classifier = classifier;
     this.names = names;
@@ -74,12 +73,12 @@ public class WekaClassifier<T extends weka.classifiers.Classifier> extends Abstr
   }
 
   @Override
-  public DoubleArray estimate(Vector record) {
+  public DoubleArray estimate(org.briljantframework.mimir.Instance record) {
     Instance instance = new Instance(record.size() + 1);
     Instances instances = new Instances("Crap", names, 1);
     instance.setDataset(instances);
     for (int i = 0; i < record.size(); i++) {
-      addValue(instance, i, record.loc().get(i));
+      addValue(instance, i, record.get(i));
     }
     instance.setMissing(record.size());
     instances.setClassIndex(record.size());
@@ -104,7 +103,7 @@ public class WekaClassifier<T extends weka.classifiers.Classifier> extends Abstr
   }
 
   public static class Learner<T extends weka.classifiers.Classifier> implements
-      Predictor.Learner<WekaClassifier<T>> {
+      Predictor.Learner<org.briljantframework.mimir.Instance, Object, WekaClassifier<T>> {
 
     private final T classifier;
 
@@ -113,36 +112,39 @@ public class WekaClassifier<T extends weka.classifiers.Classifier> extends Abstr
     }
 
     @Override
-    public WekaClassifier<T> fit(DataFrame x, Vector y) {
+    public WekaClassifier<T> fit(Input<? extends org.briljantframework.mimir.Instance> x,
+        Output<?> y) {
+      PropertyPreconditions.checkProperties(getRequiredInputProperties(), x);
+
       try {
-        Vector classes = Vectors.unique(y);
+        List<?> classes = Outputs.unique(y);
         FastVector classVector = new FastVector();
-        classes.toList().forEach(classVector::addElement);
+        classes.forEach(classVector::addElement);
 
         @SuppressWarnings("unchecked")
         T copy = (T) weka.classifiers.Classifier.makeCopy(classifier);
         FastVector names = new FastVector();
-        for (Object column : x.getColumnIndex()) {
+        List<String> featureNames = x.getProperty(Dataset.FEATURE_NAMES);
+        for (Object column : featureNames) {
           // Guess numeric for now
           Attribute element = new Attribute(column.toString());
           names.addElement(element);
         }
         names.addElement(new Attribute("Class", classVector));
-        Instances instances = new Instances("dataFrameCopy", names, x.rows());
-        List<Vector> records = x.getRecords();
-        for (int i = 0; i < records.size(); i++) {
-          Vector record = records.get(i);
+        Instances instances = new Instances("dataFrameCopy", names, x.size());
+        for (int i = 0; i < x.size(); i++) {
+          org.briljantframework.mimir.Instance record = x.get(i);
           Instance instance = new Instance(record.size() + 1);
           instance.setDataset(instances);
 
           for (int j = 0; j < record.size(); j++) {
-            Object value = record.loc().get(j);
+            Object value = record.get(j);
             addValue(instance, j, value);
           }
-          instance.setValue(record.size(), y.loc().get(String.class, i));
+          instance.setValue(record.size(), y.get(String.class, i));
           instances.add(instance);
         }
-        instances.setClassIndex(x.columns());
+        instances.setClassIndex(x.getProperty(Dataset.FEATURE_SIZE));
         copy.buildClassifier(instances);
         return new WekaClassifier<>(copy, names, classes);
       } catch (Exception e) {

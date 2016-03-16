@@ -25,9 +25,7 @@ import java.util.List;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
-import org.briljantframework.array.Range;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.tree.*;
 import org.briljantframework.mimir.supervised.Predictor;
@@ -35,10 +33,9 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * Created by isak on 11/16/15.
  */
-public class HyperPlaneTree extends TreeClassifier<Instance, HyperPlaneThreshold> {
-  protected HyperPlaneTree(List<?> classes, TreeNode<Instance, HyperPlaneThreshold> node,
-      TreeVisitor<Instance, HyperPlaneThreshold> predictionVisitor) {
-    super(classes, node, predictionVisitor);
+public class HyperPlaneTree extends TreeClassifier<Instance> {
+  protected HyperPlaneTree(List<?> classes, TreeVisitor<Instance, ?> predictionVisitor) {
+    super(classes, predictionVisitor);
   }
 
   private static DoubleArray take(DoubleArray x, IntArray i) {
@@ -63,6 +60,17 @@ public class HyperPlaneTree extends TreeClassifier<Instance, HyperPlaneThreshold
   }
 
   private static class HyperPlaneTreeVisitor implements TreeVisitor<Instance, HyperPlaneThreshold> {
+    private final TreeNode<Instance, HyperPlaneThreshold> root;
+
+    public HyperPlaneTreeVisitor(TreeNode<Instance, HyperPlaneThreshold> root) {
+      this.root = root;
+    }
+
+    @Override
+    public TreeNode<Instance, HyperPlaneThreshold> getRoot() {
+      return root;
+    }
+
     @Override
     public DoubleArray visitLeaf(TreeLeaf<Instance, HyperPlaneThreshold> leaf, Instance example) {
       return leaf.getProbabilities();
@@ -73,9 +81,9 @@ public class HyperPlaneTree extends TreeClassifier<Instance, HyperPlaneThreshold
         Instance example) {
       DoubleArray row = DoubleArray.zeros(example.size() + 1);
       row.set(0, 1);
-      // TODO: 3/14/16 FIX ME!
-      // Vectors.copy(example, row.getView(Range.of(1, row.size())));
-
+      for (int i = 1; i < example.size(); i++) {
+        row.set(i, example.getAsDouble(i));
+      }
       row = take(row, node.getThreshold().getFeatures());
       DoubleArray weights = node.getThreshold().getWeights();
       if (Arrays.inner(row, weights) < node.getThreshold().getThreshold()) {
@@ -108,7 +116,7 @@ public class HyperPlaneTree extends TreeClassifier<Instance, HyperPlaneThreshold
 
       DoubleArray array = Arrays.hstack(DoubleArray.ones(x.size(), 1), Inputs.toDoubleArray(x));
       TreeNode<Instance, HyperPlaneThreshold> root = build(array, y, set);
-      return new HyperPlaneTree(classes, root, new HyperPlaneTreeVisitor());
+      return new HyperPlaneTree(classes, new HyperPlaneTreeVisitor(root));
     }
 
     private TreeNode<Instance, HyperPlaneThreshold> build(DoubleArray x, Output<?> y,

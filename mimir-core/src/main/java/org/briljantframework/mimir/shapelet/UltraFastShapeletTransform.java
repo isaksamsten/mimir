@@ -46,7 +46,7 @@ public class UltraFastShapeletTransform implements Transformation {
   private final double p;
   private final double upperLength = 1;
   private final double lowerLength = 0.025;
-  private final Distance numericDistance =
+  private final Distance<Vector> numericDistance =
       new EarlyAbandonSlidingDistance(EuclideanDistance.getInstance());
 
   public UltraFastShapeletTransform(int shapelets, double p) {
@@ -149,10 +149,10 @@ public class UltraFastShapeletTransform implements Transformation {
 
   private static class ShapeletTransformer implements Transformer {
     private final List<Shapelet> features;
-    private final Distance numericDistance;
+    private final Distance<Vector> numericDistance;
     private final boolean selectLowest;
 
-    public ShapeletTransformer(Distance numericDistance, List<Shapelet> features,
+    public ShapeletTransformer(Distance<Vector> numericDistance, List<Shapelet> features,
         boolean selectLowest) {
       this.features = features;
       this.numericDistance = numericDistance;
