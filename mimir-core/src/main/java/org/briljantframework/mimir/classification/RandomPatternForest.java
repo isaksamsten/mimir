@@ -43,9 +43,9 @@ import org.briljantframework.mimir.evaluation.EvaluationContext;
  *
  * @author Isak Karlsson
  */
-public class RandomShapeletForest<In> extends Ensemble<In> {
+public class RandomPatternForest<In> extends Ensemble<In> {
 
-  private RandomShapeletForest(List<?> classes, List<? extends Classifier<In>> members,
+  private RandomPatternForest(List<?> classes, List<? extends Classifier<In>> members,
       BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
   }
@@ -62,14 +62,15 @@ public class RandomShapeletForest<In> extends Ensemble<In> {
   }
 
   public static class Configurator<In, E>
-      implements Classifier.Configurator<In, Object, Learner<In, E>> {
+      implements Classifier.Configurator<In, Object, Learner<In>> {
 
     private final PatternTree.Configurator<In, E> shapeletTree;
     private int size = 100;
 
-    public Configurator(PatternTree.DistanceStrategy<? super In, E> distanceStrategy, int size) {
+    public Configurator(PatternTree.PatternFactory<? super In, ? extends E> patternFactory,
+        PatternTree.PatternDistance<? super In, ? super E> patternDistance, int size) {
       this.size = size;
-      this.shapeletTree = new PatternTree.Configurator<>(distanceStrategy);
+      this.shapeletTree = new PatternTree.Configurator<>(patternFactory, patternDistance);
     }
 
     public Configurator<In, E> setMinimumSplitSize(double minSplitSize) {
@@ -77,9 +78,16 @@ public class RandomShapeletForest<In> extends Ensemble<In> {
       return this;
     }
 
-    public PatternTree.Configurator setDistanceStrategy(
-        PatternTree.DistanceStrategy<In, E> distanceStrategy) {
-      return shapeletTree.setDistanceStrategy(distanceStrategy);
+    public Configurator<In, E> setPatternDistance(
+        PatternTree.PatternDistance<? super In, ? super E> patternDistance) {
+      shapeletTree.setPatternDistance(patternDistance);
+      return this;
+    }
+
+    public Configurator<In, E> setPatternFactory(
+        PatternTree.PatternFactory<? super In, ? extends E> patternFactory) {
+      shapeletTree.setPatternFactory(patternFactory);
+      return this;
     }
 
     public Configurator<In, E> setMaximumShapelets(int maxShapelets) {
@@ -98,43 +106,43 @@ public class RandomShapeletForest<In> extends Ensemble<In> {
     }
 
     @Override
-    public Learner<In, E> configure() {
+    public Learner<In> configure() {
       return new Learner<>(shapeletTree, size);
     }
   }
 
   public static class Evaluator<In> implements
-      org.briljantframework.mimir.evaluation.Evaluator<In, Object, RandomShapeletForest<In>> {
+      org.briljantframework.mimir.evaluation.Evaluator<In, Object, RandomPatternForest<In>> {
 
     @Override
-    public void accept(EvaluationContext<? extends In, ?, ? extends RandomShapeletForest<In>> ctx) {
+    public void accept(EvaluationContext<? extends In, ?, ? extends RandomPatternForest<In>> ctx) {
       ctx.getMeasureCollection().add("depth", ctx.getPredictor().getAverageDepth());
     }
   }
 
-  public static class Learner<In, E> extends Ensemble.Learner<In, RandomShapeletForest<In>> {
+  public static class Learner<In> extends Ensemble.Learner<In, RandomPatternForest<In>> {
 
-    private final PatternTree.Configurator<In, E> configurator;
+    private final PatternTree.Configurator<In, ?> configurator;
 
-    private Learner(PatternTree.Configurator<In, E> configurator, int size) {
+    private Learner(PatternTree.Configurator<In, ?> configurator, int size) {
       super(size);
       this.configurator = configurator;
     }
 
     @Override
-    public RandomShapeletForest<In> fit(Input<? extends In> x, Output<?> y) {
+    public RandomPatternForest<In> fit(Input<? extends In> x, Output<?> y) {
       List<?> classes = Outputs.unique(y);
 
       ClassSet classSet = new ClassSet(y, classes);
-      List<FitTask<In, E>> tasks = new ArrayList<>();
+      List<FitTask<In>> tasks = new ArrayList<>();
       BooleanArray oobIndicator = Arrays.booleanArray(x.size(), size());
       for (int i = 0; i < size(); i++) {
         tasks.add(new FitTask<>(classSet, x, y, configurator, classes, oobIndicator.getColumn(i)));
       }
 
       try {
-        List<PatternTree<In, E>> models = Ensemble.Learner.execute(tasks);
-        return new RandomShapeletForest<>(classes, models, oobIndicator);
+        List<PatternTree<In, ?>> models = Ensemble.Learner.execute(tasks);
+        return new RandomPatternForest<>(classes, models, oobIndicator);
       } catch (Exception e) {
         e.printStackTrace();
         throw new RuntimeException(e);
@@ -147,18 +155,18 @@ public class RandomShapeletForest<In> extends Ensemble<In> {
       return "Ensemble of Randomized Shapelet Trees";
     }
 
-    private static final class FitTask<In, E> implements Callable<PatternTree<In, E>> {
+    private static final class FitTask<In> implements Callable<PatternTree<In, ?>> {
 
       private final ClassSet classSet;
       private final Input<? extends In> x;
       private final Output<?> y;
       private final List<?> classes;
-      private final PatternTree.Configurator<In, E> configurator;
+      private final PatternTree.Configurator<In, ?> configurator;
       private final BooleanArray oobIndicator;
 
 
       private FitTask(ClassSet classSet, Input<? extends In> x, Output<?> y,
-          PatternTree.Configurator<In, E> configurator, List<?> classes,
+          PatternTree.Configurator<In, ?> configurator, List<?> classes,
           BooleanArray oobIndicator) {
         this.classSet = classSet;
         this.x = x;
@@ -169,7 +177,7 @@ public class RandomShapeletForest<In> extends Ensemble<In> {
       }
 
       @Override
-      public PatternTree<In, E> call() throws Exception {
+      public PatternTree<In, ?> call() throws Exception {
         Random random = new Random(Thread.currentThread().getId() * System.nanoTime());
         ClassSet sample = sample(classSet, random);
         return new PatternTree.Learner<>(configurator, sample, classes).fit(x, y);

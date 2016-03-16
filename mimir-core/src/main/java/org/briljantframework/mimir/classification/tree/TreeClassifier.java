@@ -20,11 +20,10 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
-import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.classification.AbstractClassifier;
-
 import java.util.List;
+
+import org.briljantframework.array.DoubleArray;
+import org.briljantframework.mimir.classification.AbstractClassifier;
 
 /**
  * Represents a Tree based predictor. Uses a {@link TreeVisitor} to make predictions.

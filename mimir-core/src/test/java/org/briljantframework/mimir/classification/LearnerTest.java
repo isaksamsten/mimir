@@ -1,17 +1,17 @@
 /**
  * The MIT License (MIT)
- *
+ * <p>
  * Copyright (c) 2016 Isak Karlsson
- *
+ * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
  * associated documentation files (the "Software"), to deal in the Software without restriction,
  * including without limitation the rights to use, copy, modify, merge, publish, distribute,
  * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- *
+ * <p>
  * The above copyright notice and this permission notice shall be included in all copies or
  * substantial portions of the Software.
- *
+ * <p>
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
  * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
@@ -22,13 +22,17 @@ package org.briljantframework.mimir.classification;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.concurrent.ThreadLocalRandom;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.SortOrder;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.dataseries.DataSeriesCollection;
+import org.briljantframework.data.vector.Convert;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.DatasetReader;
 import org.briljantframework.dataset.io.Datasets;
@@ -50,17 +54,48 @@ import org.junit.Test;
 public class LearnerTest {
 
   @Test
+  public void testTestda3() throws Exception {
+    DataFrame data = DataFrames.permuteRecords(Datasets.loadIris());
+    Input<Instance> x = Inputs.newInput(data.drop("Class"));
+    Output<?> y = Outputs.newOutput(data.get("Class"));
+
+    PatternTree.PatternDistance<Instance, Pair<Integer, Object>> zeroOneDistance = (a, b) -> {
+      Object value = b.getValue();
+      int axis = b.getKey();
+      if (Is.numeric(value)) {
+        return Convert.to(Double.class, value).compareTo(a.getAsDouble(axis)) <= 0 ? 0 : 1;
+      } else {
+        return !Is.equal(value, a.get(axis)) ? 0 : 1;
+      }
+    };
+
+    PatternTree.PatternFactory<Instance, Pair<Integer, Object>> featureFactory = input -> {
+      int axis = ThreadLocalRandom.current().nextInt(input.size());
+      return new ImmutablePair<>(axis, input.get(axis));
+    };
+
+    RandomPatternForest.Learner<Instance> rfl =
+        new RandomPatternForest.Configurator<>(featureFactory, zeroOneDistance, 100)
+            .setMaximumShapelets(20).configure();
+
+    ClassifierValidator<Instance, RandomPatternForest<Instance>> v =
+        ClassifierValidator.crossValidator(10);
+
+    System.out.println(v.test(rfl, x, y).getMeasures().mean());
+  }
+
+  @Test
   public void testTesda2() throws Exception {
     DataFrame data = DataFrames.permuteRecords(Datasets.loadSyntheticControl());
     Input<Vector> x = new ArrayInput<>(data.drop(0).getRecords());
     Output<?> y = Outputs.newOutput(data.get(0));
 
-    ClassifierValidator<Vector, RandomShapeletForest<Vector>> v =
+    ClassifierValidator<Vector, RandomPatternForest<Vector>> v =
         ClassifierValidator.splitValidator(0.33);
 
-    RandomShapeletForest.Learner<Vector, Shapelet> rfl =
-        new RandomShapeletForest.Configurator<>(new PatternTree.ShapeletDistanceStrategy(), 100)
-            .configure();
+    RandomPatternForest.Learner<Vector> rfl =
+        new RandomPatternForest.Configurator<>(new PatternTree.ShapeletFactory(),
+            new PatternTree.ShapeletDistanceStrategy(), 100).configure();
 
     System.out.println(v.test(rfl, x, y).getMeasures().mean());
 

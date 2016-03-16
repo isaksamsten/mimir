@@ -50,42 +50,28 @@ import com.carrotsearch.hppc.cursors.ObjectDoubleCursor;
  */
 public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold<E>> {
 
-  public interface DistanceStrategy<T, S> {
-
-    S samplePattern(T input);
-
+  public interface PatternDistance<T, S> {
     double computeDistance(T a, S b);
   }
 
+  public interface PatternFactory<T, S> {
+    S createPattern(T input);
+  }
 
-  public static class ShapeletDistanceStrategy implements DistanceStrategy<Vector, Shapelet> {
-    private final Distance<Vector> categoricDistance = new ZeroOneDistance();
-    private final Distance<Vector> numericDistance =
-        EarlyAbandonSlidingDistance.create(EuclideanDistance.getInstance());
 
+  private static class CategoricShapelet extends Shapelet {
+
+    public CategoricShapelet(String value) {
+      super(0, 1, Vector.singleton(value));
+    }
+
+    public CategoricShapelet(int start, int end, Vector values) {
+      super(start, end, values);
+    }
+  }
+
+  public static class ShapeletFactory implements PatternFactory<Vector, Shapelet> {
     private final double lowerLength = 0.025, upperLength = 1;
-
-    private static class ZeroOneDistance implements Distance<Vector> {
-
-      @Override
-      public double compute(Vector a, Vector b) {
-        if (a instanceof Shapelet) {
-          return b.loc().indexOf(a.loc().get(0)) < 0 ? 1 : 0;
-        }
-        return a.loc().indexOf(b.loc().get(0)) < 0 ? 1 : 0;
-      }
-    }
-
-    private class CategoricShapelet extends Shapelet {
-
-      public CategoricShapelet(String value) {
-        super(0, 1, Vector.singleton(value));
-      }
-
-      public CategoricShapelet(int start, int end, Vector values) {
-        super(start, end, values);
-      }
-    }
 
     private static IntList nonNaIndicies(Vector vector) {
       IntList nonNas = new IntList();
@@ -106,7 +92,7 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
       if (timeSeries == null) {
         return null;
       }
-      if (isCategorical(timeSeries) && categoricDistance instanceof ZeroOneDistance) {
+      if (isCategorical(timeSeries)) {
         int rnd = ThreadLocalRandom.current().nextInt(timeSeries.size());
         return new CategoricShapelet(timeSeries.loc().get(String.class, rnd));
       }
@@ -143,7 +129,7 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
     }
 
     @Override
-    public Shapelet samplePattern(Vector timeSeries) {
+    public Shapelet createPattern(Vector timeSeries) {
       Shapelet shapelet;
       // MTS
       if (Vector.class.isAssignableFrom(timeSeries.getType().getDataClass())) {
@@ -165,6 +151,25 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
       }
       return shapelet;
     }
+  }
+
+
+  public static class ShapeletDistanceStrategy implements PatternDistance<Vector, Shapelet> {
+    private final Distance<Vector> categoricDistance = new ZeroOneDistance();
+    private final Distance<Vector> numericDistance =
+        EarlyAbandonSlidingDistance.create(EuclideanDistance.getInstance());
+
+    private static class ZeroOneDistance implements Distance<Vector> {
+
+      @Override
+      public double compute(Vector a, Vector b) {
+        if (a instanceof Shapelet) {
+          return b.loc().indexOf(a.loc().get(0)) < 0 ? 1 : 0;
+        }
+        return a.loc().indexOf(b.loc().get(0)) < 0 ? 1 : 0;
+      }
+    }
+
 
     @Override
     public double computeDistance(Vector record, Shapelet shapelet) {
@@ -215,10 +220,11 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
    */
   public static class Learner<In, E> implements Predictor.Learner<In, Object, PatternTree<In, E>> {
 
-    protected final Random random = new Random();
     protected final Gain gain = Gain.INFO;
 
-    private DistanceStrategy<? super In, E> distanceStrategy;
+    private final PatternFactory<? super In, ? extends E> patternFactory;
+    private final PatternDistance<? super In, ? super E> patternDistance;
+
     private final ClassSet classSet;
     private final int inspectedPatterns;
     private final double minSplit;
@@ -226,7 +232,8 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
     private List<?> classes;
 
     protected Learner(Configurator<In, E> builder, ClassSet classSet, List<?> classes) {
-      this.distanceStrategy = builder.distanceStrategy;
+      this.patternDistance = builder.patternDistance;
+      this.patternFactory = builder.patternFactory;
       this.inspectedPatterns = builder.patternCount;
       this.assessment = builder.assessment;
       this.minSplit = builder.minSplit;
@@ -254,7 +261,7 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
       Params params = new Params();
       params.noExamples = classSet.getTotalWeight();
       TreeNode<In, PatternTree.Threshold<E>> node = build(x, y, classSet, params);
-      DefaultPatternTreeVisitor<In, E> visitor = new DefaultPatternTreeVisitor<>(distanceStrategy);
+      DefaultPatternTreeVisitor<In, E> visitor = new DefaultPatternTreeVisitor<>(patternDistance);
       return new PatternTree<>(classes, node, visitor, params.depth, classSet);
     }
 
@@ -299,7 +306,7 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
       for (int i = 0; i < this.inspectedPatterns; i++) {
         int index = c.getRandomSample().getRandomExample().getIndex();
         In timeSeries = x.get(index);
-        shapelets.add(distanceStrategy.samplePattern(timeSeries));
+        shapelets.add(patternFactory.createPattern(timeSeries));
       }
 
       if (shapelets.isEmpty()) {
@@ -372,7 +379,7 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
       List<ExampleDistance> distances = new ArrayList<>();
       for (Example example : classSet) {
         In record = x.get(example.getIndex());
-        double distance = distanceStrategy.computeDistance(record, shapelet);
+        double distance = patternDistance.computeDistance(record, shapelet);
         memoizedDistances.put(example.getIndex(), distance);
         distances.add(new ExampleDistance(distance, example));
         if (!Is.NA(distance)) {
@@ -417,7 +424,7 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
           // } else {
           // dist = numericDistance.compute(record, shapelet);
           // }
-          double dist = distanceStrategy.computeDistance(record, shapelet);
+          double dist = patternDistance.computeDistance(record, shapelet);
           distanceMap.put(example.getIndex(), dist);
           distances.add(new ExampleDistance(dist, example));
           sum += dist;
@@ -932,10 +939,10 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
 
     private static class DefaultPatternTreeVisitor<In, E>
         implements TreeVisitor<In, PatternTree.Threshold<E>> {
-      private final DistanceStrategy<? super In, E> distanceStrategy;
+      private final PatternDistance<? super In, ? super E> patternDistance;
 
-      private DefaultPatternTreeVisitor(DistanceStrategy<? super In, E> distanceStrategy) {
-        this.distanceStrategy = distanceStrategy;
+      private DefaultPatternTreeVisitor(PatternDistance<? super In, ? super E> patternDistance) {
+        this.patternDistance = patternDistance;
       }
 
       @Override
@@ -947,7 +954,7 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
       public DoubleArray visitBranch(TreeBranch<In, PatternTree.Threshold<E>> node, In example) {
         E shapelet = node.getThreshold().getPattern();
         double threshold = node.getThreshold().getDistance();
-        double computedDistance = distanceStrategy.computeDistance(example, shapelet);
+        double computedDistance = patternDistance.computeDistance(example, shapelet);
         if (Is.NA(computedDistance)) {
           if (node.getMissing() != null) {
             return visit(node.getMissing(), example);
@@ -967,16 +974,28 @@ public class PatternTree<In, E> extends TreeClassifier<In, PatternTree.Threshold
   public static class Configurator<T, E>
       implements Classifier.Configurator<T, Object, Learner<T, E>> {
     public Learner.Assessment assessment = Learner.Assessment.IG;
-    public DistanceStrategy<? super T, E> distanceStrategy;
+
+    public PatternFactory<? super T, ? extends E> patternFactory;
+    public PatternDistance<? super T, ? super E> patternDistance;
+
     public double minSplit = 1;
     public int patternCount = 100;
 
-    public Configurator(DistanceStrategy<? super T, E> distanceStrategy) {
-      this.distanceStrategy = Objects.requireNonNull(distanceStrategy);
+    public Configurator(PatternFactory<? super T, ? extends E> patternFactory,
+        PatternDistance<? super T, ? super E> patternDistance) {
+      this.patternFactory = Objects.requireNonNull(patternFactory);
+      this.patternDistance = Objects.requireNonNull(patternDistance);
     }
 
-    public Configurator<T, E> setDistanceStrategy(DistanceStrategy<? super T, E> distanceStrategy) {
-      this.distanceStrategy = distanceStrategy;
+    public Configurator<T, E> setPatternDistance(
+        PatternDistance<? super T, ? super E> patternDistance) {
+      this.patternDistance = patternDistance;
+      return this;
+    }
+
+    public Configurator<T, E> setPatternFactory(
+        PatternFactory<? super T, ? extends E> patternFactory) {
+      this.patternFactory = patternFactory;
       return this;
     }
 

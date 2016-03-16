@@ -42,7 +42,7 @@ import org.briljantframework.dataset.io.SequenceDatasetReader;
 import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.classification.RandomForest;
-import org.briljantframework.mimir.classification.RandomShapeletForest;
+import org.briljantframework.mimir.classification.RandomPatternForest;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
 import org.briljantframework.mimir.classification.conformal.DistanceNonconformity;
 import org.briljantframework.mimir.classification.conformal.InductiveConformalClassifier;
@@ -57,7 +57,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 @Ignore
-public class RandomShapeletForestTest {
+public class RandomPatternForestTest {
 
   // @Test
   // public void testLOOCV() throws Exception {
@@ -362,7 +362,7 @@ public class RandomShapeletForestTest {
     System.out.println(shift(Vector.of(1, 2, 3, 4, 5, 6)));
   }
 
-  private DoubleArray computeOobAccuracy(RandomShapeletForest predictor, DataFrame x, Vector y) {
+  private DoubleArray computeOobAccuracy(RandomPatternForest predictor, DataFrame x, Vector y) {
 
     BooleanArray oob = predictor.getOobIndicator();
     for (int i = 0; i < x.rows(); i++) {
