@@ -27,8 +27,8 @@ import java.util.Iterator;
 import org.briljantframework.Check;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * The leave-one-out partitioner can be used to implement Leave-one-out cross-validation, a commonly

@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Objects;
 
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.Result;
 import org.briljantframework.mimir.evaluation.Validator;
 import org.briljantframework.mimir.supervised.Predictor;

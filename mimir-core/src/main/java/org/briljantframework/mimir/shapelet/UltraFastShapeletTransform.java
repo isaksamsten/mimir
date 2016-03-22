@@ -30,11 +30,10 @@ import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.MixedDataFrame;
 import org.briljantframework.data.dataframe.transform.Transformation;
 import org.briljantframework.data.dataframe.transform.Transformer;
+import org.briljantframework.data.vector.Type;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.VectorType;
 import org.briljantframework.mimir.distance.Distance;
 import org.briljantframework.mimir.distance.EarlyAbandonSlidingDistance;
-import org.briljantframework.mimir.distance.EuclideanDistance;
 
 /**
  * [1] M.Wistuba at al. Ultra-Fast Shapelets for Time Series Classication.
@@ -46,8 +45,7 @@ public class UltraFastShapeletTransform implements Transformation {
   private final double p;
   private final double upperLength = 1;
   private final double lowerLength = 0.025;
-  private final Distance<Vector> numericDistance =
-      new EarlyAbandonSlidingDistance(EuclideanDistance.getInstance());
+  private final Distance<Vector> numericDistance = new EarlyAbandonSlidingDistance();
 
   public UltraFastShapeletTransform(int shapelets, double p) {
     // Check.argument(shapelets > 0);
@@ -163,10 +161,10 @@ public class UltraFastShapeletTransform implements Transformation {
     public DataFrame transform(DataFrame x) {
       DataFrame.Builder out = new MixedDataFrame.Builder();
       for (int i = 0; i < features.size(); i++) {
-        out.set("Shapelet: " + i, VectorType.DOUBLE);
+        out.set("Shapelet: " + i, Type.DOUBLE);
       }
 
-      // ensures that the vectors are not resized
+      // ensures that the vectors are not resizedtransform
       for (int i = 0; i < features.size(); i++) {
         out.loc().set(x.rows() - 1, i, Na.DOUBLE);
       }
@@ -189,14 +187,14 @@ public class UltraFastShapeletTransform implements Transformation {
                 break;
               }
             }
-            synchronized (out) {
-              out.loc().set(i, j, minDist);
-            }
+            // synchronized (out) {
+            out.loc().set(i, j, minDist);
+            // }
             // }
           }
         });
       } else {
-        for (int i = 0; i < x.rows(); i++) {
+        IntStream.range(0, x.rows()).parallel().forEach(i -> {
           Vector record = x.loc().getRecord(i);
           for (int j = 0; j < features.size(); j++) {
             Shapelet shapelet = features.get(j);
@@ -206,7 +204,9 @@ public class UltraFastShapeletTransform implements Transformation {
             }
             out.loc().set(i, j, numericDistance.compute(channel, shapelet));
           }
-        }
+        });
+        // for (int i = 0; i < x.rows(); i++) {
+        //
       }
       return out.build();
     }

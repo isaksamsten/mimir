@@ -25,7 +25,7 @@ import java.util.List;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**

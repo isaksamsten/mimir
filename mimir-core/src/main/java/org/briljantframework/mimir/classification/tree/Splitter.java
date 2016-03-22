@@ -20,10 +20,9 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Instance;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Instance;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * @author Isak Karlsson

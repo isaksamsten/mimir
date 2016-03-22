@@ -25,8 +25,10 @@ import java.util.Set;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.*;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Inputs;
+import org.briljantframework.mimir.data.Instance;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;
 

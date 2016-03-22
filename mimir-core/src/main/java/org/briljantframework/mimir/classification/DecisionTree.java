@@ -27,8 +27,8 @@ import java.util.Set;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.vector.Convert;
-import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.tree.*;
+import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;
 

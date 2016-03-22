@@ -26,8 +26,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.briljantframework.Check;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.classification.ClassifierCharacteristic;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;

@@ -27,9 +27,9 @@ import java.util.Set;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.vector.Convert;
-import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.AbstractClassifier;
 import org.briljantframework.mimir.classification.ClassifierCharacteristic;
+import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;
 
@@ -42,7 +42,7 @@ import weka.core.Instances;
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public class WekaClassifier<T extends weka.classifiers.Classifier>
-    extends AbstractClassifier<org.briljantframework.mimir.Instance> {
+    extends AbstractClassifier<org.briljantframework.mimir.data.Instance> {
 
   private final T classifier;
   private final FastVector names;
@@ -73,7 +73,7 @@ public class WekaClassifier<T extends weka.classifiers.Classifier>
   }
 
   @Override
-  public DoubleArray estimate(org.briljantframework.mimir.Instance record) {
+  public DoubleArray estimate(org.briljantframework.mimir.data.Instance record) {
     Instance instance = new Instance(record.size() + 1);
     Instances instances = new Instances("Crap", names, 1);
     instance.setDataset(instances);
@@ -103,7 +103,7 @@ public class WekaClassifier<T extends weka.classifiers.Classifier>
   }
 
   public static class Learner<T extends weka.classifiers.Classifier> implements
-      Predictor.Learner<org.briljantframework.mimir.Instance, Object, WekaClassifier<T>> {
+      Predictor.Learner<org.briljantframework.mimir.data.Instance, Object, WekaClassifier<T>> {
 
     private final T classifier;
 
@@ -112,7 +112,7 @@ public class WekaClassifier<T extends weka.classifiers.Classifier>
     }
 
     @Override
-    public WekaClassifier<T> fit(Input<? extends org.briljantframework.mimir.Instance> x,
+    public WekaClassifier<T> fit(Input<? extends org.briljantframework.mimir.data.Instance> x,
         Output<?> y) {
       PropertyPreconditions.checkProperties(getRequiredInputProperties(), x);
 
@@ -133,7 +133,7 @@ public class WekaClassifier<T extends weka.classifiers.Classifier>
         names.addElement(new Attribute("Class", classVector));
         Instances instances = new Instances("dataFrameCopy", names, x.size());
         for (int i = 0; i < x.size(); i++) {
-          org.briljantframework.mimir.Instance record = x.get(i);
+          org.briljantframework.mimir.data.Instance record = x.get(i);
           Instance instance = new Instance(record.size() + 1);
           instance.setDataset(instances);
 

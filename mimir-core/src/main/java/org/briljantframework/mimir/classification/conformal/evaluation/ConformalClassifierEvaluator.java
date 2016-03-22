@@ -24,7 +24,7 @@ import java.util.List;
 
 import org.apache.commons.math3.util.Precision;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.Evaluator;

@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.Input;
+import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;

@@ -23,12 +23,9 @@ package org.briljantframework.mimir.classification.tree;
 import java.util.Random;
 
 import org.briljantframework.data.Is;
-import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Convert;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.VectorType;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Instance;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Instance;
 
 /**
  * Created by Isak Karlsson on 10/09/14.

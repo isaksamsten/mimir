@@ -18,31 +18,11 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.evaluation.partition;
-
-import java.util.Collection;
-
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
+package org.briljantframework.mimir.classification.tree.pattern;
 
 /**
- * The partitioner represents a strategy of how to partition a {@code DataFrame} and {@code Vector}
- * into training and validation partitions.
- *
- * <p>
- * The partitioner guarantees that the column-index of the {@code DataFrame} partitions are the same
- * as the input-{@code DataFrame}. The record-indexing might, however, be lost.
- *
- * @author Isak Karlsson
+ * Created by isak on 3/17/16.
  */
-public interface Partitioner<In, Out> {
-
-  /**
-   * Partitions {@code x} and {@code y} into training and validation partitions
-   *
-   * @param x the data
-   * @param y the target
-   * @return an iterable representing over the partitions
-   */
-  Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y);
+public interface PatternDistance<T, S> {
+  double computeDistance(T a, S b);
 }

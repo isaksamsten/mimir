@@ -31,27 +31,6 @@ import org.briljantframework.mimir.shapelet.NormalizedShapelet;
  */
 public class EarlyAbandonSlidingDistance implements Distance<Vector> {
 
-  protected final Distance<Vector> distance;
-
-  /**
-   * Instantiates a new Early abandon sliding distance.
-   *
-   * @param distance the distance
-   */
-  public EarlyAbandonSlidingDistance(Distance<Vector> distance) {
-    this.distance = Objects.requireNonNull(distance, "Requires a distance measure");
-  }
-
-  /**
-   * Create early abandon sliding distance.
-   *
-   * @param distance the distance
-   * @return the early abandon sliding distance
-   */
-  public static EarlyAbandonSlidingDistance create(Distance<Vector> distance) {
-    return new EarlyAbandonSlidingDistance(distance);
-  }
-
   /**
    * If {@code a} is shorter than {@code b}, then {@code a} is considered a shapelet and slid
    * against {@code b} and wise-versa.
@@ -72,10 +51,10 @@ public class EarlyAbandonSlidingDistance implements Distance<Vector> {
       if (!(vector instanceof NormalizedShapelet)) {
         vector = new NormalizedShapelet(0, vector.size(), vector);
       }
-      return new SlidingDistance(EuclideanDistance.getInstance()).compute(vector,
-          new NormalizedShapelet(0, candidate.size(), candidate));
+      // return new SlidingDistance(EuclideanDistance.getInstance()).compute(vector,
+      // new NormalizedShapelet(0, candidate.size(), candidate));
       // candidate = new NormalizedShapelet(0, candidate.size(), candidate);
-      // throw new IllegalArgumentException("Candidate shapelet must be z-normalized");
+      throw new IllegalArgumentException("Candidate shapelet must be z-normalized");
     }
 
     int[] order = null;

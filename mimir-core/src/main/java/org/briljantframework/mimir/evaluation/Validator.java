@@ -25,9 +25,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.briljantframework.mimir.ArrayOutput;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.ArrayOutput;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.evaluation.partition.FoldPartitioner;
 import org.briljantframework.mimir.evaluation.partition.Partition;

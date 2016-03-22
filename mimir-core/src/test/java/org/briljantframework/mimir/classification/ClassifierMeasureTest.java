@@ -23,7 +23,7 @@ package org.briljantframework.mimir.classification;
 import static org.junit.Assert.assertEquals;
 
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.ArrayOutput;
+import org.briljantframework.mimir.data.ArrayOutput;
 import org.junit.Test;
 
 /**

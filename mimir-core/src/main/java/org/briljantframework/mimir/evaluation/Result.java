@@ -22,7 +22,7 @@ package org.briljantframework.mimir.evaluation;
 
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * @author Isak Karlsson

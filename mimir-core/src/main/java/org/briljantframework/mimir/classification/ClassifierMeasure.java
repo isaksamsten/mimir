@@ -32,8 +32,8 @@ import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.DoubleVector;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.Outputs;
+import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.data.Outputs;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>

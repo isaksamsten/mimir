@@ -25,8 +25,8 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.briljantframework.Check;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * The split partitioner simply partitions the input {@code DataFrame} (with {@code m rows}) and

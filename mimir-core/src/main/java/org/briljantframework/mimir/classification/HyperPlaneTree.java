@@ -26,8 +26,8 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.tree.*;
+import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**

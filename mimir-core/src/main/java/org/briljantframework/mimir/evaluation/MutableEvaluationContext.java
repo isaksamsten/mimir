@@ -23,7 +23,7 @@ package org.briljantframework.mimir.evaluation;
 import java.util.Objects;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.partition.Partition;
 import org.briljantframework.mimir.supervised.Predictor;
 

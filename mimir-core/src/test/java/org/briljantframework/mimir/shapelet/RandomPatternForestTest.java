@@ -34,18 +34,17 @@ import org.briljantframework.data.dataseries.DataSeriesCollection;
 import org.briljantframework.data.index.Index;
 import org.briljantframework.data.reader.EntryReader;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.VectorType;
 import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.dataset.io.MatlabDatasetReader;
 import org.briljantframework.dataset.io.SequenceDatasetReader;
-import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.classification.RandomForest;
-import org.briljantframework.mimir.classification.RandomPatternForest;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
 import org.briljantframework.mimir.classification.conformal.DistanceNonconformity;
 import org.briljantframework.mimir.classification.conformal.InductiveConformalClassifier;
+import org.briljantframework.mimir.classification.tree.pattern.RandomPatternForest;
+import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.distance.EuclideanDistance;
 import org.briljantframework.mimir.evaluation.Evaluator;
 import org.briljantframework.mimir.evaluation.Result;
@@ -282,22 +281,22 @@ public class RandomPatternForestTest {
     // Gun_Point = 0.3
     // Mote_strain = 0.5
     DataFrame x = train.drop(0);
-    Input<Vector> input = new ArrayInput<>(x.getRecords());
+    Input<Instance> input = Inputs.newInput(x);
     Output<Object> output = new ArrayOutput<>(y.toList());
 
-    SplitPartitioner<Vector, Object> partitioner = new SplitPartitioner<>(0.1);
-    Partition<Vector, Object> trainPart = partitioner.partition(input, output).iterator().next();
+    SplitPartitioner<Instance, Object> partitioner = new SplitPartitioner<>(0.1);
+    Partition<Instance, Object> trainPart = partitioner.partition(input, output).iterator().next();
 
-    DistanceNonconformity.Learner<Vector> nc =
+    DistanceNonconformity.Learner<Instance> nc =
         new DistanceNonconformity.Learner<>(1, EuclideanDistance.getInstance());
     // Nonconformity.Learner nc =
     // new ProbabilityEstimateNonconformity.Learner(
     // new
     // RandomShapeletForest.Configurator(100).setAssessment(ShapeletTree.Learner.Assessment.IG).configure(),
     // new Margin());
-    InductiveConformalClassifier.Learner<Vector> learner =
+    InductiveConformalClassifier.Learner<Instance> learner =
         new InductiveConformalClassifier.Learner<>(nc);
-    InductiveConformalClassifier<Vector> classifier =
+    InductiveConformalClassifier<Instance> classifier =
         learner.fit(trainPart.getTrainingData(), trainPart.getTrainingTarget());
     classifier.calibrate(trainPart.getValidationData(), trainPart.getValidationTarget());
     // testEarlyClassification(test, classifier);
@@ -419,7 +418,7 @@ public class RandomPatternForestTest {
     EntryReader in = new SequenceDatasetReader(
         new FileInputStream("/Users/isak-kar/Desktop/sequences/" + ade + ".seq"));
 
-    DataFrame frame = new DataSeriesCollection.Builder(VectorType.STRING).readAll(in).build();
+    DataFrame frame = new DataSeriesCollection.Builder(String.class).readAll(in).build();
     frame = vectorize(frame);
 
     // System.out.println(frame.rows() + ", " + frame.columns());

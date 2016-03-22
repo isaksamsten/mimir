@@ -18,28 +18,24 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.classification;
+package org.briljantframework.mimir.classification.tree.pattern;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.Na;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.Outputs;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.data.Outputs;
 import org.briljantframework.mimir.classification.tree.*;
 import org.briljantframework.mimir.distance.Distance;
-import org.briljantframework.mimir.distance.EarlyAbandonSlidingDistance;
 import org.briljantframework.mimir.distance.EuclideanDistance;
 import org.briljantframework.mimir.shapelet.ChannelShapelet;
-import org.briljantframework.mimir.shapelet.IndexSortedNormalizedShapelet;
 import org.briljantframework.mimir.shapelet.Shapelet;
 import org.briljantframework.mimir.supervised.Predictor;
-import org.briljantframework.primitive.IntList;
 import org.briljantframework.statistics.FastStatistics;
 
 import com.carrotsearch.hppc.*;
@@ -49,164 +45,6 @@ import com.carrotsearch.hppc.cursors.ObjectDoubleCursor;
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public class PatternTree<In> extends TreeClassifier<In> {
-
-  public interface PatternDistance<T, S> {
-    double computeDistance(T a, S b);
-  }
-
-  public interface PatternFactory<T, S> {
-    S createPattern(Input<? extends T> inputs, ClassSet classSet);
-
-  }
-
-  public static abstract class SamplingPatternFactory<T, S> implements PatternFactory<T, S> {
-
-    @Override
-    public S createPattern(Input<? extends T> inputs, ClassSet classSet) {
-      return createPattern(inputs.get(classSet.getRandomSample().getRandomExample().getIndex()));
-    }
-
-    protected abstract S createPattern(T input);
-
-  }
-
-  private static class CategoricShapelet extends Shapelet {
-
-    public CategoricShapelet(String value) {
-      super(0, 1, Vector.singleton(value));
-    }
-
-    public CategoricShapelet(int start, int end, Vector values) {
-      super(start, end, values);
-    }
-  }
-
-  public static class ShapeletFactory extends SamplingPatternFactory<Vector, Shapelet> {
-    private final double lowerLength = 0.025, upperLength = 1;
-
-    private static IntList nonNaIndicies(Vector vector) {
-      IntList nonNas = new IntList();
-      for (int i = 0; i < vector.size(); i++) {
-        if (!Is.NA(vector.loc().get(i))) {
-          nonNas.add(i);
-        }
-      }
-      return nonNas;
-    }
-
-    private static boolean isCategorical(Vector timeSeries) {
-      return timeSeries != null
-          && String.class.isAssignableFrom(timeSeries.getType().getDataClass());
-    }
-
-    private Shapelet getUnivariateShapelet(Vector timeSeries) {
-      if (timeSeries == null) {
-        return null;
-      }
-      if (isCategorical(timeSeries)) {
-        int rnd = ThreadLocalRandom.current().nextInt(timeSeries.size());
-        return new CategoricShapelet(timeSeries.loc().get(String.class, rnd));
-      }
-
-      int timeSeriesLength = timeSeries.size();
-      int upper = (int) Math.round(timeSeriesLength * upperLength);
-      int lower = (int) Math.round(timeSeriesLength * lowerLength);
-      if (lower < 2) {
-        lower = 2;
-      }
-
-      if (Math.addExact(upper, lower) > timeSeriesLength) {
-        upper = timeSeriesLength - lower;
-      }
-      if (lower == upper) {
-        upper -= 2;
-      }
-      if (upper < 1) {
-        // return new Shapelet(0, 1, timeSeries);
-        return null;
-      }
-
-      int length = ThreadLocalRandom.current().nextInt(upper) + lower;
-      int start = ThreadLocalRandom.current().nextInt(timeSeriesLength - length);
-      Shapelet shapelet;
-      if (isCategorical(timeSeries)) {
-        shapelet = new CategoricShapelet(start, length, timeSeries);
-      } else {
-        // TODO: normalization should be a param
-        // TODO: normalized
-        shapelet = new IndexSortedNormalizedShapelet(start, length, timeSeries);
-      }
-      return shapelet;
-    }
-
-    @Override
-    public Shapelet createPattern(Vector timeSeries) {
-      Shapelet shapelet;
-      // MTS
-      if (Vector.class.isAssignableFrom(timeSeries.getType().getDataClass())) {
-        IntList nonNas = nonNaIndicies(timeSeries);
-        if (!nonNas.isEmpty()) {
-          int channelIndex = nonNas.get(ThreadLocalRandom.current().nextInt(nonNas.size()));
-          Vector channel = timeSeries.loc().get(Vector.class, channelIndex);
-          Shapelet univariateShapelet = getUnivariateShapelet(channel);
-          if (univariateShapelet == null) {
-            shapelet = null;
-          } else {
-            shapelet = new ChannelShapelet(channelIndex, univariateShapelet);
-          }
-        } else {
-          shapelet = null;
-        }
-      } else {
-        shapelet = getUnivariateShapelet(timeSeries);
-      }
-      return shapelet;
-    }
-  }
-
-
-  public static class ShapeletDistance implements PatternDistance<Vector, Shapelet> {
-    private final Distance<Vector> categoricDistance = new ZeroOneDistance();
-    private final Distance<Vector> numericDistance =
-        EarlyAbandonSlidingDistance.create(EuclideanDistance.getInstance());
-
-    private static class ZeroOneDistance implements Distance<Vector> {
-
-      @Override
-      public double compute(Vector a, Vector b) {
-        if (a instanceof Shapelet) {
-          return b.loc().indexOf(a.loc().get(0)) < 0 ? 1 : 0;
-        }
-        return a.loc().indexOf(b.loc().get(0)) < 0 ? 1 : 0;
-      }
-    }
-
-
-    @Override
-    public double computeDistance(Vector record, Shapelet shapelet) {
-      double distance;
-      if (shapelet instanceof ChannelShapelet) {
-        int channelIndex = ((ChannelShapelet) shapelet).getChannel();
-        Vector channel = record.loc().get(Vector.class, channelIndex);
-        if (shapelet.getDelegate() instanceof CategoricShapelet) {
-          if (Is.NA(channel)) {
-            distance = Na.DOUBLE;
-          } else {
-            distance = categoricDistance.compute(channel, shapelet);
-          }
-        } else {
-          if (Is.NA(channel)) {
-            distance = Na.DOUBLE;
-          } else {
-            distance = numericDistance.compute(channel, shapelet);
-          }
-        }
-      } else {
-        distance = numericDistance.compute(record, shapelet);
-      }
-      return distance;
-    }
-  }
 
   public final ClassSet classSet;
   private final int depth;
@@ -318,7 +156,10 @@ public class PatternTree<In> extends TreeClassifier<In> {
       for (int i = 0; i < this.inspectedPatterns; i++) {
         // int index = c.getRandomSample().getRandomExample().getIndex();
         // In timeSeries = x.get(index);
-        shapelets.add(patternFactory.createPattern(x, c));
+        E pattern = patternFactory.createPattern(x, c);
+        if (pattern != null) {
+          shapelets.add(pattern);
+        }
       }
 
       if (shapelets.isEmpty()) {
@@ -428,22 +269,12 @@ public class PatternTree<In> extends TreeClassifier<In> {
         double sum = 0;
         for (Example example : classSet) {
           In record = x.get(example.getIndex());
-          // double dist;
-          // if (shapelet instanceof ChannelShapelet) {
-          // Vector channel =
-          // record.loc().get(Vector.class, ((ChannelShapelet) shapelet).getChannel());
-          // dist = numericDistance.compute(channel, shapelet);
-          // } else {
-          // dist = numericDistance.compute(record, shapelet);
-          // }
           double dist = patternDistance.computeDistance(record, shapelet);
           distanceMap.put(example.getIndex(), dist);
           distances.add(new ExampleDistance(dist, example));
           sum += dist;
         }
         double stat = assessFstatShapeletQuality(distances, y);
-        // TODO: comment away
-        // stat *= (shapelet.size() / (double) x.columns());
         if (stat > bestStat || bestDistances == null) {
           bestStat = stat;
           bestDistanceMap = distanceMap;
@@ -622,13 +453,6 @@ public class PatternTree<In> extends TreeClassifier<In> {
             // missingSample.add(example);
             rightSample.add(example);
           } else {
-            // if (shapeletDistance == threshold) {
-            // if (getRandom().nextDouble() <= 0.5) {
-            // leftSample.add(example);
-            // } else {
-            // rightSample.add(example);
-            // }
-            // } else
             if (shapeletDistance <= threshold) {
               leftSample.add(example);
             } else {
@@ -650,10 +474,6 @@ public class PatternTree<In> extends TreeClassifier<In> {
 
       return new TreeSplit<>(left, right, missing,
           new PatternTree.Threshold<>(shapelet, threshold, classSet));
-    }
-
-    public enum SampleMode {
-      DOWN_SAMPLE, NORMAL, DERIVATE, NEW_SAMPLE, RANDOMIZE
     }
 
     public enum Assessment {
@@ -695,7 +515,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
       }
     }
 
-    protected static class Threshold {
+    private static class Threshold {
 
       public double threshold, impurity, gap, margin;
 
@@ -852,7 +672,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
           double minDistance = Double.POSITIVE_INFINITY;
           Object cls = null;
           for (Example ex : included) {
-            double distance = EUCLIDEAN.compute(example, x.loc().getRecord(ex.getIndex()));
+            double distance = EUCLIDEAN.compute(example.loc(), x.getRecord(ex.getIndex()).loc());
             if (distance < minDistance) {
               minDistance = distance;
               cls = y.loc().get(Object.class, ex.getIndex());
@@ -1002,7 +822,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
   }
 
   public static class Configurator<T, E>
-      implements Classifier.Configurator<T, Object, Learner<T, E>> {
+      implements Predictor.Configurator<T, Object, Learner<T, E>> {
     public Learner.Assessment assessment = Learner.Assessment.IG;
 
     public PatternFactory<? super T, ? extends E> patternFactory;

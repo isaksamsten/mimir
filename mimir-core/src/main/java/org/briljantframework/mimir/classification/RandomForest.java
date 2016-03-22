@@ -29,11 +29,11 @@ import java.util.concurrent.Callable;
 import org.briljantframework.Check;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
-import org.briljantframework.mimir.*;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.classification.tree.Example;
 import org.briljantframework.mimir.classification.tree.RandomSplitter;
 import org.briljantframework.mimir.classification.tree.Splitter;
+import org.briljantframework.mimir.data.*;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>

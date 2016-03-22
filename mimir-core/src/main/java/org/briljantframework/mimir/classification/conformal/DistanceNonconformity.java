@@ -26,8 +26,8 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
 import org.briljantframework.data.Is;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.classification.NearestNeighbours;
 import org.briljantframework.mimir.distance.Distance;
 
@@ -36,10 +36,10 @@ import org.briljantframework.mimir.distance.Distance;
  */
 public class DistanceNonconformity<In> implements ClassifierNonconformity<In> {
 
-  private final NearestNeighbours<In> classifier;
+  private final NearestNeighbours<? super In> classifier;
   private final int k;
 
-  public DistanceNonconformity(NearestNeighbours<In> classifier, int k) {
+  public DistanceNonconformity(NearestNeighbours<? super In> classifier, int k) {
     this.classifier = classifier;
     this.k = k;
   }
@@ -98,10 +98,10 @@ public class DistanceNonconformity<In> implements ClassifierNonconformity<In> {
   public static class Learner<In>
       implements ClassifierNonconformity.Learner<In, DistanceNonconformity<In>> {
 
-    private final NearestNeighbours.Learner<In> nearestNeighbors;
+    private final NearestNeighbours.Learner<? super In> nearestNeighbors;
     private final int k;
 
-    public Learner(int k, Distance<In> distance) {
+    public Learner(int k, Distance<? super In> distance) {
       this.nearestNeighbors = new NearestNeighbours.Learner<>(k, distance);
       this.k = k;
     }

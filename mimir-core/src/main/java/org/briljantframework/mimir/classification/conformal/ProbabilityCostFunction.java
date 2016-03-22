@@ -25,7 +25,7 @@ import java.util.List;
 import org.briljantframework.Check;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * A classification error function

@@ -18,31 +18,28 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.evaluation.partition;
+package org.briljantframework.mimir.data;
 
-import java.util.Collection;
+import java.util.List;
 
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
+import org.briljantframework.data.vector.Convert;
 
 /**
- * The partitioner represents a strategy of how to partition a {@code DataFrame} and {@code Vector}
- * into training and validation partitions.
- *
- * <p>
- * The partitioner guarantees that the column-index of the {@code DataFrame} partitions are the same
- * as the input-{@code DataFrame}. The record-indexing might, however, be lost.
- *
+ * An output represents a collection of indexed output variables.
+ * 
  * @author Isak Karlsson
  */
-public interface Partitioner<In, Out> {
+public interface Output<T> extends List<T> {
 
   /**
-   * Partitions {@code x} and {@code y} into training and validation partitions
+   * Get the value at the specified position coerced to a value of the given class.
    *
-   * @param x the data
-   * @param y the target
-   * @return an iterable representing over the partitions
+   * @param cls the class
+   * @param index the index
+   * @param <E> the type of the returned value.
+   * @return an instance of the given tyoe
    */
-  Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y);
+  default <E> E get(Class<? extends E> cls, int index) {
+    return Convert.to(cls, index);
+  }
 }

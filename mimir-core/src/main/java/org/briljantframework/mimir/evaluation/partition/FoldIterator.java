@@ -26,10 +26,10 @@ import java.util.Objects;
 
 import org.briljantframework.Check;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.ArrayInput;
-import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.ArrayOutput;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.ArrayInput;
+import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.data.ArrayOutput;
 import org.briljantframework.mimir.classification.ClassifierValidator;
 
 /**

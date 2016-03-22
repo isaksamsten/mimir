@@ -18,31 +18,31 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.evaluation.partition;
-
-import java.util.Collection;
-
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
+package org.briljantframework.mimir.data;
 
 /**
- * The partitioner represents a strategy of how to partition a {@code DataFrame} and {@code Vector}
- * into training and validation partitions.
- *
- * <p>
- * The partitioner guarantees that the column-index of the {@code DataFrame} partitions are the same
- * as the input-{@code DataFrame}. The record-indexing might, however, be lost.
- *
  * @author Isak Karlsson
  */
-public interface Partitioner<In, Out> {
+public interface Property<T> {
 
   /**
-   * Partitions {@code x} and {@code y} into training and validation partitions
-   *
-   * @param x the data
-   * @param y the target
-   * @return an iterable representing over the partitions
+   * Return the class of the given property
+   * 
+   * @return the class of the property
    */
-  Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y);
+  Class<T> getType();
+
+  /**
+   * Return the name of the property
+   * 
+   * @return the property name
+   */
+  String getName();
+
+  /**
+   * Return the description of the property
+   * 
+   * @return the property description
+   */
+  String getDescription();
 }

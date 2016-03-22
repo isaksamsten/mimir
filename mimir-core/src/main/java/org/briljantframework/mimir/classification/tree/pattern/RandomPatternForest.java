@@ -18,7 +18,7 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.classification;
+package org.briljantframework.mimir.classification.tree.pattern;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,9 +27,11 @@ import java.util.concurrent.Callable;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.Outputs;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.data.Outputs;
+import org.briljantframework.mimir.classification.Classifier;
+import org.briljantframework.mimir.classification.Ensemble;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.classification.tree.Example;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
@@ -67,8 +69,8 @@ public class RandomPatternForest<In> extends Ensemble<In> {
     private final PatternTree.Configurator<In, E> shapeletTree;
     private int size = 100;
 
-    public Configurator(PatternTree.PatternFactory<? super In, ? extends E> patternFactory,
-        PatternTree.PatternDistance<? super In, ? super E> patternDistance, int size) {
+    public Configurator(PatternFactory<? super In, ? extends E> patternFactory,
+        PatternDistance<? super In, ? super E> patternDistance, int size) {
       this.size = size;
       this.shapeletTree = new PatternTree.Configurator<>(patternFactory, patternDistance);
     }
@@ -79,13 +81,13 @@ public class RandomPatternForest<In> extends Ensemble<In> {
     }
 
     public Configurator<In, E> setPatternDistance(
-        PatternTree.PatternDistance<? super In, ? super E> patternDistance) {
+        PatternDistance<? super In, ? super E> patternDistance) {
       shapeletTree.setPatternDistance(patternDistance);
       return this;
     }
 
     public Configurator<In, E> setPatternFactory(
-        PatternTree.PatternFactory<? super In, ? extends E> patternFactory) {
+        PatternFactory<? super In, ? extends E> patternFactory) {
       shapeletTree.setPatternFactory(patternFactory);
       return this;
     }
@@ -129,8 +131,8 @@ public class RandomPatternForest<In> extends Ensemble<In> {
       this.configurator = configurator;
     }
 
-    public <E> Learner(PatternTree.PatternFactory<In, E> patternFactory,
-        PatternTree.PatternDistance<In, E> patternDistance, int size) {
+    public <E> Learner(PatternFactory<In, E> patternFactory, PatternDistance<In, E> patternDistance,
+        int size) {
       this(new PatternTree.Configurator<>(patternFactory, patternDistance), size);
     }
 

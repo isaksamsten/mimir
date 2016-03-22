@@ -22,8 +22,8 @@ package org.briljantframework.mimir.classification.tune;
 
 import java.util.List;
 
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.Validator;
 import org.briljantframework.mimir.supervised.Predictor;
 

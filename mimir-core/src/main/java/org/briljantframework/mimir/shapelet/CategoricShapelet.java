@@ -18,31 +18,20 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.evaluation.partition;
+package org.briljantframework.mimir.shapelet;
 
-import java.util.Collection;
-
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
+import org.briljantframework.data.vector.Vector;
 
 /**
- * The partitioner represents a strategy of how to partition a {@code DataFrame} and {@code Vector}
- * into training and validation partitions.
- *
- * <p>
- * The partitioner guarantees that the column-index of the {@code DataFrame} partitions are the same
- * as the input-{@code DataFrame}. The record-indexing might, however, be lost.
- *
- * @author Isak Karlsson
+ * Created by isak on 3/17/16.
  */
-public interface Partitioner<In, Out> {
+public class CategoricShapelet extends Shapelet {
 
-  /**
-   * Partitions {@code x} and {@code y} into training and validation partitions
-   *
-   * @param x the data
-   * @param y the target
-   * @return an iterable representing over the partitions
-   */
-  Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y);
+  public CategoricShapelet(String value) {
+    super(0, 1, Vector.singleton(value));
+  }
+
+  public CategoricShapelet(int start, int end, Vector values) {
+    super(start, end, values);
+  }
 }

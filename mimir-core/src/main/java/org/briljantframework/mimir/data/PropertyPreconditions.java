@@ -18,31 +18,27 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.evaluation.partition;
+package org.briljantframework.mimir.data;
 
 import java.util.Collection;
 
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
-
 /**
- * The partitioner represents a strategy of how to partition a {@code DataFrame} and {@code Vector}
- * into training and validation partitions.
- *
- * <p>
- * The partitioner guarantees that the column-index of the {@code DataFrame} partitions are the same
- * as the input-{@code DataFrame}. The record-indexing might, however, be lost.
- *
  * @author Isak Karlsson
  */
-public interface Partitioner<In, Out> {
+public final class PropertyPreconditions {
+  private PropertyPreconditions() {}
 
-  /**
-   * Partitions {@code x} and {@code y} into training and validation partitions
-   *
-   * @param x the data
-   * @param y the target
-   * @return an iterable representing over the partitions
-   */
-  Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y);
+  public static void checkProperties(Collection<? extends Property<?>> required,
+      Properties properties) {
+    for (Property<?> property : required) {
+      if (!properties.contains(property)) {
+        throw new IllegalArgumentException(
+            String.format("Required property '%s' not set.", property.getName()));
+      }
+    }
+  }
+
+  public static void checkProperties(Collection<? extends Property<?>> required, Input<?> input) {
+    checkProperties(required, input.getProperties());
+  }
 }

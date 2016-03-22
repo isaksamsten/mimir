@@ -24,9 +24,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-import org.briljantframework.mimir.Input;
-import org.briljantframework.mimir.Output;
-import org.briljantframework.mimir.Property;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.data.Property;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>

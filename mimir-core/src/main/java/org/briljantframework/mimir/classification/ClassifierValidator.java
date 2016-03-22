@@ -27,7 +27,7 @@ import java.util.Set;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.*;
+import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.evaluation.Evaluator;
 import org.briljantframework.mimir.evaluation.MutableEvaluationContext;
 import org.briljantframework.mimir.evaluation.Validator;

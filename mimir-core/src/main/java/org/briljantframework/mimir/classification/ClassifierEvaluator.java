@@ -20,7 +20,7 @@
  */
 package org.briljantframework.mimir.classification;
 
-import org.briljantframework.mimir.Output;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.Evaluator;
 
