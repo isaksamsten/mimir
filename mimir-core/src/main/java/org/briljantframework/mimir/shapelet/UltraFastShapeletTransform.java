@@ -28,10 +28,13 @@ import java.util.stream.IntStream;
 import org.briljantframework.data.Na;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.MixedDataFrame;
-import org.briljantframework.data.dataframe.transform.Transformation;
-import org.briljantframework.data.dataframe.transform.Transformer;
 import org.briljantframework.data.vector.Type;
 import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.data.ArrayInput;
+import org.briljantframework.mimir.data.Dataset;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.transform.Transformation;
+import org.briljantframework.mimir.data.transform.Transformer;
 import org.briljantframework.mimir.distance.Distance;
 import org.briljantframework.mimir.distance.EarlyAbandonSlidingDistance;
 
@@ -39,7 +42,7 @@ import org.briljantframework.mimir.distance.EarlyAbandonSlidingDistance;
  * [1] M.Wistuba at al. Ultra-Fast Shapelets for Time Series Classication.
  * http://arxiv.org/pdf/1503.05018.pdf
  */
-public class UltraFastShapeletTransform implements Transformation {
+public class UltraFastShapeletTransform implements Transformation<Vector, Vector> {
 
   private final int shapelets;
   private final double p;
@@ -54,20 +57,18 @@ public class UltraFastShapeletTransform implements Transformation {
   }
 
   @Override
-  public Transformer fit(DataFrame df) {
+  public Transformer<Vector, Vector> fit(Input<? extends Vector> x) {
     List<Shapelet> features = new ArrayList<>();
-    boolean selectLowest =
-        Vector.class.isAssignableFrom(df.loc().getRecord(0).getType().getDataClass());
+    boolean selectLowest = Vector.class.isAssignableFrom(x.get(0).getType().getDataClass());
     if (shapelets == -1) {
-      int n = df.rows();
-      int m = df.columns();
+      int n = x.size();
+      int m = x.getProperty(Dataset.FEATURE_SIZE);
       int s = 1;
 
       if (selectLowest) {
         // m = df.loc().getRecord(0).loc().get(Vector.class, 0).size();
-        m = df.getRecords().stream().mapToInt(r -> r.loc().get(Vector.class, 0).size()).max()
-            .orElse(0);
-        s = df.loc().getRecord(0).size();
+        m = x.stream().mapToInt(r -> r.loc().get(Vector.class, 0).size()).max().orElse(0);
+        s = x.get(0).size();
       }
 
       double sum = 0;
@@ -80,7 +81,7 @@ public class UltraFastShapeletTransform implements Transformation {
         for (int k = 0; k < s; k++) {
           for (int j = 0; j < r; j++) {
             int vec = ThreadLocalRandom.current().nextInt(n);
-            Vector record = df.loc().getRecord(vec).get(Vector.class, k);
+            Vector record = x.get(vec).get(Vector.class, k);
             if (record.size() + 1 - i <= 0) {
               continue;
             }
@@ -92,8 +93,8 @@ public class UltraFastShapeletTransform implements Transformation {
       System.out.println(features.size());
     } else {
       for (int i = 0; i < shapelets; i++) {
-        int rIndex = ThreadLocalRandom.current().nextInt(df.rows());
-        Vector record = df.loc().getRecord(rIndex);
+        int rIndex = ThreadLocalRandom.current().nextInt(x.size());
+        Vector record = x.get(rIndex);
         Shapelet feature;
         // MTS
         if (Vector.class.isAssignableFrom(record.getType().getDataClass())) {
@@ -145,12 +146,12 @@ public class UltraFastShapeletTransform implements Transformation {
     return new IndexSortedNormalizedShapelet(start, length, timeSeries);
   }
 
-  private static class ShapeletTransformer implements Transformer {
+  private static class ShapeletTransformer implements Transformer<Vector, Vector> {
     private final List<Shapelet> features;
     private final Distance<Vector> numericDistance;
     private final boolean selectLowest;
 
-    public ShapeletTransformer(Distance<Vector> numericDistance, List<Shapelet> features,
+    ShapeletTransformer(Distance<Vector> numericDistance, List<Shapelet> features,
         boolean selectLowest) {
       this.features = features;
       this.numericDistance = numericDistance;
@@ -158,7 +159,7 @@ public class UltraFastShapeletTransform implements Transformation {
     }
 
     @Override
-    public DataFrame transform(DataFrame x) {
+    public Input<Vector> transform(Input<? extends Vector> x) {
       DataFrame.Builder out = new MixedDataFrame.Builder();
       for (int i = 0; i < features.size(); i++) {
         out.set("Shapelet: " + i, Type.DOUBLE);
@@ -166,13 +167,13 @@ public class UltraFastShapeletTransform implements Transformation {
 
       // ensures that the vectors are not resizedtransform
       for (int i = 0; i < features.size(); i++) {
-        out.loc().set(x.rows() - 1, i, Na.DOUBLE);
+        out.loc().set(x.size() - 1, i, Na.DOUBLE);
       }
 
       if (selectLowest) {
-        IntStream.range(0, x.rows()).parallel().forEach(i -> {
+        IntStream.range(0, x.size()).parallel().forEach(i -> {
           // for (int i = 0; i < x.rows(); i++) {
-          Vector record = x.loc().getRecord(i);
+          Vector record = x.get(i);
           for (int j = 0; j < features.size(); j++) {
             // System.err.println("doin " + i + " : " + j);
             Shapelet shapelet = features.get(j);
@@ -194,8 +195,8 @@ public class UltraFastShapeletTransform implements Transformation {
           }
         });
       } else {
-        IntStream.range(0, x.rows()).parallel().forEach(i -> {
-          Vector record = x.loc().getRecord(i);
+        IntStream.range(0, x.size()).parallel().forEach(i -> {
+          Vector record = x.get(i);
           for (int j = 0; j < features.size(); j++) {
             Shapelet shapelet = features.get(j);
             Vector channel = record;
@@ -208,7 +209,13 @@ public class UltraFastShapeletTransform implements Transformation {
         // for (int i = 0; i < x.rows(); i++) {
         //
       }
-      return out.build();
+
+      return new ArrayInput<>(out.build().getRecords());
+    }
+
+    @Override
+    public Vector transform(Vector x) {
+      return null;
     }
   }
 }

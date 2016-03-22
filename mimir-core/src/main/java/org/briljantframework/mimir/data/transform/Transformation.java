@@ -18,51 +18,36 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.distance;
+package org.briljantframework.mimir.data.transform;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import org.briljantframework.Check;
-import org.briljantframework.mimir.data.timeseries.SymbolicAggregator;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.data.Input;
 
 /**
+ * Fit a Transformation to a dataset and return a transformation which can be used to transform
+ * other datasets using the parameters of the fitted dataset. This can be particularly useful when a
+ * transformation must be fitted on a dataset and applied on another. For example, in the case of
+ * normalizing training and testing data.
+ *
  * @author Isak Karlsson
  */
-public class SaxDistance implements Distance<Vector> {
+@FunctionalInterface
+public interface Transformation<T, E> {
 
-  private final Map<String, Map<String, Double>> lookup;
-  private final double n;
-
-  public SaxDistance(double n, Map<String, Map<String, Double>> lookup) {
-    this.lookup = lookup;
-    this.n = n;
+  /**
+   * Fit and transform the data frame in a single operation
+   *
+   * @param dataFrame the data frame
+   * @return the transformed data frame
+   */
+  default Input<E> fitTransform(Input<? extends T> dataFrame) {
+    return fit(dataFrame).transform(dataFrame);
   }
 
-  public SaxDistance(double n, String... alphabet) {
-    this(n, Arrays.asList(alphabet));
-  }
-
-  public SaxDistance(double n, List<String> alphabet) {
-    this(n, SymbolicAggregator.newLookupTable(alphabet));
-  }
-
-  @Override
-  public double compute(Vector a, Vector b) {
-    Check.dimension(a.size(), b.size());
-
-    double w = a.size();
-    double sum = 0;
-
-    for (int i = 0; i < w; i++) {
-      String av = a.loc().get(String.class, i);
-      String bv = b.loc().get(String.class, i);
-      double value = lookup.get(av).get(bv);
-      sum += value * value;
-    }
-    return Math.sqrt(n / w) * Math.sqrt(sum);
-  }
-
+  /**
+   * Fit a transformer to data frame
+   *
+   * @param dataFrame the dataset to use in the fit procedure
+   * @return the transformation
+   */
+  Transformer<T, E> fit(Input<? extends T> dataFrame);
 }

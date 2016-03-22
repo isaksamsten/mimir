@@ -22,9 +22,6 @@ package org.briljantframework.mimir.data;
 
 
 
-import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.dataframe.DataFrame;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -32,6 +29,9 @@ import java.util.function.Consumer;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import org.briljantframework.array.DoubleArray;
+import org.briljantframework.data.dataframe.DataFrame;
 
 /**
  * @author Isak Karlsson
@@ -58,7 +58,11 @@ public final class Inputs {
    * @param input the input
    * @return an unmodifiable view of the given input
    */
+  @SuppressWarnings("unchecked")
   public static <T> Input<T> unmodifiableInput(Input<? extends T> input) {
+    if (input instanceof UnmodifiableInput) {
+      return (Input<T>) input;
+    }
     return new UnmodifiableInput<>(input);
   }
 

@@ -18,51 +18,23 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.distance;
+package org.briljantframework.mimir.data.transform;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import org.briljantframework.Check;
-import org.briljantframework.mimir.data.timeseries.SymbolicAggregator;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.data.Input;
 
 /**
+ * Fit an invertible transformation, e.g. PCA.
+ * 
  * @author Isak Karlsson
  */
-public class SaxDistance implements Distance<Vector> {
+public interface InvertibleTransformation<T, E> extends Transformation<T, E> {
 
-  private final Map<String, Map<String, Double>> lookup;
-  private final double n;
-
-  public SaxDistance(double n, Map<String, Map<String, Double>> lookup) {
-    this.lookup = lookup;
-    this.n = n;
-  }
-
-  public SaxDistance(double n, String... alphabet) {
-    this(n, Arrays.asList(alphabet));
-  }
-
-  public SaxDistance(double n, List<String> alphabet) {
-    this(n, SymbolicAggregator.newLookupTable(alphabet));
-  }
-
+  /**
+   * Perform an invertible transformation on {@code x}
+   *
+   * @param x data frame to transform
+   * @return the invertible transformation
+   */
   @Override
-  public double compute(Vector a, Vector b) {
-    Check.dimension(a.size(), b.size());
-
-    double w = a.size();
-    double sum = 0;
-
-    for (int i = 0; i < w; i++) {
-      String av = a.loc().get(String.class, i);
-      String bv = b.loc().get(String.class, i);
-      double value = lookup.get(av).get(bv);
-      sum += value * value;
-    }
-    return Math.sqrt(n / w) * Math.sqrt(sum);
-  }
-
+  InvertibleTransformer<T, E> fit(Input<? extends T> x);
 }
