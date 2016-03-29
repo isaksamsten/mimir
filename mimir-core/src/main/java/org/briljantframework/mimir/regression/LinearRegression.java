@@ -23,19 +23,18 @@ package org.briljantframework.mimir.regression;
 import java.util.Collections;
 import java.util.Set;
 
+import org.briljantframework.Check;
+import org.briljantframework.DoubleSequence;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Inputs;
-import org.briljantframework.mimir.data.Instance;
-import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.data.*;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
-import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public final class LinearRegression implements Regression<Instance> {
+public final class LinearRegression implements Regression<DoubleSequence> {
 
   private final DoubleArray theta;
 
@@ -48,12 +47,12 @@ public final class LinearRegression implements Regression<Instance> {
   }
 
   @Override
-  public Double predict(Instance y) {
+  public Double predict(DoubleSequence y) {
     return 0.0;
   }
 
   @Override
-  public Output<Double> predict(Input<? extends Instance> x) {
+  public Output<Double> predict(Input<? extends DoubleSequence> x) {
     throw new UnsupportedOperationException();
   }
 
@@ -65,17 +64,24 @@ public final class LinearRegression implements Regression<Instance> {
   /**
    * @author Isak Karlsson
    */
-  public static class Learner implements Predictor.Learner<Instance, Double, LinearRegression> {
+  public static class Learner extends AbstractLearner<DoubleSequence, Double, LinearRegression> {
+
+    public static final TypeKey<Double> REGULARIZATION =
+        TypeKey.of("regularization", Double.class, 0.1);
 
     public Learner() {}
 
     @Override
-    public LinearRegression fit(Input<? extends Instance> in, Output<? extends Double> out) {
+    public LinearRegression fit(Input<? extends DoubleSequence> in, Output<? extends Double> out) {
+      Check.argument(Dataset.isDataset(in) && Dataset.isAllNumeric(in),
+          "all features must be numeric");
+
       DoubleArray x = Arrays.vstack(Arrays.ones(in.size()), Inputs.toDoubleArray(in));
       DoubleArray y = DoubleArray.copyOf(out);
 
+      double scalar = get(REGULARIZATION);
       DoubleArray inner =
-          Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.eye(x.columns()).times(1));
+          Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.eye(x.columns()).times(scalar));
       DoubleArray v = Arrays.dot(Arrays.linalg.pinv(inner), x.transpose());
       DoubleArray theta = Arrays.dot(v, y);
 

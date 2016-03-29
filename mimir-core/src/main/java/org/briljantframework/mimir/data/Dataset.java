@@ -20,6 +20,7 @@
  */
 package org.briljantframework.mimir.data;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -31,6 +32,17 @@ public final class Dataset {
    * Castable class instance (it is used for 'reified' generic parameters)
    */
   private final static Class<? extends List> CLASS = List.class;
+
+  /**
+   * Returns true if the input can be considered a dataset, i.e. has the properties
+   * {@link #FEATURE_SIZE} and {@link #FEATURE_TYPES}.
+   * 
+   * @param input the input
+   * @return true if the given input is a dataset.
+   */
+  public static boolean isDataset(Input<?> input) {
+    return input.getProperties().containsAll(Arrays.asList(FEATURE_TYPES, FEATURE_SIZE));
+  }
 
   /**
    * Returns true if all classes in the collection is assign from {@link Number}.
@@ -56,7 +68,7 @@ public final class Dataset {
    * This property denotes the number of features in an input dataset. Often, this is the number of
    * columns.
    */
-  public static final Property<Integer> FEATURE_SIZE = new Property<Integer>() {
+  public static final TypeKey<Integer> FEATURE_SIZE = new TypeKey<Integer>() {
     @Override
     public Class<Integer> getType() {
       return Integer.class;
@@ -76,7 +88,7 @@ public final class Dataset {
   /**
    * This property denotes the feature types of a tabular dataset
    */
-  public static final Property<List<Class<?>>> FEATURE_TYPES = new Property<List<Class<?>>>() {
+  public static final TypeKey<List<Class<?>>> FEATURE_TYPES = new TypeKey<List<Class<?>>>() {
 
 
     @Override
@@ -96,7 +108,7 @@ public final class Dataset {
     }
   };
 
-  public static final Property<List<String>> FEATURE_NAMES = new Property<List<String>>() {
+  public static final TypeKey<List<String>> FEATURE_NAMES = new TypeKey<List<String>>() {
     @Override
     @SuppressWarnings("unchecked")
     public Class<List<String>> getType() {

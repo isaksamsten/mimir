@@ -22,7 +22,9 @@ package org.briljantframework.mimir.classification;
 
 import static org.briljantframework.mimir.classification.optimization.OptimizationUtils.logistic;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.Arrays;
@@ -35,8 +37,8 @@ import org.briljantframework.mimir.classification.optimization.MultiClassLogisti
 import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.MeasureSample;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
-import org.briljantframework.mimir.supervised.Predictor;
 import org.briljantframework.optimize.DifferentialMultivariateFunction;
 import org.briljantframework.optimize.LimitedMemoryBfgsOptimizer;
 import org.briljantframework.optimize.NonlinearOptimizer;
@@ -139,44 +141,6 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
     return "LogisticRegression{" + "coefficients=" + coefficients + ", logLoss=" + logLoss + '}';
   }
 
-  public static final class Configurator
-      implements Classifier.Configurator<Instance, Object, Learner> {
-
-    private int iterations = 100;
-    private double regularization = 0.01;
-
-    private NonlinearOptimizer optimizer;
-
-    public Configurator() {}
-
-    public Configurator(int iterations) {
-      this.iterations = iterations;
-    }
-
-    public Configurator setIterations(int it) {
-      this.iterations = it;
-      return this;
-    }
-
-    public Configurator setRegularization(double lambda) {
-      this.regularization = lambda;
-      return this;
-    }
-
-    public void setOptimizer(NonlinearOptimizer optimizer) {
-      this.optimizer = optimizer;
-    }
-
-    @Override
-    public Learner configure() {
-      if (optimizer == null) {
-        // m ~ 20, [1] pp 252.
-        optimizer = new LimitedMemoryBfgsOptimizer(20, iterations, 1E-5);
-      }
-      return new Learner(this);
-    }
-  }
-
   public static class Evaluator implements
       org.briljantframework.mimir.evaluation.Evaluator<Instance, Object, LogisticRegression> {
 
@@ -199,42 +163,27 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
    *
    * @author Isak Karlsson
    */
-  public static class Learner implements Predictor.Learner<Instance, Object, LogisticRegression> {
+  public static class Learner extends AbstractLearner<Instance, Object, LogisticRegression> {
 
-    public static final double GRADIENT_TOLERANCE = 1E-5;
-    public static final int MAX_ITERATIONS = 100;
-    public static final int MEMORY = 20;
+    /**
+     * Maximum number of iterations before convergence.
+     */
+    public static final TypeKey<Integer> MAX_ITERATIONS =
+        TypeKey.of("max_iterations", Integer.class, 100);
+    public static final TypeKey<Double> REGULARIZATION =
+        TypeKey.of("reqularization", Double.class, 1.0);
 
-    private final double regularization;
-    private final NonlinearOptimizer optimizer;
-
-    private Learner(Configurator builder) {
-      Check.argument(
-          !Double.isNaN(builder.regularization) && !Double.isInfinite(builder.regularization));
-      this.regularization = builder.regularization;
-      this.optimizer = Objects.requireNonNull(builder.optimizer);
-    }
-
-    public Learner() {
-      this.regularization = 0.01;
-      this.optimizer = new LimitedMemoryBfgsOptimizer(MEMORY, MAX_ITERATIONS, GRADIENT_TOLERANCE);
-    }
+    static final double GRADIENT_TOLERANCE = 1E-5;
+    static final int MEMORY = 20;
 
     public Learner(double regularization) {
-      this.regularization = regularization;
-      this.optimizer = new LimitedMemoryBfgsOptimizer(MEMORY, MAX_ITERATIONS, GRADIENT_TOLERANCE);
-    }
-
-    @Override
-    public String toString() {
-      return "LogisticRegression.Learner{" + "regularization=" + regularization + ", optimizer="
-          + optimizer + '}';
+      set(REGULARIZATION, regularization);
     }
 
     @Override
     public LogisticRegression fit(Input<? extends Instance> in, Output<?> out) {
-      PropertyPreconditions.checkProperties(getRequiredInputProperties(), in);
-      Check.argument(Dataset.isAllNumeric(in), "All features must be numeric.");
+      Check.argument(Dataset.isDataset(in) && Dataset.isAllNumeric(in),
+          "All features must be numeric.");
 
       int n = in.size();
       int m = in.getProperty(Dataset.FEATURE_SIZE);
@@ -250,14 +199,17 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
       DifferentialMultivariateFunction objective;
       int k = classes.size();
       if (k == 2) {
-        objective = new BinaryLogisticFunction(x, y, regularization);
+        objective = new BinaryLogisticFunction(x, y, get(REGULARIZATION));
         theta = DoubleArray.zeros(x.columns());
       } else if (k > 2) {
-        objective = new MultiClassLogisticFunction(x, y, regularization, k);
+        objective = new MultiClassLogisticFunction(x, y, get(REGULARIZATION), k);
         theta = DoubleArray.zeros(x.columns(), k);
       } else {
         throw new IllegalArgumentException(String.format("Illegal classes. k >= 2 (%d >= 2)", k));
       }
+
+      NonlinearOptimizer optimizer =
+          new LimitedMemoryBfgsOptimizer(MEMORY, get(MAX_ITERATIONS), GRADIENT_TOLERANCE);
       double logLoss = optimizer.optimize(objective, theta);
 
       Vector.Builder names = Vector.Builder.of(Object.class).add("(Intercept)");
@@ -271,12 +223,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
       return new LogisticRegression(names.build(), theta, logLoss, classes);
     }
 
-    @Override
-    public Collection<Property<?>> getRequiredInputProperties() {
-      return java.util.Arrays.asList(Dataset.FEATURE_SIZE, Dataset.FEATURE_TYPES);
-    }
-
-    protected DoubleArray constructInputMatrix(Input<? extends Instance> input, int n, int m) {
+    DoubleArray constructInputMatrix(Input<? extends Instance> input, int n, int m) {
       DoubleArray x = DoubleArray.zeros(n, m + 1);
       for (int i = 0; i < n; i++) {
         x.set(i, 0, 1);

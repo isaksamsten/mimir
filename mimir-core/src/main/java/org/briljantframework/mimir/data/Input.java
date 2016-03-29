@@ -32,15 +32,15 @@ public interface Input<T> extends List<T> {
    * 
    * @return the collection of properties for the input.
    */
-  Properties getProperties();
+  TypeMap getProperties();
 
   /**
    * Returns the specified property.
    * 
-   * @param property the property
+   * @param typeKey the property
    * @return the value for the given property
    */
-  default <E> E getProperty(Property<E> property) {
-    return getProperties().get(property);
+  default <E> E getProperty(TypeKey<E> typeKey) {
+    return getProperties().get(typeKey);
   }
 }

@@ -36,7 +36,7 @@ import org.briljantframework.mimir.data.Input;
 public class MinMaxNormalizer<T extends DoubleSequence> implements Transformation<T, T> {
 
   @Override
-  public Transformer<T, T> fit(Input<? extends T> df) {
+  public Transformer<T, T> fit(Input<? extends T> x) {
     Vector.Builder min = Vector.Builder.of(Double.class);
     Vector.Builder max = Vector.Builder.of(Double.class);
     // for (Object columnKey : df) {

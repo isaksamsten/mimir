@@ -28,6 +28,7 @@ import org.briljantframework.array.IntArray;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.classification.tree.*;
 import org.briljantframework.mimir.data.*;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
@@ -94,7 +95,7 @@ public class HyperPlaneTree extends TreeClassifier<Instance> {
     }
   }
 
-  public static class Learner implements Predictor.Learner<Instance, Object, HyperPlaneTree> {
+  public static class Learner extends AbstractLearner<Instance, Object, HyperPlaneTree> {
     private final ClassSet set;
     private final Gain criterion = Gain.INFO;
     private final List<?> classes;

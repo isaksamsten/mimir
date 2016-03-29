@@ -27,7 +27,7 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson
  */
-public class Configuration<In, Out, P extends Predictor<In, Out>> {
+public class Configuration<In, Out, P extends Predictor<?, ?>> {
 
   private final Predictor.Learner<In, Out, ? extends P> classifier;
   private final Result result;

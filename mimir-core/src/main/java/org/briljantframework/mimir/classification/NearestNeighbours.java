@@ -30,9 +30,10 @@ import org.briljantframework.data.Is;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.data.Outputs;
+import org.briljantframework.mimir.data.TypeKey;
 import org.briljantframework.mimir.distance.Distance;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
-import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * In pattern recognition, the k-Nearest Neighbors algorithm (or k-NN for short) is a non-parametric
@@ -132,18 +133,13 @@ public class NearestNeighbours<In> extends AbstractClassifier<In> {
   /**
    * A nearest neighbour learner learns a nearest neighbours classifier
    */
-  public static class Learner<In> implements Predictor.Learner<In, Object, NearestNeighbours<In>> {
+  public static class Learner<In> extends AbstractLearner<In, Object, NearestNeighbours<In>> {
 
-    private final int neighbors;
+    public static final TypeKey<Integer> NEIGHBORS = TypeKey.of("neighbors", Integer.class, 1);
     private final Distance<In> distance;
 
-    private Learner(Configurator<In> builder) {
-      this.neighbors = builder.neighbors;
-      this.distance = builder.distance;
-    }
-
     public Learner(int k, Distance<In> distance) {
-      this.neighbors = k;
+      set(NEIGHBORS, k);
       this.distance = distance;
     }
 
@@ -151,37 +147,12 @@ public class NearestNeighbours<In> extends AbstractClassifier<In> {
     public NearestNeighbours<In> fit(Input<? extends In> x, Output<?> y) {
       Check.argument(x.size() == y.size(), "The size of x and y don't match: %s != %s.", x.size(),
           y.size());
-      return new NearestNeighbours<>(x, y, distance, neighbors, Outputs.unique(y));
+      return new NearestNeighbours<>(x, y, distance, get(NEIGHBORS), Outputs.unique(y));
     }
 
     @Override
     public String toString() {
       return "k-Nearest Neighbors";
-    }
-  }
-
-  public static class Configurator<In> implements Predictor.Configurator<In, Object, Learner<In>> {
-
-    public int neighbors;
-    private Distance<In> distance = null;
-
-    public Configurator(int neighbors) {
-      this.neighbors = neighbors;
-    }
-
-    public Predictor.Configurator setNeighbors(int k) {
-      this.neighbors = k;
-      return this;
-    }
-
-    public Predictor.Configurator setDistance(Distance<In> distance) {
-      this.distance = distance;
-      return this;
-    }
-
-    public Learner<In> configure() {
-      Check.state(distance == null, "No distance measure is chosen");
-      return new Learner<>(this);
     }
   }
 }

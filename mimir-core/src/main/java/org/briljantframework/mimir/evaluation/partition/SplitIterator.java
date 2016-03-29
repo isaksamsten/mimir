@@ -24,10 +24,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import org.briljantframework.Check;
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.ArrayInput;
-import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.ArrayOutput;
+import org.briljantframework.mimir.data.*;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -74,10 +71,9 @@ public class SplitIterator<In, Out> implements Iterator<Partition<In, Out>> {
       xValidation.add(x.get(i));
       yValidation.add(y.get(i));
     }
-    // DataFrame trainingSet = xTrainingBuilder.build();
-    // trainingSet.setColumnIndex(x.getColumnIndex());
-    // DataFrame validationSet = xValidationBuilder.build();
-    // validationSet.setColumnIndex(x.getColumnIndex());
-    return new Partition<>(xTraining, xValidation, yTraining, yValidation);
+
+    return new Partition<>(Inputs.unmodifiableInput(xTraining),
+        Inputs.unmodifiableInput(xValidation), Outputs.unmodifiableOutput(yTraining),
+        Outputs.unmodifiableOutput(yValidation));
   }
 }

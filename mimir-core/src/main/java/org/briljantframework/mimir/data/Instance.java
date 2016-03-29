@@ -20,8 +20,11 @@
  */
 package org.briljantframework.mimir.data;
 
+import java.util.List;
+
 import org.briljantframework.DoubleSequence;
 import org.briljantframework.data.vector.Convert;
+import org.briljantframework.data.vector.Vector;
 
 /**
  * An m-feature vector of heterogeneous values. Generally, an input collection of instances should
@@ -36,6 +39,18 @@ import org.briljantframework.data.vector.Convert;
  * @author Isak Karlsson
  */
 public interface Instance extends DoubleSequence {
+
+  static Instance of(Vector vector) {
+    return new VectorInstance(vector);
+  }
+
+  static Instance of(Object... value) {
+    return new ImmutableArrayInstance(value);
+  }
+
+  static Instance copyOf(List<?> values) {
+    return of(values.toArray());
+  }
 
   /**
    * Returns the size of the instance (i.e., the number of features)
@@ -52,6 +67,17 @@ public interface Instance extends DoubleSequence {
    * @return the value as an object
    */
   Object get(int index);
+
+  /**
+   * Returns the type of the i:th feature value.
+   *
+   * @param index the index
+   * @return the type
+   */
+  default Class<?> getType(int index) {
+    Object value = get(index);
+    return value == null ? null : value.getClass();
+  }
 
   /**
    * Returns the value of the i:th feature as an instance of the given class, or {@code NA} if the

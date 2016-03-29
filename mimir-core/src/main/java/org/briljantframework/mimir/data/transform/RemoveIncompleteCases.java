@@ -39,7 +39,7 @@ public class RemoveIncompleteCases<T extends Instance> implements Transformer<T,
   @Override
   public Input<T> transform(Input<? extends T> x) {
     Input<T> o = x.stream().filter(instance -> !hasNA(instance))
-        .collect(Collectors.toCollection(ArrayInput::new));
+        .collect(Collectors.toCollection(() -> new ArrayInput<>(x.getProperties())));
     return Inputs.unmodifiableInput(o);
   }
 
@@ -54,6 +54,10 @@ public class RemoveIncompleteCases<T extends Instance> implements Transformer<T,
 
   @Override
   public T transform(T x) {
-    return !hasNA(x) ? x : null;
+    if (!hasNA(x))
+      return x;
+    else {
+      throw new IllegalStateException("no instance returned");
+    }
   }
 }

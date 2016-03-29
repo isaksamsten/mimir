@@ -20,53 +20,42 @@
  */
 package org.briljantframework.mimir.data;
 
-import java.util.*;
-
 /**
  * @author Isak Karlsson
  */
-public final class Properties {
+public interface TypeKey<T> {
 
-  private final Map<Property<?>, Object> properties;
-
-  public Properties() {
-    this.properties = new HashMap<>();
+  static <T> TypeKey<T> of(String name, Class<T> cls) {
+    return new StringTypeKey<>(cls, name);
   }
 
-  public Properties(Properties properties) {
-    this.properties = new HashMap<>(properties.properties);
+  static <T> TypeKey<T> of(String name, Class<T> cls, T defaultValue) {
+    return new StringTypeKey<>(cls, name, defaultValue);
   }
 
-  public boolean contains(Property<?> property) {
-    return properties.containsKey(property);
+  /**
+   * Return the class of the given property
+   * 
+   * @return the class of the property
+   */
+  Class<T> getType();
+
+  default T defaultValue() {
+    return null;
   }
 
-  public boolean containsAll(Collection<? extends Property<?>> properties) {
-    for (Property<?> property : properties) {
-      if (!contains(property)) {
-        return false;
-      }
-    }
-    return true;
-  }
+  /**
+   * Return the name of the property
+   * 
+   * @return the property name
+   */
+  String getName();
 
-  public Set<Property<?>> keySet() {
-    return Collections.unmodifiableSet(properties.keySet());
-  }
+  /**
+   * Return the description of the property
+   * 
+   * @return the property description
+   */
+  String getDescription();
 
-  public <T> T get(Property<T> property) {
-    Object value = properties.get(property);
-    if (value != null) {
-      return property.getType().cast(value);
-    } else {
-      throw new NoSuchElementException("illegal property");
-    }
-  }
-
-  public <T> void set(Property<T> property, T value) {
-    if (value == null || !property.getType().isInstance(value)) {
-      throw new IllegalArgumentException();
-    }
-    properties.put(property, value);
-  }
 }

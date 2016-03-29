@@ -39,6 +39,7 @@ import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.dataseries.DataSeriesCollection;
 import org.briljantframework.data.parser.CsvParser;
+import org.briljantframework.data.statistics.FastStatistics;
 import org.briljantframework.data.vector.Convert;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.DatasetReader;
@@ -53,14 +54,15 @@ import org.briljantframework.mimir.classification.tree.pattern.PatternDistance;
 import org.briljantframework.mimir.classification.tree.pattern.PatternFactory;
 import org.briljantframework.mimir.classification.tree.pattern.RandomPatternForest;
 import org.briljantframework.mimir.classification.tree.pattern.SamplingPatternFactory;
+import org.briljantframework.mimir.classification.tune.GridSearch;
 import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.evaluation.Result;
 import org.briljantframework.mimir.evaluation.Validator;
 import org.briljantframework.mimir.shapelet.ShapeletDistance;
 import org.briljantframework.mimir.shapelet.ShapeletFactory;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;
-import org.briljantframework.statistics.FastStatistics;
 import org.junit.Test;
 
 /**
@@ -84,6 +86,18 @@ public class LearnerTest {
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Test
+  public void Generate() throws Exception {
+    GridSearch<Instance, Object, RandomForest, RandomForest.Configurator> gridSearch =
+        new GridSearch<>(ClassifierValidator.crossValidator(10));
+    Pair<Input<Instance>, Output<?>> data = loadDataset();
+    Input<Instance> x = data.getLeft();
+    Output<?> y = data.getRight();
+
+    System.out.println(gridSearch.tune(new RandomForest.Configurator(100), x, y));
+
   }
 
   @Test
@@ -118,65 +132,68 @@ public class LearnerTest {
         };
     PatternDistance<DoubleSequence, DoubleSequence> rbfKernel = this::rbf;
 
-    Predictor.Learner<DoubleSequence, Object, Classifier<DoubleSequence>> rbfForest = (in, out) -> {
-      int features = in.getProperty(Dataset.FEATURE_SIZE);
-      double[] mean = new double[features];
-      double[] std = new double[features];
+    Predictor.Learner<DoubleSequence, Object, Classifier<DoubleSequence>> rbfForest =
+        new AbstractLearner<DoubleSequence, Object, Classifier<DoubleSequence>>() {
 
-      for (int i = 0; i < features; i++) {
-        FastStatistics statistics = new FastStatistics();
-        for (int j = 0; j < in.size(); j++) {
-          double value = in.get(j).getAsDouble(i);
-          if (!Is.NA(value)) {
-            statistics.addValue(value);
-          }
-        }
-        mean[i] = statistics.getMean();
-        std[i] = statistics.getStandardDeviation();
-      }
+          @Override
+          public Classifier<DoubleSequence> fit(Input<? extends DoubleSequence> in, Output<?> out) {
+            int features = in.getProperty(Dataset.FEATURE_SIZE);
+            double[] mean = new double[features];
+            double[] std = new double[features];
 
-      RandomPatternForest.Learner<DoubleSequence> rfl =
-          new RandomPatternForest.Configurator<>(factory, rbfKernel, 100).setPatternCount(5)
-              .configure();
+            for (int i = 0; i < features; i++) {
+              FastStatistics statistics = new FastStatistics();
+              for (int j = 0; j < in.size(); j++) {
+                double value = in.get(j).getAsDouble(i);
+                if (!Is.NA(value)) {
+                  statistics.addValue(value);
+                }
+              }
+              mean[i] = statistics.getMean();
+              std[i] = statistics.getStandardDeviation();
+            }
+            RandomPatternForest.Learner<DoubleSequence> rfl =
+                new RandomPatternForest.Configurator<>(factory, rbfKernel, 100).setPatternCount(5)
+                    .configure();
 
-      Input<DoubleSequence> xTrans = normalize(in, mean, std);
-      RandomPatternForest<DoubleSequence> model = rfl.fit(xTrans, out);
-      Classifier<DoubleSequence> classifier = new Classifier<DoubleSequence>() {
+            Input<DoubleSequence> xTrans = normalize(in, mean, std);
+            RandomPatternForest<DoubleSequence> model = rfl.fit(xTrans, out);
+            Classifier<DoubleSequence> classifier = new Classifier<DoubleSequence>() {
 
-        @Override
-        public List<?> getClasses() {
-          return model.getClasses();
-        }
+              @Override
+              public List<?> getClasses() {
+                return model.getClasses();
+              }
 
-        @Override
-        public DoubleArray estimate(Input<? extends DoubleSequence> x) {
-          return model.estimate(normalize(x, mean, std));
-        }
+              @Override
+              public DoubleArray estimate(Input<? extends DoubleSequence> x) {
+                return model.estimate(normalize(x, mean, std));
+              }
 
-        @Override
-        public DoubleArray estimate(DoubleSequence input) {
-          throw new UnsupportedOperationException();
-        }
+              @Override
+              public DoubleArray estimate(DoubleSequence input) {
+                throw new UnsupportedOperationException();
+              }
 
-        @Override
-        public Object predict(DoubleSequence doubleSequence) {
-          throw new UnsupportedOperationException();
-        }
+              @Override
+              public Object predict(DoubleSequence doubleSequence) {
+                throw new UnsupportedOperationException();
+              }
 
-        @Override
-        public Output<Object> predict(Input<? extends DoubleSequence> x) {
-          return model.predict(normalize(x, mean, std));
-        }
+              @Override
+              public Output<Object> predict(Input<? extends DoubleSequence> x) {
+                return model.predict(normalize(x, mean, std));
+              }
 
-        @Override
-        public Set<Characteristic> getCharacteristics() {
-          return model.getCharacteristics();
-        }
-      };
+              @Override
+              public Set<Characteristic> getCharacteristics() {
+                return model.getCharacteristics();
+              }
+            };
 
-      return classifier;
-    };
-
+            return classifier;
+          };
+        };
     ClassifierValidator<DoubleSequence, Classifier<DoubleSequence>> v =
         ClassifierValidator.crossValidator(10);
     // v.add(new EnsembleEvaluator<>());

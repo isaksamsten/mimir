@@ -24,10 +24,10 @@ import java.util.List;
 import java.util.Objects;
 
 import org.briljantframework.array.DoubleArray;
+import org.briljantframework.mimir.classification.Ensemble;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.classification.Ensemble;
-import org.briljantframework.mimir.supervised.Predictor;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 
 /**
  * @author Isak Karlsson
@@ -55,7 +55,7 @@ public class BootstrapConformalClassifier<In> extends AbstractConformalClassifie
   }
 
   public static class Learner<In>
-      implements Predictor.Learner<In, Object, BootstrapConformalClassifier<In>> {
+      extends AbstractLearner<In, Object, BootstrapConformalClassifier<In>> {
 
     private final ProbabilityEstimateNonconformity.Learner<In, ? extends Ensemble<In>> learner;
 

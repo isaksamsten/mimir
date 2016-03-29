@@ -30,19 +30,27 @@ import org.briljantframework.mimir.supervised.Predictor;
  */
 public interface EvaluationContext<In, Out, P extends Predictor<?, Out>> {
 
+  /**
+   * Get the partition into training and testing data.
+   * 
+   * @return the partition
+   */
   Partition<In, Out> getPartition();
 
+  /**
+   * Get the predictions the i:th prediction corresponds to the i:th validation instance.
+   * 
+   * @return the predictions
+   */
   Output<Out> getPredictions();
 
+  /**
+   *
+   * @return
+   */
   DoubleArray getEstimates();
 
   P getPredictor();
-
-//  // TODO: measure should depend on P
-//  <T extends Measure, C extends Measure.Builder<T>> C getOrDefault(Class<T> measure,
-//      Supplier<C> supplier);
-//
-//  List<Measure> getMeasures();
 
   MeasureCollection getMeasureCollection();
 

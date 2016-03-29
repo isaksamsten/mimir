@@ -44,6 +44,7 @@ public interface Tuner<In, Out, P extends Predictor<In, Out>, O extends Predicto
    * @param toOptimize the classifier to optimize
    * @return the classifier configurations which has been optimized
    */
-  List<Configuration<In, Out, P>> tune(O toOptimize, Input<In> x, Output<Out> y);
+  List<Configuration<In, Out, P>> tune(O toOptimize, Input<? extends In> x,
+      Output<? extends Out> y);
 
 }

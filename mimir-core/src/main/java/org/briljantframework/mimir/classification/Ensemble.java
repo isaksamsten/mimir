@@ -29,8 +29,10 @@ import java.util.stream.Collectors;
 
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.classification.tree.ClassSet;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.TypeKey;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;
 
@@ -110,7 +112,9 @@ public class Ensemble<In> extends AbstractClassifier<In> {
    * @author Isak Karlsson
    */
   public abstract static class Learner<In, P extends Ensemble<In>>
-      implements Predictor.Learner<In, Object, P> {
+      extends AbstractLearner<In, Object, P> {
+
+    public static final TypeKey<Integer> SIZE = TypeKey.of("ensemble_size", Integer.class, 100);
 
     private final static ThreadPoolExecutor THREAD_POOL;
     private final static int CORES;
@@ -128,10 +132,9 @@ public class Ensemble<In> extends AbstractClassifier<In> {
       }
     }
 
-    protected final int size;
 
     protected Learner(int size) {
-      this.size = size;
+      set(SIZE, size);
     }
 
     /**
@@ -163,8 +166,9 @@ public class Ensemble<In> extends AbstractClassifier<In> {
      *
      * @return the size of the ensemble
      */
+    @Deprecated
     public int size() {
-      return size;
+      return get(SIZE);
     }
   }
 }

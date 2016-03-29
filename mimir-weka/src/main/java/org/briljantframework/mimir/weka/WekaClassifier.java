@@ -24,12 +24,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.vector.Convert;
 import org.briljantframework.mimir.classification.AbstractClassifier;
 import org.briljantframework.mimir.classification.ClassifierCharacteristic;
-import org.briljantframework.mimir.data.*;
+import org.briljantframework.mimir.data.Dataset;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.data.Outputs;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;
 
@@ -114,7 +118,8 @@ public class WekaClassifier<T extends weka.classifiers.Classifier>
     @Override
     public WekaClassifier<T> fit(Input<? extends org.briljantframework.mimir.data.Instance> x,
         Output<?> y) {
-      PropertyPreconditions.checkProperties(getRequiredInputProperties(), x);
+      Check.argument(Dataset.isDataset(x), "requires a dataset");
+      Check.argument(x.size() == y.size(), "input output size missmatch");
 
       try {
         List<?> classes = Outputs.unique(y);

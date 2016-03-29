@@ -20,22 +20,43 @@
  */
 package org.briljantframework.mimir.data.transform;
 
-import org.briljantframework.DoubleSequence;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.briljantframework.Check;
+import org.briljantframework.array.DoubleArray;
+import org.briljantframework.data.Is;
 import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.*;
 
 /**
  * @author Isak Karlsson
  */
-public class MeanImputer<T extends DoubleSequence> implements Transformation<T, T> {
+public class MeanImputer<T extends Instance> implements Transformation<T, Instance> {
 
   @Override
-  public Transformer<T, T> fit(Input<? extends T> frame) {
-    Vector.Builder builder = Vector.Builder.of(Double.class);
-    // for (Object key : frame.getColumnIndex().keySet()) {
-    // builder.set(key, Vectors.mean(frame.get(key)));
-    // }
-    Vector means = builder.build();
+  public Transformer<T, Instance> fit(Input<? extends T> x) {
+    PropertyPreconditions.checkProperties(
+        Arrays.asList(Dataset.FEATURE_SIZE, Dataset.FEATURE_TYPES), x.getProperties());
+    int columns = x.getProperty(Dataset.FEATURE_SIZE);
+    List<Class<?>> featureTypes = x.getProperty(Dataset.FEATURE_TYPES);
+    DoubleArray means = DoubleArray.zeros(columns);
+    for (int i = 0; i < x.size(); i++) {
+      T instance = x.get(i);
+      if (instance.size() != columns) {
+        throw new IllegalStateException("Illegal sequence size.");
+      }
+      for (int j = 0; j < instance.size(); j++) {
+        if (Number.class.isAssignableFrom(featureTypes.get(j))) {
+          double value = instance.getAsDouble(j);
+          if (!Is.NA(value)) {
+            means.plusAssign(value / x.size());
+          }
+        }
+      }
+    }
+
     return new MeanImputeTransformer<>(means);
   }
 
@@ -44,31 +65,14 @@ public class MeanImputer<T extends DoubleSequence> implements Transformation<T, 
     return "MeanImputer{}";
   }
 
-  private static class MeanImputeTransformer<T extends DoubleSequence>
-      implements Transformer<T, T> {
+  private static class MeanImputeTransformer<T extends Instance>
+      implements Transformer<T, Instance> {
 
-    private final Vector means;
+    private final DoubleArray means;
 
-    public MeanImputeTransformer(Vector means) {
+    MeanImputeTransformer(DoubleArray means) {
       this.means = means;
     }
-
-    // @Override
-    // public DataFrame transform(DataFrame x) {
-    // Check.dimension(x.columns(), means.size());
-    // DataFrame.Builder df = x.newBuilder();
-    // for (Object colKey : x.getColumnIndex().keySet()) {
-    // Vector column = x.get(colKey);
-    // for (Object rowKey : x.getIndex().keySet()) {
-    // if (column.isNA(rowKey)) {
-    // df.set(rowKey, colKey, means, colKey);
-    // } else {
-    // df.set(rowKey, colKey, column, rowKey);
-    // }
-    // }
-    // }
-    // return df.build();
-    // }
 
     @Override
     public String toString() {
@@ -76,13 +80,32 @@ public class MeanImputer<T extends DoubleSequence> implements Transformation<T, 
     }
 
     @Override
-    public Input<T> transform(Input<? extends T> x) {
-      return null;
+    public Input<Instance> transform(Input<? extends T> x) {
+      PropertyPreconditions.checkProperties(
+          Arrays.asList(Dataset.FEATURE_TYPES, Dataset.FEATURE_SIZE), x.getProperties());
+      int columns = x.getProperty(Dataset.FEATURE_SIZE);
+      Check.state(columns == means.size(), "illegal feature size");
+
+      ArrayInput<Instance> o = x.stream().map(this::transform)
+          .collect(Collectors.toCollection(() -> new ArrayInput<>(x.getProperties())));
+      return Inputs.unmodifiableInput(o);
     }
 
     @Override
-    public T transform(T x) {
-      return null;
+    public Instance transform(T x) {
+      Check.state(x.size() == means.size(), "illegal feature size");
+      Vector.Builder vector = Vector.Builder.of(Object.class);
+      for (int i = 0; i < x.size(); i++) {
+        if (Number.class.isAssignableFrom(x.getType(i))) {
+          double value = x.getAsDouble(i);
+          if (Is.NA(value)) {
+            vector.set(i, means.get(i));
+          } else {
+            vector.set(i, value);
+          }
+        }
+      }
+      return Instance.of(vector);
     }
   }
 }

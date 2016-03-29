@@ -20,13 +20,12 @@
  */
 package org.briljantframework.mimir.supervised;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.Property;
+import org.briljantframework.mimir.data.TypeKey;
+import org.briljantframework.mimir.data.TypeMap;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -57,7 +56,7 @@ public interface Predictor<In, Out> {
   Set<Characteristic> getCharacteristics();
 
   /**
-   * A Learner represents a generator predictors.
+   * Generates a predictor based on some underlying algorithm and properties.
    */
   interface Learner<In, Out, P extends Predictor<In, Out>> {
 
@@ -70,14 +69,11 @@ public interface Predictor<In, Out> {
      */
     P fit(Input<? extends In> in, Output<? extends Out> out);
 
-    /**
-     * Reports the requirements imposed on the input.
-     * 
-     * @return a collection of input properties.
-     */
-    default Collection<Property<?>> getRequiredInputProperties() {
-      return Collections.emptySet();
-    }
+    <T> void set(TypeKey<T> key, T value);
+
+    <T> T get(TypeKey<T> key);
+
+    TypeMap getParameters();
   }
 
   interface Configurator<In, Out, C extends Learner<In, Out, ? extends Predictor<In, Out>>> {

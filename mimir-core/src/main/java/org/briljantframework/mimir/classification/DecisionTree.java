@@ -24,13 +24,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.vector.Convert;
 import org.briljantframework.mimir.classification.tree.*;
 import org.briljantframework.mimir.data.*;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
-import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -57,10 +58,10 @@ public class DecisionTree extends TreeClassifier<Instance> {
   /**
    * @author Isak Karlsson
    */
-  public static class Learner implements Predictor.Learner<Instance, Object, DecisionTree> {
+  public static class Learner extends AbstractLearner<Instance, Object, DecisionTree> {
 
-    protected final double mininumWeight = 1;
-    protected final Splitter splitter;
+    public static TypeKey<Double> MIN_LEAF_SIZE = TypeKey.of("min_leaf_size", Double.class, 1.0);
+    public static TypeKey<Splitter> SPLITTER = TypeKey.of("splitter", Splitter.class);
 
     protected ClassSet classSet;
     protected List<?> classes = null;
@@ -69,16 +70,15 @@ public class DecisionTree extends TreeClassifier<Instance> {
       this(splitter, null, null);
     }
 
-
     protected Learner(Splitter splitter, ClassSet classSet, List<?> classes) {
-      this.splitter = splitter;
+      set(SPLITTER, splitter);
       this.classSet = classSet;
       this.classes = classes;
     }
 
     @Override
     public DecisionTree fit(Input<? extends Instance> in, Output<?> out) {
-      PropertyPreconditions.checkProperties(getRequiredInputProperties(), in);
+      Check.argument(Dataset.isDataset(in), "requires a dataset");
       ClassSet classSet = this.classSet;
       List<?> classes = this.classes != null ? this.classes : Outputs.unique(out);
       if (classSet == null) {
@@ -98,11 +98,11 @@ public class DecisionTree extends TreeClassifier<Instance> {
     protected TreeNode<Instance, ValueThreshold> build(Input<? extends Instance> frame,
         Output<?> target, Params p, ClassSet classSet, int depth) {
 
-      if (classSet.getTotalWeight() <= mininumWeight || classSet.getTargetCount() == 1) {
+      if (classSet.getTotalWeight() <= get(MIN_LEAF_SIZE) || classSet.getTargetCount() == 1) {
         p.depth = Math.max(p.depth, depth);
         return TreeLeaf.fromExamples(classSet);
       }
-      TreeSplit<ValueThreshold> maxSplit = splitter.find(classSet, frame, target);
+      TreeSplit<ValueThreshold> maxSplit = get(SPLITTER).find(classSet, frame, target);
       if (maxSplit == null) {
         p.depth = Math.max(p.depth, depth);
         return TreeLeaf.fromExamples(classSet);
@@ -124,8 +124,7 @@ public class DecisionTree extends TreeClassifier<Instance> {
     }
 
     private final class Params {
-
-      public int depth = 0;
+      int depth = 0;
     }
   }
 
@@ -135,7 +134,7 @@ public class DecisionTree extends TreeClassifier<Instance> {
     private static final int MISSING = 0, LEFT = -1, RIGHT = 1;
     private final TreeNode<Instance, ValueThreshold> root;
 
-    public SimplePredictionVisitor(TreeNode<Instance, ValueThreshold> node) {
+    SimplePredictionVisitor(TreeNode<Instance, ValueThreshold> node) {
       this.root = node;
     }
 
@@ -158,10 +157,6 @@ public class DecisionTree extends TreeClassifier<Instance> {
         if (Is.nominal(threshold)) {
           direction = Is.equal(example.get(axis), threshold) ? LEFT : RIGHT;
         } else {
-          // note: Is.nominal return true for any non-number and Number is always comparable
-          // @SuppressWarnings("unchecked")
-          // Comparable<Object> leftComparable = example.loc().get(Comparable.class, axis);
-          // direction = leftComparable.compareTo(threshold) <= 0 ? LEFT : RIGHT;
           double left = example.getAsDouble(axis);
           double right = Convert.to(Double.class, threshold);
           direction = Double.compare(left, right) <= 0 ? LEFT : RIGHT;
@@ -175,7 +170,7 @@ public class DecisionTree extends TreeClassifier<Instance> {
           return visit(node.getRight(), example);
         case MISSING:
         default:
-          return visit(node.getLeft(), example); // TODO: what to do with missing values?
+          return visit(node.getLeft(), example);
       }
     }
   }

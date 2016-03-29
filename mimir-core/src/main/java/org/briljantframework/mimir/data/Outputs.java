@@ -41,7 +41,11 @@ public final class Outputs {
    * @param <T> the class of the output
    * @return an unmodifiable view of the specified output
    */
+  @SuppressWarnings("unchecked")
   public static <T> Output<T> unmodifiableOutput(Output<? extends T> output) {
+    if (output instanceof UnmodifiableOutput) {
+      return (Output<T>) output;
+    }
     return new UnmodifiableOutput<>(output);
   }
 

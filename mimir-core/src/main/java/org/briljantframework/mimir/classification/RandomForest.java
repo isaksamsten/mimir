@@ -21,7 +21,6 @@
 package org.briljantframework.mimir.classification;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -74,7 +73,7 @@ public final class RandomForest extends Ensemble<Instance> {
 
     @Override
     public RandomForest fit(Input<? extends Instance> x, Output<?> y) {
-      PropertyPreconditions.checkProperties(getRequiredInputProperties(), x);
+      Check.argument(Dataset.isDataset(x), "requires a dataset");
       Check.argument(x.size() == y.size());
 
       List<?> classes = Outputs.unique(y);
@@ -93,11 +92,6 @@ public final class RandomForest extends Ensemble<Instance> {
         e.printStackTrace();
         return null;
       }
-    }
-
-    @Override
-    public Collection<Property<?>> getRequiredInputProperties() {
-      return java.util.Arrays.asList(Dataset.FEATURE_SIZE, Dataset.FEATURE_TYPES);
     }
 
     @Override

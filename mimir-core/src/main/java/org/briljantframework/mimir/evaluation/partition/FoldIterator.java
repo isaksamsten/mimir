@@ -26,11 +26,8 @@ import java.util.Objects;
 
 import org.briljantframework.Check;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.ArrayInput;
-import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.ArrayOutput;
 import org.briljantframework.mimir.classification.ClassifierValidator;
+import org.briljantframework.mimir.data.*;
 
 /**
  * Lazy iterator that partitions the supplied {@linkplain DataFrame data frame} and {@code Vector
@@ -171,6 +168,8 @@ public class FoldIterator<In, Out> implements Iterator<Partition<In, Out>> {
       index += 1;
     }
 
-    return new Partition<>(xTraining, xValidation, yTraining, yValidation);
+    return new Partition<>(Inputs.unmodifiableInput(xTraining),
+        Inputs.unmodifiableInput(xValidation), Outputs.unmodifiableOutput(yTraining),
+        Outputs.unmodifiableOutput(yValidation));
   }
 }

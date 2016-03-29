@@ -30,6 +30,7 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.briljantframework.DoubleSequence;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 
@@ -66,13 +67,27 @@ public final class Inputs {
     return new UnmodifiableInput<>(input);
   }
 
-  public static DoubleArray toDoubleArray(Input<? extends Instance> x,
+  /**
+   * Converts an input of double sequences to a double array while applying the given operator to
+   * each value.
+   *
+   * <p/>
+   * <strong>Required properties</strong>
+   * <ul>
+   * <li>{@link Dataset#FEATURE_SIZE}</li>
+   * </ul>
+   *
+   * @param x the input
+   * @param operator the operator
+   * @return a double array
+   */
+  public static DoubleArray toDoubleArray(Input<? extends DoubleSequence> x,
       DoubleUnaryOperator operator) {
     int n = x.size();
     int m = x.getProperty(Dataset.FEATURE_SIZE);
     DoubleArray out = DoubleArray.zeros(n, m);
     for (int i = 0; i < n; i++) {
-      Instance v = x.get(i);
+      DoubleSequence v = x.get(i);
       for (int j = 0; j < m; j++) {
         out.set(i, j, operator.applyAsDouble(v.getAsDouble(j)));
       }
@@ -80,7 +95,19 @@ public final class Inputs {
     return out;
   }
 
-  public static DoubleArray toDoubleArray(Input<? extends Instance> x) {
+  /**
+   * Converts an input of double sequences to a double array.
+   *
+   * <p/>
+   * <strong>Required properties</strong>
+   * <ul>
+   * <li>{@link Dataset#FEATURE_SIZE}</li>
+   * </ul>
+   *
+   * @param x the input
+   * @return a double array
+   */
+  public static DoubleArray toDoubleArray(Input<? extends DoubleSequence> x) {
     return toDoubleArray(x, DoubleUnaryOperator.identity());
   }
 
@@ -197,7 +224,7 @@ public final class Inputs {
     }
 
     @Override
-    public Properties getProperties() {
+    public TypeMap getProperties() {
       return c.getProperties();
     }
 

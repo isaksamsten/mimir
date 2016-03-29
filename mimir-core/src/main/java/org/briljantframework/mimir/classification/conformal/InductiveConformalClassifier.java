@@ -26,11 +26,12 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.briljantframework.Check;
+import org.briljantframework.mimir.classification.ClassifierCharacteristic;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.classification.ClassifierCharacteristic;
+import org.briljantframework.mimir.data.TypeKey;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
-import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -78,16 +79,18 @@ public class InductiveConformalClassifier<In> extends AbstractConformalClassifie
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
   public static class Learner<In>
-      implements Predictor.Learner<In, Object, InductiveConformalClassifier<In>> {
+      extends AbstractLearner<In, Object, InductiveConformalClassifier<In>> {
+
+    public static final TypeKey<Boolean> STOCHASTIC_SMOOTING =
+        TypeKey.of("stochastic_smooting", Boolean.class, true);
 
     private final ClassifierNonconformity.Learner<In, ? extends ClassifierNonconformity<In>> learner;
-    private final boolean stochasticSmoothing;
     private final ClassifierCalibrator<In> calibratable;
 
     public Learner(
         ClassifierNonconformity.Learner<In, ? extends ClassifierNonconformity<In>> learner,
         ClassifierCalibrator<In> calibrator, boolean stochasticSmoothing) {
-      this.stochasticSmoothing = stochasticSmoothing;
+      set(STOCHASTIC_SMOOTING, stochasticSmoothing);
       this.calibratable = Objects.requireNonNull(calibrator, "Calibrator is required.");
       this.learner = Objects.requireNonNull(learner, "Nonconformity learner is required.");
     }
@@ -110,7 +113,7 @@ public class InductiveConformalClassifier<In> extends AbstractConformalClassifie
       Check.argument(in.size() == out.size(),
           "The size of input data and input target don't match.");
       ClassifierNonconformity<In> nc = learner.fit(in, out);
-      return new InductiveConformalClassifier<>(nc, calibratable, stochasticSmoothing,
+      return new InductiveConformalClassifier<>(nc, calibratable, get(STOCHASTIC_SMOOTING),
           nc.getClasses());
     }
   }

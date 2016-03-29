@@ -47,13 +47,14 @@ public class GridSearch<In, Out, P extends Predictor<In, Out>, O extends Predict
     this.validator = Objects.requireNonNull(validator, "validator required");
   }
 
-  private List<Configuration<In, Out, P>> gridSearch(O builder, Input<In> x, Output<Out> y) {
+  private List<Configuration<In, Out, P>> gridSearch(O builder, Input<? extends In> x,
+      Output<? extends Out> y) {
     List<Configuration<In, Out, P>> configurations = new ArrayList<>();
     gridSearch(builder, x, y, configurations, new Object[updatables.size()], 0);
     return configurations;
   }
 
-  private void gridSearch(O classifierBuilder, Input<In> x, Output<Out> y,
+  private void gridSearch(O classifierBuilder, Input<? extends In> x, Output<? extends Out> y,
       List<Configuration<In, Out, P>> results, Object[] parameters, int n) {
     if (n != updatables.size()) {
       ParameterUpdator<O> updater = updatables.get(n).updator();
@@ -75,7 +76,8 @@ public class GridSearch<In, Out, P extends Predictor<In, Out>, O extends Predict
   }
 
   @Override
-  public List<Configuration<In, Out, P>> tune(O toOptimize, Input<In> x, Output<Out> y) {
+  public List<Configuration<In, Out, P>> tune(O toOptimize, Input<? extends In> x,
+      Output<? extends Out> y) {
     return gridSearch(toOptimize, x, y);
   }
 

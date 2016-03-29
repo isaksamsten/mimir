@@ -28,6 +28,9 @@ import org.briljantframework.mimir.data.Input;
  * transformation must be fitted on a dataset and applied on another. For example, in the case of
  * normalizing training and testing data.
  *
+ * <p/>
+ * The input
+ *
  * @author Isak Karlsson
  */
 @FunctionalInterface
@@ -36,18 +39,18 @@ public interface Transformation<T, E> {
   /**
    * Fit and transform the data frame in a single operation
    *
-   * @param dataFrame the data frame
+   * @param x the data frame
    * @return the transformed data frame
    */
-  default Input<E> fitTransform(Input<? extends T> dataFrame) {
-    return fit(dataFrame).transform(dataFrame);
+  default Input<E> fitTransform(Input<? extends T> x) {
+    return fit(x).transform(x);
   }
 
   /**
    * Fit a transformer to data frame
    *
-   * @param dataFrame the dataset to use in the fit procedure
+   * @param x the dataset to use in the fit procedure
    * @return the transformation
    */
-  Transformer<T, E> fit(Input<? extends T> dataFrame);
+  Transformer<T, E> fit(Input<? extends T> x);
 }

@@ -20,9 +20,16 @@
  */
 package org.briljantframework.mimir.data.transform;
 
-import org.briljantframework.DoubleSequence;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.mimir.data.Input;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
+import org.briljantframework.Check;
+import org.briljantframework.data.Is;
+import org.briljantframework.data.statistics.FastStatistics;
+import org.briljantframework.mimir.data.*;
 
 /**
  * Z normalization is also known as "Normalization to Zero Mean and Unit of Energy" first mentioned
@@ -32,24 +39,35 @@ import org.briljantframework.mimir.data.Input;
  *
  * @author Isak Karlsson
  */
-public class ZNormalizer<T extends DoubleSequence> implements Transformation<T, T> {
+public class ZNormalizer<T extends Instance> implements Transformation<T, Instance> {
 
   @Override
-  public Transformer<T, T> fit(Input<? extends T> df) {
-    Vector.Builder meanBuilder = Vector.Builder.of(Double.class);
-    Vector.Builder stdBuilder = Vector.Builder.of(Double.class);
-    // for (Object columnKey : df) {
-    // StatisticalSummary stats = Vectors.statisticalSummary(df.get(columnKey));
-    // if (stats.getN() <= 0 || Is.NA(stats.getMean()) || Is.NA(stats.getStandardDeviation())) {
-    // throw new IllegalArgumentException("Illegal value for column " + columnKey);
-    // }
-    // meanBuilder.set(columnKey, stats.getMean());
-    // stdBuilder.set(columnKey, stats.getStandardDeviation());
-    // }
-    Vector mean = meanBuilder.build();
-    Vector sigma = stdBuilder.build();
+  public Transformer<T, Instance> fit(Input<? extends T> x) {
+    PropertyPreconditions.checkProperties(
+        Arrays.asList(Dataset.FEATURE_SIZE, Dataset.FEATURE_TYPES), x.getProperties());
+    List<FastStatistics> stats = new ArrayList<>();
+    int columns = x.getProperty(Dataset.FEATURE_SIZE);
+    List<Class<?>> featureType = x.getProperty(Dataset.FEATURE_TYPES);
+    for (int i = 0; i < columns; i++) {
+      stats.add(new FastStatistics());
+    }
 
-    return new ZNormalizerTransformer<>(mean, sigma);
+    for (T instance : x) {
+      Check.state(instance.size() == columns);
+      for (int i = 0; i < instance.size(); i++) {
+        if (Number.class.isAssignableFrom(featureType.get(i))) {
+          double value = instance.getAsDouble(i);
+          if (!Is.NA(value)) {
+            stats.get(i).addValue(value);
+          }
+        }
+      }
+    }
+
+
+    List<StatisticalSummary> summaries =
+        stats.stream().map(FastStatistics::getSummary).collect(Collectors.toList());
+    return new ZNormalizerTransformer<>(featureType, summaries);
   }
 
   @Override
@@ -57,50 +75,38 @@ public class ZNormalizer<T extends DoubleSequence> implements Transformation<T, 
     return "ZNormalizer";
   }
 
-  private static class ZNormalizerTransformer<T extends DoubleSequence>
-      implements Transformer<T, T> {
+  private static class ZNormalizerTransformer<T extends Instance>
+      implements Transformer<T, Instance> {
 
-    private final Vector mean;
-    private final Vector sigma;
+    private final List<StatisticalSummary> summaries;
+    private final List<Class<?>> featureTypes;
 
-    ZNormalizerTransformer(Vector mean, Vector sigma) {
-      this.mean = mean;
-      this.sigma = sigma;
+    ZNormalizerTransformer(List<Class<?>> featureTypes,
+        List<StatisticalSummary> statisticalSummaries) {
+      this.featureTypes = featureTypes;
+      this.summaries = statisticalSummaries;
     }
 
     @Override
-    public Input<T> transform(Input<? extends T> x) {
-      // Check.argument(mean.getIndex().equals(x.getColumnIndex()), "Columns must match.");
-      // DataFrame.Builder builder = x.newBuilder();
-      // for (Object columnKey : x) {
-      // Vector column = x.get(columnKey);
-      // double m = mean.getAsDouble(columnKey);
-      // double std = sigma.getAsDouble(columnKey);
-      // Vector.Builder normalized = column.newBuilder(column.size());
-      // for (int i = 0, size = column.size(); i < size; i++) {
-      // double v = column.loc().getAsDouble(i);
-      // if (Is.NA(v)) {
-      // normalized.addNA();
-      // } else if (std == 0) {
-      // normalized.add(0);
-      // } else {
-      // normalized.add((v - m) / std);
-      // }
-      // }
-      // builder.set(columnKey, normalized);
-      // }
-      // return builder.setIndex(x.getIndex()).build();
-      throw new UnsupportedOperationException();
-    }
+    public Instance transform(T x) {
+      Check.state(x.size() == summaries.size());
+      ArrayInstance o = new ArrayInstance();
+      for (int i = 0; i < x.size(); i++) {
+        double value = x.getAsDouble(i);
+        if (Is.NA(value) || !Number.class.isAssignableFrom(featureTypes.get(i))) {
+          o.add(x.get(i));
+        } else {
+          StatisticalSummary summary = summaries.get(i);
+          o.add((value - summary.getMean()) / summary.getStandardDeviation());
+        }
+      }
 
-    @Override
-    public T transform(T x) {
-      throw new UnsupportedOperationException();
+      return o;
     }
 
     @Override
     public String toString() {
-      return "ZNormalizerTransformer{" + "mean=" + mean + ", sigma=" + sigma + '}';
+      return "ZNormalizerTransformer{" + "summaries=" + summaries + '}';
     }
   }
 }
