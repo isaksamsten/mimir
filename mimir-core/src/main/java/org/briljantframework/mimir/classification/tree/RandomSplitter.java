@@ -27,7 +27,7 @@ import org.briljantframework.mimir.data.Dataset;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Instance;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.primitive.ArrayAllocations;
+import org.briljantframework.util.primitive.ArrayAllocations;
 
 /**
  * NOTE: This cannot be reused among trees (it is stateful for performance reasons)

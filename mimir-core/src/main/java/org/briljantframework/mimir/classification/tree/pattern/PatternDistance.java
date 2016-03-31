@@ -24,5 +24,10 @@ package org.briljantframework.mimir.classification.tree.pattern;
  * Created by isak on 3/17/16.
  */
 public interface PatternDistance<T, S> {
+
+  default boolean isCategoric(S thing) {
+    return false;
+  }
+
   double computeDistance(T a, S b);
 }

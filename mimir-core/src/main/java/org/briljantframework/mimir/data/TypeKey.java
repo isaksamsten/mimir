@@ -20,6 +20,8 @@
  */
 package org.briljantframework.mimir.data;
 
+import java.util.function.Function;
+
 /**
  * @author Isak Karlsson
  */
@@ -33,6 +35,11 @@ public interface TypeKey<T> {
     return new StringTypeKey<>(cls, name, defaultValue);
   }
 
+  static <T> TypeKey<T> of(String name, Class<T> cls, T defaultValue,
+      Function<? super T, Boolean> validator) {
+    return new StringTypeKey<T>(cls, name, defaultValue, validator);
+  }
+
   /**
    * Return the class of the given property
    * 
@@ -40,8 +47,23 @@ public interface TypeKey<T> {
    */
   Class<T> getType();
 
+  /**
+   * Get the default value for this key, or null if no default value.
+   * 
+   * @return the default value
+   */
   default T defaultValue() {
     return null;
+  }
+
+  /**
+   * Validate that the value is appropriate for this type key.
+   * 
+   * @param value the value
+   * @return true if the value is valid (default: value != null)
+   */
+  default boolean validate(T value) {
+    return value != null;
   }
 
   /**

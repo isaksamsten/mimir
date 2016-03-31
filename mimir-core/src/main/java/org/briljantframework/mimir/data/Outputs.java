@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.briljantframework.DoubleSequence;
 import org.briljantframework.data.vector.Vector;
 
 /**
@@ -33,6 +34,14 @@ import org.briljantframework.data.vector.Vector;
 public final class Outputs {
 
   private Outputs() {}
+
+  public static Output<Double> copyOf(DoubleSequence sequence) {
+    Output<Double> output = new ArrayOutput<>();
+    for (int i = 0; i < sequence.size(); i++) {
+      output.add(sequence.getAsDouble(i));
+    }
+    return unmodifiableOutput(output);
+  }
 
   /**
    * Returns an unmodifiable view of the specified output.
@@ -59,7 +68,7 @@ public final class Outputs {
   @SafeVarargs
   @SuppressWarnings("varargs")
   public static <T> Output<T> newOutput(T... values) {
-    return new ArrayOutput<>(values);
+    return new ImmutableArrayOutput<>(values);
   }
 
   /**
@@ -127,10 +136,10 @@ public final class Outputs {
     return counts;
   }
 
-  private static class ArrayOutput<T> extends AbstractList<T> implements Output<T> {
+  private static class ImmutableArrayOutput<T> extends AbstractList<T> implements Output<T> {
     private final T[] values;
 
-    public ArrayOutput(T[] values) {
+    public ImmutableArrayOutput(T[] values) {
       this.values = Objects.requireNonNull(values);
     }
 

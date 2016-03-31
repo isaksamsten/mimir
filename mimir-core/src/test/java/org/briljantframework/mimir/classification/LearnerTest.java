@@ -20,10 +20,7 @@
  */
 package org.briljantframework.mimir.classification;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -31,8 +28,11 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.util.FastMath;
 import org.briljantframework.DoubleSequence;
+import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
+import org.briljantframework.array.Range;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.SortOrder;
 import org.briljantframework.data.dataframe.DataFrame;
@@ -50,10 +50,7 @@ import org.briljantframework.mimir.classification.conformal.InductiveConformalCl
 import org.briljantframework.mimir.classification.conformal.ProbabilityCostFunction;
 import org.briljantframework.mimir.classification.conformal.ProbabilityEstimateNonconformity;
 import org.briljantframework.mimir.classification.conformal.evaluation.ConformalClassifierValidator;
-import org.briljantframework.mimir.classification.tree.pattern.PatternDistance;
-import org.briljantframework.mimir.classification.tree.pattern.PatternFactory;
-import org.briljantframework.mimir.classification.tree.pattern.RandomPatternForest;
-import org.briljantframework.mimir.classification.tree.pattern.SamplingPatternFactory;
+import org.briljantframework.mimir.classification.tree.pattern.*;
 import org.briljantframework.mimir.classification.tune.GridSearch;
 import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.evaluation.Result;
@@ -69,6 +66,15 @@ import org.junit.Test;
  * Created by isak on 11/16/15.
  */
 public class LearnerTest {
+
+  @Test
+  public void sampleRegion() throws Exception {
+    DoubleArray x = Arrays.range(10 * 10).asDouble().reshape(10, 10);
+    System.out.println(x);
+    System.out.println(x.getView(Range.of(1, 3), Range.of(3, 8)));
+
+
+  }
 
   private Pair<Input<Instance>, Output<?>> loadDataset() {
     // DataFrame data = DataFrames.permuteRecords(Datasets.loadIris());
@@ -97,6 +103,111 @@ public class LearnerTest {
     Output<?> y = data.getRight();
 
     System.out.println(gridSearch.tune(new RandomForest.Configurator(100), x, y));
+
+  }
+
+  @Test
+  public void MatThing() throws Exception {
+    DoubleArray data = Arrays
+        .readIdx(new FileInputStream(new File("/home/isak/Tmp/mnist/train-images-idx3-ubyte")));
+    DoubleArray label = Arrays
+        .readIdx(new FileInputStream(new File("/home/isak/Tmp/mnist/train-labels-idx1-ubyte")));
+
+    Input<DoubleArray> in = new AbstractInput<DoubleArray>() {
+      @Override
+      public DoubleArray get(int index) {
+        return data.select(index);
+      }
+
+      @Override
+      public int size() {
+        return data.size(0);
+      }
+
+      @Override
+      public TypeMap getProperties() {
+        return new TypeMap();
+      }
+    };
+    Output<?> out = Outputs.copyOf(label);
+
+    PatternFactory<DoubleArray, DoubleArray> factory =
+        new SamplingPatternFactory<DoubleArray, DoubleArray>() {
+          @Override
+          protected DoubleArray createPattern(DoubleArray input) {
+            int xStart = ThreadLocalRandom.current().nextInt(10);
+            int xEnd = ThreadLocalRandom.current().nextInt(xStart + 5, 29);
+            int yStart = ThreadLocalRandom.current().nextInt(10);
+            int yEnd = ThreadLocalRandom.current().nextInt(yStart + 5, 29);
+            DoubleArray view = input.getView(Range.of(xStart, xEnd), Range.of(yStart, yEnd));
+            return view;
+          }
+        };
+
+    PatternDistance<DoubleArray, DoubleArray> distance =
+        new PatternDistance<DoubleArray, DoubleArray>() {
+          @Override
+          public double computeDistance(DoubleArray a, DoubleArray b) {
+            double minDistance = Double.POSITIVE_INFINITY;
+            int seriesSize = a.size();
+            int m = b.size();
+            double[] t = new double[m * 2];
+
+            double ex = 0;
+            double ex2 = 0;
+            for (int i = 0; i < seriesSize; i++) {
+              double d = a.get(i);
+              ex += d;
+              ex2 += d * d;
+              t[i % m] = d;
+              t[(i % m) + m] = d;
+
+              if (i >= m - 1) {
+                int j = (i + 1) % m;
+                double mean = ex / m;
+                double sigma = FastMath.sqrt(ex2 / m - mean * mean);
+                double dist = distance(b, t, j, m, mean, sigma, minDistance);
+                if (dist < minDistance) {
+                  minDistance = dist;
+                }
+
+                ex -= t[j];
+                ex2 -= t[j] * t[j];
+              }
+            }
+            return Math.sqrt(minDistance / b.size());
+          }
+
+          double distance(DoubleArray c, double[] t, int j, int m, double mean, double std,
+              double bsf) {
+            double sum = 0;
+            for (int i = 0; i < m && sum < bsf; i++) {
+              double x = normalize(t[i + j], mean, std) - c.get(i);
+              // double x = ((t[i + j] - mean) / std) - c.loc().getAsDouble(i);
+              sum += x * x;
+            }
+            return sum;
+          }
+
+          public double normalize(double value, double mean, double std) {
+            if (std == 0) {
+              return 0;
+            } else {
+              return (value - mean) / std;
+            }
+          }
+        };
+
+    RandomPatternForest.Learner<DoubleArray, DoubleArray> rpfl =
+        new RandomPatternForest.Learner<>(factory, distance, 1);
+    rpfl.set(PatternTree.PATTERN_COUNT, 1);
+    rpfl.set(Ensemble.SIZE, 1);
+
+    ClassifierValidator<DoubleArray, RandomPatternForest<DoubleArray>> validator =
+        ClassifierValidator.splitValidator(0.33);
+    System.out.println(validator.test(rpfl, in, out));
+
+
 
   }
 
@@ -152,9 +263,9 @@ public class LearnerTest {
               mean[i] = statistics.getMean();
               std[i] = statistics.getStandardDeviation();
             }
-            RandomPatternForest.Learner<DoubleSequence> rfl =
-                new RandomPatternForest.Configurator<>(factory, rbfKernel, 100).setPatternCount(5)
-                    .configure();
+            RandomPatternForest.Learner<DoubleSequence, DoubleSequence> rfl =
+                new RandomPatternForest.Learner<>(factory, rbfKernel, 100);
+            rfl.set(PatternTree.PATTERN_COUNT, 10);
 
             Input<DoubleSequence> xTrans = normalize(in, mean, std);
             RandomPatternForest<DoubleSequence> model = rfl.fit(xTrans, out);
@@ -285,7 +396,7 @@ public class LearnerTest {
           }
         };
 
-    RandomPatternForest.Learner<Instance> rfl =
+    RandomPatternForest.Learner<Instance, ?> rfl =
         new RandomPatternForest.Learner<>(featureFactory, zeroOneDistance, 100);
 
     ClassifierValidator<Instance, RandomPatternForest<Instance>> v =
@@ -303,9 +414,8 @@ public class LearnerTest {
     ClassifierValidator<Vector, RandomPatternForest<Vector>> v =
         ClassifierValidator.splitValidator(0.33);
 
-    RandomPatternForest.Learner<Vector> rfl =
-        new RandomPatternForest.Configurator<>(new ShapeletFactory(), new ShapeletDistance(), 100)
-            .configure();
+    RandomPatternForest.Learner<Vector, ?> rfl =
+        new RandomPatternForest.Learner<>(new ShapeletFactory(), new ShapeletDistance(), 100);
 
     System.out.println(v.test(rfl, x, y).getMeasures().mean());
 

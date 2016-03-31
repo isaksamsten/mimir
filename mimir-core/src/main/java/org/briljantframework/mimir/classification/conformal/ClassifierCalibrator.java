@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.primitive.DoubleList;
+import org.briljantframework.util.primitive.DoubleList;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>

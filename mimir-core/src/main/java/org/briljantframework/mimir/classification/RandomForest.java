@@ -80,9 +80,10 @@ public final class RandomForest extends Ensemble<Instance> {
       Check.argument(classes.size() > 1, "require more than 1 output.");
 
       ClassSet classSet = new ClassSet(y, classes);
-      List<FitTask> fitTasks = new ArrayList<>();
-      BooleanArray oobIndicator = Arrays.booleanArray(x.size(), size());
-      for (int i = 0; i < size(); i++) {
+      int size = get(SIZE);
+      BooleanArray oobIndicator = Arrays.booleanArray(x.size(), size);
+      List<FitTask> fitTasks = new ArrayList<>(size);
+      for (int i = 0; i < size; i++) {
         fitTasks
             .add(new FitTask(classSet, x, y, learnStrategy, classes, oobIndicator.getColumn(i)));
       }

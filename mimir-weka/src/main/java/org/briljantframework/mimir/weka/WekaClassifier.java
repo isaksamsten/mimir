@@ -34,8 +34,8 @@ import org.briljantframework.mimir.data.Dataset;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.data.Outputs;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
-import org.briljantframework.mimir.supervised.Predictor;
 
 import weka.core.Attribute;
 import weka.core.FastVector;
@@ -106,8 +106,8 @@ public class WekaClassifier<T extends weka.classifiers.Classifier>
 
   }
 
-  public static class Learner<T extends weka.classifiers.Classifier> implements
-      Predictor.Learner<org.briljantframework.mimir.data.Instance, Object, WekaClassifier<T>> {
+  public static class Learner<T extends weka.classifiers.Classifier> extends
+      AbstractLearner<org.briljantframework.mimir.data.Instance, Object, WekaClassifier<T>> {
 
     private final T classifier;
 

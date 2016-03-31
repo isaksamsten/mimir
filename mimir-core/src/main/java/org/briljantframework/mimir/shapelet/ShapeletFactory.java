@@ -20,12 +20,12 @@
  */
 package org.briljantframework.mimir.shapelet;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.briljantframework.data.Is;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.classification.tree.pattern.SamplingPatternFactory;
-import org.briljantframework.primitive.IntList;
-
-import java.util.concurrent.ThreadLocalRandom;
+import org.briljantframework.util.primitive.IntList;
 
 /**
  * Created by isak on 3/17/16.

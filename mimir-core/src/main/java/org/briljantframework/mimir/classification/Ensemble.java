@@ -41,6 +41,12 @@ import org.briljantframework.mimir.supervised.Predictor;
  */
 public class Ensemble<In> extends AbstractClassifier<In> {
 
+  /**
+   * The number of members in the ensemble
+   */
+  public static final TypeKey<Integer> SIZE =
+      TypeKey.of("ensemble_size", Integer.class, 100, i -> i > 0);
+
   private final List<? extends Classifier<In>> members;
   private final BooleanArray oobIndicator;
 
@@ -113,8 +119,6 @@ public class Ensemble<In> extends AbstractClassifier<In> {
    */
   public abstract static class Learner<In, P extends Ensemble<In>>
       extends AbstractLearner<In, Object, P> {
-
-    public static final TypeKey<Integer> SIZE = TypeKey.of("ensemble_size", Integer.class, 100);
 
     private final static ThreadPoolExecutor THREAD_POOL;
     private final static int CORES;

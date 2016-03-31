@@ -29,10 +29,7 @@ import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.statistics.FastStatistics;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.classification.tree.*;
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.Outputs;
-import org.briljantframework.mimir.data.TypeKey;
+import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.distance.Distance;
 import org.briljantframework.mimir.distance.EuclideanDistance;
 import org.briljantframework.mimir.shapelet.ChannelShapelet;
@@ -48,14 +45,23 @@ import com.carrotsearch.hppc.cursors.ObjectDoubleCursor;
  */
 public class PatternTree<In> extends TreeClassifier<In> {
 
-  public final ClassSet classSet;
+  /**
+   * Number of patterns to inspect at each node
+   */
+  public static final TypeKey<Integer> PATTERN_COUNT =
+      TypeKey.of("inspected_patterns", Integer.class, 10, i -> i > 0);
+
+  /**
+   * Number of input elements required to split a node
+   */
+  public static final TypeKey<Double> MIN_SPLIT_SIZE =
+      TypeKey.of("min_split_size", Double.class, 1.0, i -> i > 0);
+
   private final int depth;
 
-  private PatternTree(List<?> classes, TreeVisitor<In, ?> predictionVisitor, int depth,
-      ClassSet classSet) {
+  private PatternTree(List<?> classes, TreeVisitor<In, ?> predictionVisitor, int depth) {
     super(classes, predictionVisitor);
     this.depth = depth;
-    this.classSet = classSet;
   }
 
   public int getDepth() {
@@ -70,12 +76,6 @@ public class PatternTree<In> extends TreeClassifier<In> {
    * @author Isak Karlsson
    */
   public static class Learner<In, E> extends AbstractLearner<In, Object, PatternTree<In>> {
-
-    public static final TypeKey<Integer> PATTERN_COUNT =
-        TypeKey.of("inspected_patterns", Integer.class, 10);
-
-    public static final TypeKey<Double> MIN_SPLIT_SIZE =
-        TypeKey.of("min_split_size", Double.class, 1.0);
 
     protected final Gain gain = Gain.INFO;
 
@@ -97,7 +97,18 @@ public class PatternTree<In> extends TreeClassifier<In> {
       this.classes = classes;
     }
 
-    public Gain getGain() {
+    public Learner(PatternFactory<? super In, ? extends E> factory,
+        PatternDistance<? super In, ? super E> patternDistance, ClassSet classSet, List<?> classes,
+        TypeMap properties) {
+      super(properties);
+      this.patternFactory = factory;
+      this.patternDistance = patternDistance;
+      this.classSet = classSet;
+      this.classes = classes;
+      this.assessment = Assessment.IG;
+    }
+
+    private Gain getGain() {
       return gain;
     }
 
@@ -114,7 +125,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
       TreeNode<In, PatternTree.Threshold<E>> node = build(x, y, classSet, params);
       DefaultPatternTreeVisitor<In, E> visitor =
           new DefaultPatternTreeVisitor<>(node, patternDistance);
-      return new PatternTree<>(classes, visitor, params.depth, classSet);
+      return new PatternTree<>(classes, visitor, params.depth);
     }
 
     protected TreeNode<In, PatternTree.Threshold<E>> build(Input<? extends In> x, Output<?> y,
@@ -164,6 +175,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
       }
 
       if (shapelets.isEmpty()) {
+        System.err.println("debug: empty sample");
         return null;
       }
 
@@ -199,8 +211,8 @@ public class PatternTree<In> extends TreeClassifier<In> {
         TreeSplit<PatternTree.Threshold<E>> bestSplit =
             split(bestDistanceMap, classSet, bestThreshold.threshold, bestShapelet);
         bestSplit.setImpurity(bestThreshold.impurity);
-        PatternTree.Threshold threshold = bestSplit.getThreshold();
-        threshold.setClassDistances(computeMeanDistance(bestDistanceMap, classSet, y));
+        // PatternTree.Threshold threshold = bestSplit.getThreshold();
+        // threshold.setClassDistances(computeMeanDistance(bestDistanceMap, classSet, y));
         return bestSplit;
       } else {
         return null;
@@ -236,24 +248,23 @@ public class PatternTree<In> extends TreeClassifier<In> {
         double distance = patternDistance.computeDistance(record, shapelet);
         memoizedDistances.put(example.getIndex(), distance);
         distances.add(new ExampleDistance(distance, example));
-        if (!Is.NA(distance)) {
+        if (!Is.NA(distance) && !Double.isInfinite(distance)) {
           sum += distance;
         }
       }
 
-      // if (shapelet instanceof ChannelShapelet
-      // && shapelet.getDelegate() instanceof CategoricShapelet) {
-      // TreeSplit<?> split = split(memoizedDistances, classSet, 0.5, shapelet);
-      // double impurity = gain.compute(split);
-      // return new Threshold(0.5, impurity, 0, Double.POSITIVE_INFINITY);
-      // } else {
-      Collections.sort(distances);
-      int firstNa = distances.indexOf(ExampleDistance.NA);
-      if (firstNa >= 0) {
-        distances = distances.subList(0, firstNa);
+      if (patternDistance.isCategoric(shapelet)) {
+        TreeSplit<?> split = split(memoizedDistances, classSet, 0.5, shapelet);
+        double impurity = gain.compute(split);
+        return new Threshold(0.5, impurity, 0, Double.POSITIVE_INFINITY);
+      } else {
+        Collections.sort(distances);
+        int firstNa = distances.indexOf(ExampleDistance.NA);
+        if (firstNa >= 0) {
+          distances = distances.subList(0, firstNa);
+        }
+        return findBestThreshold(distances, classSet, y, sum, firstNa);
       }
-      return findBestThreshold(distances, classSet, y, sum, firstNa);
-      // }
     }
 
     protected TreeSplit<PatternTree.Threshold<E>> findBestSplitFstat(ClassSet classSet,
@@ -363,9 +374,9 @@ public class PatternTree<In> extends TreeClassifier<In> {
       gtWeight -= first.getWeight();
       ltWeight += first.getWeight();
 
-      double prevDistance = distances.get(0).distance;
+      double prevDistance = ed.distance;
       double lowestImpurity = Double.POSITIVE_INFINITY;
-      double threshold = distances.get(0).distance / 2;
+      double threshold = Double.isFinite(ed.distance) ? ed.distance / 2 : 0;
       Gain gain = getGain();
       double ltGap = 0.0, gtGap = distanceSum, largestGap = Double.NEGATIVE_INFINITY;
       for (int i = 1; i < distances.size(); i++) {
@@ -398,7 +409,8 @@ public class PatternTree<In> extends TreeClassifier<In> {
           if (lowerImpurity || equalImpuritySmallerGap) {
             lowestImpurity = impurity;
             largestGap = gap;
-            threshold = (ed.distance + prevDistance) / 2;
+            threshold =
+                Double.isFinite(ed.distance) ? (ed.distance + prevDistance) / 2 : prevDistance;
           }
         }
 
@@ -413,10 +425,12 @@ public class PatternTree<In> extends TreeClassifier<In> {
         lt.addTo(target, weight);
         gt.addTo(target, -weight);
 
-        ltGap += ed.distance;
-        gtGap -= ed.distance;
+        if (Double.isFinite(ed.distance)) {
+          ltGap += ed.distance;
+          gtGap -= ed.distance;
+          prevDistance = ed.distance;
+        }
 
-        prevDistance = ed.distance;
         prevTarget = target;
       }
 

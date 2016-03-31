@@ -92,18 +92,22 @@ public final class TypeMap {
     if (value != null) {
       return typeKey.getType().cast(value);
     } else {
-      throw new NoSuchElementException("illegal property");
+      throw new NoSuchElementException("key not found");
     }
   }
 
   public <T> void set(TypeKey<T> typeKey, T value) {
     if (value == null) {
-      throw new NullPointerException("null values are note allowed");
+      throw new NullPointerException("null values are not allowed");
     } else if (!typeKey.getType().isInstance(value)) {
       throw new IllegalArgumentException(
           "The given value is not an instance of the class specified by the key.");
+    } else if (!typeKey.validate(value)) {
+      throw new IllegalArgumentException(
+          "The given value does not conform with the validation requirements of the key");
+    } else {
+      map.put(typeKey, value);
     }
-    map.put(typeKey, value);
   }
 
   @Override
