@@ -76,6 +76,7 @@ public interface Predictor<In, Out> {
     TypeMap getParameters();
   }
 
+  @Deprecated
   interface Configurator<In, Out, C extends Learner<In, Out, ? extends Predictor<In, Out>>> {
     C configure();
   }

@@ -73,6 +73,7 @@ public class WekaClassifier<T extends weka.classifiers.Classifier>
 
   @Override
   public Set<Characteristic> getCharacteristics() {
+
     return Collections.singleton(ClassifierCharacteristic.ESTIMATOR);
   }
 

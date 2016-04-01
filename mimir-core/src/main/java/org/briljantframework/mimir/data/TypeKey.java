@@ -27,14 +27,41 @@ import java.util.function.Function;
  */
 public interface TypeKey<T> {
 
+  /**
+   * Returns a key with the specified name and type
+   *
+   * @param name the name
+   * @param cls the type
+   * @param <T> the class
+   * @return a new key
+   */
   static <T> TypeKey<T> of(String name, Class<T> cls) {
     return new StringTypeKey<>(cls, name);
   }
 
+  /**
+   * Returns a key with the specified name, type and default value
+   *
+   * @param name the name
+   * @param cls the type
+   * @param defaultValue the default value
+   * @param <T> the class
+   * @return a new key
+   */
   static <T> TypeKey<T> of(String name, Class<T> cls, T defaultValue) {
     return new StringTypeKey<>(cls, name, defaultValue);
   }
 
+  /**
+   * Returns a key with the specified name, type, default value and value validator
+   *
+   * @param name the name
+   * @param cls the type
+   * @param defaultValue the default value
+   * @param validator the value validator
+   * @param <T> the class
+   * @return a new key
+   */
   static <T> TypeKey<T> of(String name, Class<T> cls, T defaultValue,
       Function<? super T, Boolean> validator) {
     return new StringTypeKey<T>(cls, name, defaultValue, validator);

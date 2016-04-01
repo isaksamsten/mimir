@@ -23,7 +23,10 @@ package org.briljantframework.mimir.data;
 import java.util.function.Function;
 
 /**
- * Created by isak on 3/29/16.
+ * The default typed key based on string values. Two keys are the same if the have the same name and
+ * type.
+ * 
+ * @author Isak Karlsson
  */
 class StringTypeKey<T> implements TypeKey<T> {
   private final Class<T> cls;
@@ -91,5 +94,10 @@ class StringTypeKey<T> implements TypeKey<T> {
     int result = cls != null ? cls.hashCode() : 0;
     result = 31 * result + (name != null ? name.hashCode() : 0);
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return getName();
   }
 }

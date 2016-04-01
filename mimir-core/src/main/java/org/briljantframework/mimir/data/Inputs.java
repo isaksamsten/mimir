@@ -43,6 +43,8 @@ public final class Inputs {
 
   /**
    * Create a new input based on instance from a {@link DataFrame}.
+   * <p/>
+   * The returned input is immutable.
    * 
    * @param dataFrame the data frame
    * @return a new instance input

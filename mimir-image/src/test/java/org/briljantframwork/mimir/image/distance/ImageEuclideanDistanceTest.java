@@ -18,35 +18,26 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.classification.tune;
+package org.briljantframwork.mimir.image.distance;
 
-import org.briljantframework.mimir.data.TypeMap;
-import org.briljantframework.mimir.evaluation.Result;
+import org.briljantframework.array.DoubleArray;
+import org.briljantframework.mimir.distance.Distance;
+import org.briljantframework.mimir.distance.EuclideanDistance;
+import org.junit.Test;
 
 /**
- * @author Isak Karlsson
+ * Created by isak on 3/31/16.
  */
-public class Configuration<Out> {
+public class ImageEuclideanDistanceTest {
 
-  private final Result<Out> result;
-  private final TypeMap parameters;
-
-  public Configuration(Result<Out> result, TypeMap parameters) {
-    this.result = result;
-    this.parameters = parameters;
+  @Test
+  public void testCompute() throws Exception {
+    DoubleArray a = DoubleArray.of(255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0)
+        .reshape(4, 4);
+    DoubleArray b = DoubleArray.of(0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255)
+        .reshape(4, 4);
+    Distance<DoubleArray> distance = new ImageEuclideanDistance();
+    System.out.println(distance.compute(a, b));
+    System.out.println(EuclideanDistance.getInstance().compute(a, b));
   }
-
-  public Result<Out> getResult() {
-    return result;
-  }
-
-  public TypeMap getParameters() {
-    return parameters;
-  }
-
-  @Override
-  public String toString() {
-    return result.toString();
-  }
-
 }

@@ -51,7 +51,9 @@ import org.briljantframework.mimir.classification.conformal.ProbabilityCostFunct
 import org.briljantframework.mimir.classification.conformal.ProbabilityEstimateNonconformity;
 import org.briljantframework.mimir.classification.conformal.evaluation.ConformalClassifierValidator;
 import org.briljantframework.mimir.classification.tree.pattern.*;
+import org.briljantframework.mimir.classification.tune.Configuration;
 import org.briljantframework.mimir.classification.tune.GridSearch;
+import org.briljantframework.mimir.classification.tune.Updatables;
 import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.evaluation.Result;
 import org.briljantframework.mimir.evaluation.Validator;
@@ -66,6 +68,31 @@ import org.junit.Test;
  * Created by isak on 11/16/15.
  */
 public class LearnerTest {
+
+  @Test
+  public void testGridSearch() throws Exception {
+    GridSearch<Instance, Object, LogisticRegression> gridSearch =
+        new GridSearch<>(ClassifierValidator.crossValidator(10));
+    gridSearch.add(Updatables.enumeration(LogisticRegression.MAX_ITERATIONS, 100));
+    gridSearch.add(Updatables.linspace(LogisticRegression.REGULARIZATION, 0.001, 10, 25));
+
+    DataFrame iris = DataFrames.permuteRecords(Datasets.loadIris());
+    DataFrame replaceNa = iris.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean()));
+    Vector classVector = iris.get("Class");
+
+    Input<Instance> x = Inputs.newInput(replaceNa);
+    Output<?> y = Outputs.newOutput(classVector);
+    LogisticRegression.Learner learner = new LogisticRegression.Learner(1);
+    List<Configuration<Object>> tune = gridSearch.tune(learner, x, y);
+
+    tune.sort((a, b) -> -Double.compare(a.getResult().getMeasure("accuracy").mean(),
+        b.getResult().getMeasure("accuracy").mean()));
+
+    for (Configuration<Object> f : tune) {
+      System.out.println(f.getParameters() + " " + f.getResult().getMeasure("accuracy").mean());
+    }
+
+  }
 
   @Test
   public void sampleRegion() throws Exception {
@@ -96,13 +123,13 @@ public class LearnerTest {
 
   @Test
   public void Generate() throws Exception {
-    GridSearch<Instance, Object, RandomForest, RandomForest.Configurator> gridSearch =
-        new GridSearch<>(ClassifierValidator.crossValidator(10));
-    Pair<Input<Instance>, Output<?>> data = loadDataset();
-    Input<Instance> x = data.getLeft();
-    Output<?> y = data.getRight();
-
-    System.out.println(gridSearch.tune(new RandomForest.Configurator(100), x, y));
+    // GridSearch<Instance, Object, RandomForest, RandomForest.Configurator> gridSearch =
+    // new GridSearch<>(ClassifierValidator.crossValidator(10));
+    // Pair<Input<Instance>, Output<?>> data = loadDataset();
+    // Input<Instance> x = data.getLeft();
+    // Output<?> y = data.getRight();
+    //
+    // System.out.println(gridSearch.tune(new RandomForest.Configurator(100), x, y));
 
   }
 

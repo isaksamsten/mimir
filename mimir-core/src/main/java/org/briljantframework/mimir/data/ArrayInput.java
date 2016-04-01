@@ -29,6 +29,8 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
+ * A mutable input collection.
+ * 
  * @author Isak Karlsson
  */
 public class ArrayInput<T> extends AbstractInput<T> {

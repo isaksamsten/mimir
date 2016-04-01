@@ -49,6 +49,14 @@ public abstract class AbstractLearner<In, Out, P extends Predictor<In, Out>>
     return parameters.get(key);
   }
 
+  protected <T> T getOrDefault(TypeKey<T> typeKey, T defaultValue) {
+    return parameters.getOrDefault(typeKey, defaultValue);
+  }
+
+  protected <T> T getOrDefault(TypeKey<T> typeKey) {
+    return parameters.getOrDefault(typeKey);
+  }
+
   @Override
   public final TypeMap getParameters() {
     return parameters;

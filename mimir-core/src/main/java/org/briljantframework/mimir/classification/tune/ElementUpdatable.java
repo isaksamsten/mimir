@@ -20,24 +20,30 @@
  */
 package org.briljantframework.mimir.classification.tune;
 
-import java.util.function.BiConsumer;
+import org.briljantframework.mimir.data.TypeKey;
+import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-class UpdatableEnumerationParameter<T, V> implements UpdatableParameter<T> {
+class ElementUpdatable<T> implements Updatable {
 
-  private final V[] enumeration;
-  private final BiConsumer<T, V> updater;
+  private final T[] enumeration;
+  private final TypeKey<? super T> key;
 
-  public UpdatableEnumerationParameter(BiConsumer<T, V> updater, V[] enumeration) {
+  public ElementUpdatable(TypeKey<? super T> key, T[] enumeration) {
     this.enumeration = enumeration;
-    this.updater = updater;
+    this.key = key;
   }
 
   @Override
-  public ParameterUpdator<T> updator() {
-    return new ParameterUpdator<T>() {
+  public TypeKey<?> getKey() {
+    return key;
+  }
+
+  @Override
+  public Updater updator() {
+    return new Updater() {
       private int current = 0;
 
       @Override
@@ -46,9 +52,9 @@ class UpdatableEnumerationParameter<T, V> implements UpdatableParameter<T> {
       }
 
       @Override
-      public Object update(T toUpdate) {
-        V value = enumeration[current++];
-        updater.accept(toUpdate, value);
+      public Object update(Predictor.Learner<?, ?, ?> toUpdate) {
+        T value = enumeration[current++];
+        toUpdate.set(key, value);
         return value;
       }
     };

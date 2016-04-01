@@ -36,6 +36,8 @@ import org.briljantframework.mimir.supervised.Characteristic;
  */
 public final class LinearRegression implements Regression<DoubleSequence> {
 
+  public static final TypeKey<Double> REGULARIZATION =
+      TypeKey.of("regularization", Double.class, 0.1);
   private final DoubleArray theta;
 
   private LinearRegression(DoubleArray theta) {
@@ -66,9 +68,6 @@ public final class LinearRegression implements Regression<DoubleSequence> {
    */
   public static class Learner extends AbstractLearner<DoubleSequence, Double, LinearRegression> {
 
-    public static final TypeKey<Double> REGULARIZATION =
-        TypeKey.of("regularization", Double.class, 0.1);
-
     public Learner() {}
 
     @Override
@@ -79,7 +78,7 @@ public final class LinearRegression implements Regression<DoubleSequence> {
       DoubleArray x = Arrays.vstack(Arrays.ones(in.size()), Inputs.toDoubleArray(in));
       DoubleArray y = DoubleArray.copyOf(out);
 
-      double scalar = get(REGULARIZATION);
+      double scalar = getOrDefault(REGULARIZATION);
       DoubleArray inner =
           Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.eye(x.columns()).times(scalar));
       DoubleArray v = Arrays.dot(Arrays.linalg.pinv(inner), x.transpose());

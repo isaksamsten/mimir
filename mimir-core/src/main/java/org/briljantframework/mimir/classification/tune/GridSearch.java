@@ -21,13 +21,12 @@
 package org.briljantframework.mimir.classification.tune;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.data.TypeMap;
 import org.briljantframework.mimir.evaluation.Result;
 import org.briljantframework.mimir.evaluation.Validator;
 import org.briljantframework.mimir.supervised.Predictor;
@@ -35,76 +34,47 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson
  */
-public class GridSearch<In, Out, P extends Predictor<In, Out>, O extends Predictor.Configurator<In, Out, ? extends Predictor.Learner<In, Out, ? extends P>>>
-    implements Tuner<In, Out, P, O> {
+public class GridSearch<In, Out, P extends Predictor<In, Out>> {
 
-  private final List<UpdatableParameter<O>> updatables = new ArrayList<>();
-  private final List<String> parameterNames = new ArrayList<>();
-
+  // private final List<String> parameterNames = new ArrayList<>();
+  private final List<Updatable> updatables = new ArrayList<>();
   private Validator<In, Out, P> validator;
 
   public GridSearch(Validator<In, Out, P> validator) {
     this.validator = Objects.requireNonNull(validator, "validator required");
   }
 
-  private List<Configuration<In, Out, P>> gridSearch(O builder, Input<? extends In> x,
-      Output<? extends Out> y) {
-    List<Configuration<In, Out, P>> configurations = new ArrayList<>();
-    gridSearch(builder, x, y, configurations, new Object[updatables.size()], 0);
+  private List<Configuration<Out>> gridSearch(Predictor.Learner<In, Out, ? extends P> classifier,
+      Input<? extends In> x, Output<? extends Out> y) {
+    List<Configuration<Out>> configurations = new ArrayList<>();
+    gridSearch(classifier, x, y, configurations, new Object[updatables.size()], 0);
     return configurations;
   }
 
-  private void gridSearch(O classifierBuilder, Input<? extends In> x, Output<? extends Out> y,
-      List<Configuration<In, Out, P>> results, Object[] parameters, int n) {
+  private void gridSearch(Predictor.Learner<In, Out, ? extends P> classifier, Input<? extends In> x,
+      Output<? extends Out> y, List<Configuration<Out>> results, Object[] parameters, int n) {
+
     if (n != updatables.size()) {
-      ParameterUpdator<O> updater = updatables.get(n).updator();
+      Updater updater = updatables.get(n).updator();
       while (updater.hasUpdate()) {
-        Object value = updater.update(classifierBuilder);
+        Object value = updater.update(classifier);
         parameters[n] = value;
-        gridSearch(classifierBuilder, x, y, results, parameters, n + 1);
+        gridSearch(classifier, x, y, results, parameters, n + 1);
       }
     } else {
-      Predictor.Learner<In, Out, ? extends P> classifier = classifierBuilder.configure();
       Result<Out> result = validator.test(classifier, x, y);
-      System.out.println(Arrays.toString(parameters));
-      Vector.Builder builder = Vector.Builder.of(Object.class);
-      for (int i = 0; i < parameters.length; i++) {
-        builder.set(parameterNames.get(i), parameters[i]);
-      }
-      results.add(new Configuration<>(classifier, result, builder.build()));
+      results.add(new Configuration<Out>(result, new TypeMap(classifier.getParameters())));
     }
   }
 
-  @Override
-  public List<Configuration<In, Out, P>> tune(O toOptimize, Input<? extends In> x,
-      Output<? extends Out> y) {
+
+  public List<Configuration<Out>> tune(Predictor.Learner<In, Out, ? extends P> toOptimize,
+      Input<? extends In> x, Output<? extends Out> y) {
     return gridSearch(toOptimize, x, y);
   }
 
-
-  @Override
-  public Tuner<In, Out, P, O> setParameter(String name, UpdatableParameter<O> updatable) {
-    Objects.requireNonNull(name, "parameter name is required");
+  public void add(Updatable updatable) {
     Objects.requireNonNull(updatable, "updatable is required");
-    int i = parameterNames.indexOf(name);
-    if (i < 0) {
-      updatables.add(updatable);
-      parameterNames.add(name);
-    } else {
-      updatables.set(i, updatable);
-      parameterNames.set(i, name);
-    }
-    return this;
-  }
-
-  @Override
-  public Tuner<In, Out, P, O> setValidator(Validator<In, Out, P> validator) {
-    this.validator = Objects.requireNonNull(validator, "validator required");
-    return this;
-  }
-
-  @Override
-  public Validator<In, Out, P> getValidator() {
-    return validator;
+    updatables.add(updatable);
   }
 }

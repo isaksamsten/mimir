@@ -20,13 +20,16 @@
  */
 package org.briljantframework.mimir.classification.tune;
 
-/**
- * Created by Isak Karlsson on 24/09/14.
- *
- * @param <T> the type parameter
- */
-@FunctionalInterface
-public interface UpdatableParameter<T> {
+import org.briljantframework.mimir.data.TypeMap;
+import org.briljantframework.mimir.supervised.Predictor;
 
-  ParameterUpdator<T> updator();
+/**
+ * @author Isak Karlsson <isak-kar@dsv.su.se>
+ */
+public interface Updater {
+
+  boolean hasUpdate();
+
+  Object update(Predictor.Learner<?, ?, ?> predictor);
+
 }

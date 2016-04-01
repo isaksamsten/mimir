@@ -24,19 +24,12 @@ import java.util.List;
 
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.evaluation.Validator;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson
  */
-public interface Tuner<In, Out, P extends Predictor<In, Out>, O extends Predictor.Configurator<In, Out, ? extends Predictor.Learner<In, Out, ? extends P>>> {
-
-  Tuner<In, Out, P, O> setParameter(String name, UpdatableParameter<O> updater);
-
-  Tuner<In, Out, P, O> setValidator(Validator<In, Out, P> validator);
-
-  Validator<In, Out, P> getValidator();
+public interface Tuner<In, Out, P extends Predictor<In, Out>> {
 
   /**
    * Optimize the paramters of the specified classifier over the specified data frame and labels
@@ -44,7 +37,7 @@ public interface Tuner<In, Out, P extends Predictor<In, Out>, O extends Predicto
    * @param toOptimize the classifier to optimize
    * @return the classifier configurations which has been optimized
    */
-  List<Configuration<In, Out, P>> tune(O toOptimize, Input<? extends In> x,
+  List<Configuration<Out>> tune(Predictor.Learner<In, Out, P> toOptimize, Input<? extends In> x,
       Output<? extends Out> y);
 
 }

@@ -23,7 +23,9 @@ package org.briljantframework.mimir.data;
 import java.util.List;
 
 /**
- * Input variables
+ * A collection of input variables.
+ *
+ * @author Isak Karlsson
  */
 public interface Input<T> extends List<T> {
 
@@ -33,6 +35,16 @@ public interface Input<T> extends List<T> {
    * @return the collection of properties for the input.
    */
   TypeMap getProperties();
+
+  /**
+   * Return true if the input contains the specified property.
+   * 
+   * @param typeKey the key
+   * @return true if key is set
+   */
+  default boolean hasProperty(TypeKey<?> typeKey) {
+    return getProperties().contains(typeKey);
+  }
 
   /**
    * Returns the specified property.

@@ -78,17 +78,11 @@ public final class TypeMap {
    * 
    * @param typeKey the key
    * @param <T> the type of the return value
-   * @return the value of the specified key
+   * @return the value of the specified key (or the default value of the key)
    * @throws NoSuchElementException if the property does not exist
    */
   public <T> T get(TypeKey<T> typeKey) {
     Object value = map.get(typeKey);
-
-    // try the default value if the value is missing
-    if (value == null) {
-      value = typeKey.defaultValue();
-    }
-
     if (value != null) {
       return typeKey.getType().cast(value);
     } else {
@@ -96,6 +90,26 @@ public final class TypeMap {
     }
   }
 
+  public <T> T getOrDefault(TypeKey<T> typeKey, T defaultValue) {
+    if (defaultValue == null) {
+      throw new NullPointerException();
+    }
+    Object value = map.getOrDefault(typeKey, defaultValue);
+    return typeKey.getType().cast(value);
+  }
+
+  public <T> T getOrDefault(TypeKey<T> typeKey) {
+    return getOrDefault(typeKey, typeKey.defaultValue());
+  }
+
+  /**
+   * Associate the specified key and value, validating the class and properties of the value based
+   * on the specified key.
+   * 
+   * @param typeKey the key
+   * @param value the value
+   * @param <T>
+   */
   public <T> void set(TypeKey<T> typeKey, T value) {
     if (value == null) {
       throw new NullPointerException("null values are not allowed");

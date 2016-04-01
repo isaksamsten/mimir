@@ -47,6 +47,7 @@ public class MultiClassLogisticFunction implements DifferentialMultivariateFunct
     double f = 0.0;
     int n = x.rows();
     int p = x.columns();
+
     w = w.reshape(p, k);
     g = g.reshape(p, k);
     g.assign(0);

@@ -48,12 +48,14 @@ import org.briljantframework.optimize.NonlinearOptimizer;
  */
 public class LogisticRegression extends AbstractClassifier<Instance> {
 
-  public enum Measure {
-    LOG_LOSS
-  }
+  /**
+   * Maximum number of iterations before convergence.
+   */
+  public static final TypeKey<Integer> MAX_ITERATIONS =
+      TypeKey.of("max_iterations", Integer.class, 100);
 
-  private final Vector names;
-
+  public static final TypeKey<Double> REGULARIZATION =
+      TypeKey.of("reqularization", Double.class, 1.0);
   /**
    * If {@code getClasses().size()} is larger than {@code 2}, coefficients is a a 2d-array where
    * each column is the coefficients for the the j:th class and the i:th feature.
@@ -62,6 +64,8 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
    * element is the coefficient for the i:th feature.
    */
   private final DoubleArray coefficients;
+
+  private final Vector names;
   private final double logLoss;
 
   private LogisticRegression(Vector names, DoubleArray coefficients, double logLoss,
@@ -165,14 +169,6 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
    */
   public static class Learner extends AbstractLearner<Instance, Object, LogisticRegression> {
 
-    /**
-     * Maximum number of iterations before convergence.
-     */
-    public static final TypeKey<Integer> MAX_ITERATIONS =
-        TypeKey.of("max_iterations", Integer.class, 100);
-    public static final TypeKey<Double> REGULARIZATION =
-        TypeKey.of("reqularization", Double.class, 1.0);
-
     static final double GRADIENT_TOLERANCE = 1E-5;
     static final int MEMORY = 20;
 
@@ -193,7 +189,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
       DoubleArray x = constructInputMatrix(in, n, m);
       IntArray y = Arrays.intArray(out.size());
       for (int i = 0; i < y.size(); i++) {
-        y.set(i, classes.indexOf(y.get(i)));
+        y.set(i, classes.indexOf(out.get(i)));
       }
       DoubleArray theta;
       DifferentialMultivariateFunction objective;
@@ -209,10 +205,10 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
       }
 
       NonlinearOptimizer optimizer =
-          new LimitedMemoryBfgsOptimizer(MEMORY, get(MAX_ITERATIONS), GRADIENT_TOLERANCE);
+          new LimitedMemoryBfgsOptimizer(MEMORY, getOrDefault(MAX_ITERATIONS), GRADIENT_TOLERANCE);
       double logLoss = optimizer.optimize(objective, theta);
 
-      Vector.Builder names = Vector.Builder.of(Object.class).add("(Intercept)");
+      Vector.Builder names = Vector.Builder.of(String.class).add("(Intercept)");
       if (in.getProperties().contains(Dataset.FEATURE_NAMES)) {
         in.getProperty(Dataset.FEATURE_NAMES).forEach(names::add);
       } else {

@@ -41,27 +41,22 @@ public final class Dataset {
    * @return true if the given input is a dataset.
    */
   public static boolean isDataset(Input<?> input) {
-    return input.getProperties().containsAll(Arrays.asList(FEATURE_TYPES, FEATURE_SIZE));
-  }
-
-  /**
-   * Returns true if all classes in the collection is assign from {@link Number}.
-   * 
-   * @param collection the collection of classes
-   * @return true if all classes is assignable from {@link Number}
-   */
-  public static boolean isAllNumeric(Collection<? extends Class<?>> collection) {
-    return collection.stream().allMatch(Number.class::isAssignableFrom);
+    return input.getProperties().containsAll(Arrays.asList(FEATURE_TYPES, FEATURE_SIZE))
+        && input.getProperty(FEATURE_TYPES).size() == input.getProperty(FEATURE_SIZE);
   }
 
   /**
    * Returns true if all features (as defined by the {@link #FEATURE_TYPES} property) are numeric.
-   * 
+   *
    * @param input the input
    * @return true if all features are numeric
    */
   public static boolean isAllNumeric(Input<?> input) {
     return isAllNumeric(input.getProperty(Dataset.FEATURE_TYPES));
+  }
+
+  private static boolean isAllNumeric(Collection<? extends Class<?>> collection) {
+    return collection.stream().allMatch(Number.class::isAssignableFrom);
   }
 
   /**
@@ -83,13 +78,17 @@ public final class Dataset {
     public String getDescription() {
       return "Number of input features";
     }
+
+    @Override
+    public boolean validate(Integer value) {
+      return value != null && value > 0;
+    }
   };
 
   /**
    * This property denotes the feature types of a tabular dataset
    */
   public static final TypeKey<List<Class<?>>> FEATURE_TYPES = new TypeKey<List<Class<?>>>() {
-
 
     @Override
     @SuppressWarnings("unchecked")

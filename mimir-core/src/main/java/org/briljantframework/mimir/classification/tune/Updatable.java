@@ -20,13 +20,14 @@
  */
 package org.briljantframework.mimir.classification.tune;
 
+import org.briljantframework.mimir.data.TypeKey;
+
 /**
- * @author Isak Karlsson <isak-kar@dsv.su.se>
+ * Created by Isak Karlsson on 24/09/14.
  */
-public interface ParameterUpdator<T> {
+public interface Updatable {
 
-  boolean hasUpdate();
+  TypeKey<?> getKey();
 
-  Object update(T toUpdate);
-
+  Updater updator();
 }
