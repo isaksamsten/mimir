@@ -38,6 +38,8 @@ import org.briljantframework.mimir.supervised.Characteristic;
  */
 public class DecisionTree extends TreeClassifier<Instance> {
 
+  public static TypeKey<Double> MIN_LEAF_SIZE = TypeKey.of("min_leaf_size", Double.class, 1.0);
+  public static TypeKey<Splitter> SPLITTER = TypeKey.of("splitter", Splitter.class);
   private final int depth;
 
   private DecisionTree(List<?> classes, int depth,
@@ -59,9 +61,6 @@ public class DecisionTree extends TreeClassifier<Instance> {
    * @author Isak Karlsson
    */
   public static class Learner extends AbstractLearner<Instance, Object, DecisionTree> {
-
-    public static TypeKey<Double> MIN_LEAF_SIZE = TypeKey.of("min_leaf_size", Double.class, 1.0);
-    public static TypeKey<Splitter> SPLITTER = TypeKey.of("splitter", Splitter.class);
 
     protected ClassSet classSet;
     protected List<?> classes = null;
@@ -98,7 +97,7 @@ public class DecisionTree extends TreeClassifier<Instance> {
     protected TreeNode<Instance, ValueThreshold> build(Input<? extends Instance> frame,
         Output<?> target, Params p, ClassSet classSet, int depth) {
 
-      if (classSet.getTotalWeight() <= get(MIN_LEAF_SIZE) || classSet.getTargetCount() == 1) {
+      if (classSet.getTotalWeight() <= getOrDefault(MIN_LEAF_SIZE) || classSet.getTargetCount() == 1) {
         p.depth = Math.max(p.depth, depth);
         return TreeLeaf.fromExamples(classSet);
       }

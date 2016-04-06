@@ -53,8 +53,8 @@ public class EarlyAbandonSlidingDistance implements Distance<Vector> {
       }
       // return new SlidingDistance(EuclideanDistance.getInstance()).compute(vector,
       // new NormalizedShapelet(0, candidate.size(), candidate));
-      // candidate = new NormalizedShapelet(0, candidate.size(), candidate);
-      throw new IllegalArgumentException("Candidate shapelet must be z-normalized");
+       candidate = new NormalizedShapelet(0, candidate.size(), candidate);
+//      throw new IllegalArgumentException("Candidate shapelet must be z-normalized");
     }
 
     int[] order = null;

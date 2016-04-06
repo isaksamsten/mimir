@@ -83,7 +83,7 @@ public class Shapelet extends VectorView {
 
   @Override
   protected String toStringAt(int index) {
-    return parent.loc().toString(index);
+    return parent.loc().toString(start + index);
   }
 
   @Override

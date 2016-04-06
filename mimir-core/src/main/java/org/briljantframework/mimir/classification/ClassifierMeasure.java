@@ -20,12 +20,12 @@
  */
 package org.briljantframework.mimir.classification;
 
+import java.util.*;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.stream.DoubleStream;
 
 import org.briljantframework.Check;
-import org.briljantframework.array.DoubleArray;
+import org.briljantframework.array.*;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.Na;
 import org.briljantframework.data.dataframe.DataFrame;
@@ -34,6 +34,11 @@ import org.briljantframework.data.vector.DoubleVector;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.data.Outputs;
+import sun.font.FontRunIterator;
+
+import static org.briljantframework.array.Arrays.dot;
+import static org.briljantframework.array.Arrays.doubleVector;
+import static org.briljantframework.array.Arrays.mean;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -88,11 +93,10 @@ public class ClassifierMeasure {
     // Vector fMeasure =
     // fMeasure(predicted, truth, classes).mapWithIndex(Double.class,
     // (key, value) -> weight.getIndex().contains(key) ? weight.getAsDouble(key) * value : 0);
-
     this.accuracy = accuracy(predicted, truth);
-    this.precision = 0;// precision.sum();
-    this.recall = 0;// recall.sum();
-    this.fMeasure = 0; // fMeasure.sum();
+    this.precision = averagePrecision(predicted, truth, classes);
+    this.recall = averageRecall(predicted, truth, classes);
+    this.fMeasure = 2 * precision * recall / (precision + recall);
 
     if (scores != null) {
       areaUnderRocCurve = averageAreaUnderRocCurve(predicted, truth, scores, classes);
@@ -102,6 +106,46 @@ public class ClassifierMeasure {
       areaUnderRocCurve = Na.DOUBLE;
     }
   }
+
+  private double averageRecall(Output<?> prediction, Output<?> truth, List<?> classes) {
+    Check.argument(prediction.size() == truth.size(), "illegal size");
+    double[] recall = new double[classes.size()];
+    for (int i = 0; i < classes.size(); i++) {
+      Object cls = classes.get(i);
+      int predicted = 0, truePositive = 0;
+      for (int j = 0; j < prediction.size(); j++) {
+        if (Is.equal(truth.get(j), cls)) {
+          predicted++;
+          if (Is.equal(prediction.get(j), cls)) {
+            truePositive++;
+          }
+        }
+      }
+      recall[i] = predicted > 0 ? (double) truePositive / predicted : 0;
+    }
+    return mean(doubleVector(recall));
+  }
+
+  public double averagePrecision(Output<?> prediction, Output<?> truth, List<?> classes) {
+    Check.argument(prediction.size() == truth.size(), "illegal size");
+    double[] precision = new double[classes.size()];
+    for (int i = 0; i < classes.size(); i++) {
+      int predicted = 0, truePositive = 0;
+      Object cls = classes.get(i);
+      for (int j = 0; j < prediction.size(); j++) {
+        if (Is.equal(prediction.get(j), cls)) {
+          predicted++;
+          if (Is.equal(truth.get(j), cls)) {
+            truePositive++;
+          }
+        }
+      }
+      precision[i] = predicted > 0 ? (double) truePositive / predicted : 0;
+    }
+    return mean(doubleVector(precision));
+  }
+
+
 
   /**
    * Compute the precision of each class

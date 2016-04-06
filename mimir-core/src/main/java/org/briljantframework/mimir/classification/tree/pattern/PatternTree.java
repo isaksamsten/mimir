@@ -57,6 +57,9 @@ public class PatternTree<In> extends TreeClassifier<In> {
   public static final TypeKey<Double> MIN_SPLIT_SIZE =
       TypeKey.of("min_split_size", Double.class, 1.0, i -> i > 0);
 
+  public static final TypeKey<Learner.Assessment> ASSESSMENT =
+      TypeKey.of("assessment", Learner.Assessment.class, Learner.Assessment.IG);
+
   private final int depth;
 
   private PatternTree(List<?> classes, TreeVisitor<In, ?> predictionVisitor, int depth) {
@@ -83,14 +86,15 @@ public class PatternTree<In> extends TreeClassifier<In> {
     private final PatternDistance<? super In, ? super E> patternDistance;
 
     private final ClassSet classSet;
-    private final Assessment assessment;
+//    private final Assessment assessment;
     private List<?> classes;
 
     protected Learner(Configurator<In, E> builder, ClassSet classSet, List<?> classes) {
       this.patternDistance = builder.patternDistance;
       this.patternFactory = builder.patternFactory;
       this.set(PATTERN_COUNT, builder.patternCount);
-      this.assessment = builder.assessment;
+//      this.assessment = builder.assessment;
+      set(ASSESSMENT, builder.assessment);
       this.set(MIN_SPLIT_SIZE, builder.minSplit);
 
       this.classSet = classSet;
@@ -105,7 +109,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
       this.patternDistance = patternDistance;
       this.classSet = classSet;
       this.classes = classes;
-      this.assessment = Assessment.IG;
+//      this.assessment = Assessment.IG;
     }
 
     private Gain getGain() {
@@ -130,7 +134,8 @@ public class PatternTree<In> extends TreeClassifier<In> {
 
     protected TreeNode<In, PatternTree.Threshold<E>> build(Input<? extends In> x, Output<?> y,
         ClassSet classSet, Params params) {
-      if (classSet.getTotalWeight() <= get(MIN_SPLIT_SIZE) || classSet.getTargetCount() == 1) {
+      if (classSet.getTotalWeight() <= getOrDefault(MIN_SPLIT_SIZE)
+          || classSet.getTargetCount() == 1) {
         return TreeLeaf.fromExamples(classSet, classSet.getTotalWeight() / params.noExamples);
       }
       params.depth += 1;
@@ -165,7 +170,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
 
     public TreeSplit<PatternTree.Threshold<E>> find(ClassSet c, Input<? extends In> x,
         Output<?> y) {
-      int patternCount = get(PATTERN_COUNT);
+      int patternCount = getOrDefault(PATTERN_COUNT);
       List<E> shapelets = new ArrayList<>(patternCount);
       for (int i = 0; i < patternCount; i++) {
         E pattern = patternFactory.createPattern(x, c);
@@ -180,7 +185,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
       }
 
       TreeSplit<PatternTree.Threshold<E>> bestSplit;
-      if (assessment == Assessment.IG) {
+      if (getOrDefault(ASSESSMENT) == Assessment.IG) {
         bestSplit = findBestSplit(c, x, y, shapelets);
       } else {
         bestSplit = findBestSplitFstat(c, x, y, shapelets);
@@ -200,7 +205,8 @@ public class PatternTree<In> extends TreeClassifier<In> {
         boolean lowerImpurity = threshold.impurity < bestThreshold.impurity;
         boolean equalImpuritySmallerGap =
             threshold.impurity == bestThreshold.impurity && threshold.gap > bestThreshold.gap;
-        if (lowerImpurity || equalImpuritySmallerGap) {
+        // || equalImpuritySmallerGap
+        if (lowerImpurity) {
           bestShapelet = subPattern;
           bestThreshold = threshold;
           bestDistanceMap = distanceMap;
@@ -284,7 +290,9 @@ public class PatternTree<In> extends TreeClassifier<In> {
           double dist = patternDistance.computeDistance(record, shapelet);
           distanceMap.put(example.getIndex(), dist);
           distances.add(new ExampleDistance(dist, example));
-          sum += dist;
+          if (!Is.NA(dist) && !Double.isInfinite(dist)) {
+            sum += dist;
+          }
         }
         double stat = assessFstatShapeletQuality(distances, y);
         if (stat > bestStat || bestDistances == null) {
@@ -313,9 +321,11 @@ public class PatternTree<In> extends TreeClassifier<In> {
       for (ExampleDistance distance : distances) {
         Object c = y.get(distance.example.getIndex()); // getClassVal
         double thisDist = distance.distance; // getDistance
-        sizes.addTo(c, 1);
-        sums.addTo(c, thisDist); // sums[c] += thisDist
-        sumOfSquares.addTo(c, thisDist * thisDist); // sumsOfSquares[c] += thisDist + thisDist
+        if (!Is.NA(thisDist)) {
+          sizes.addTo(c, 1);
+          sums.addTo(c, thisDist); // sums[c] += thisDist
+          sumOfSquares.addTo(c, thisDist * thisDist); // sumsOfSquares[c] += thisDist + thisDist
+        }
       }
       //
       double part1 = 0;
