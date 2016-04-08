@@ -20,35 +20,36 @@
  */
 package org.briljantframework.mimir.classification;
 
-import java.util.*;
+import static org.briljantframework.array.Arrays.doubleVector;
+import static org.briljantframework.array.Arrays.mean;
+
 import java.util.Arrays;
-import java.util.stream.DoubleStream;
+import java.util.List;
+import java.util.Map;
 
 import org.briljantframework.Check;
-import org.briljantframework.array.*;
+import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.Na;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.vector.DoubleVector;
 import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.data.Outputs;
-import sun.font.FontRunIterator;
-
-import static org.briljantframework.array.Arrays.dot;
-import static org.briljantframework.array.Arrays.doubleVector;
-import static org.briljantframework.array.Arrays.mean;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public class ClassifierMeasure {
 
-  public static final String PREDICTED_ACTUAL_SIZE =
+  private static final String PREDICTED_ACTUAL_SIZE =
       "Size of predicted and actual values does not match";
-  public static final String ILLEGAL_SCORE_MATRIX = "Illegal score matrix";
-  private final double accuracy, areaUnderRocCurve, brierScore, precision, recall;
+  private static final String ILLEGAL_SCORE_MATRIX = "Illegal score matrix";
+
+  private final double accuracy;
+  private final double areaUnderRocCurve;
+  private final double brierScore;
+  private final double precision;
+  private final double recall;
   private final double fMeasure;
 
   /**
@@ -58,7 +59,7 @@ public class ClassifierMeasure {
    * @param truth the true values
    */
   public ClassifierMeasure(Output<?> predicted, Output<?> truth) {
-    this(predicted, truth, null, null);
+    this(predicted, truth, null, Outputs.unique(Arrays.asList(predicted, truth)));
   }
 
   /**
@@ -73,29 +74,15 @@ public class ClassifierMeasure {
       List<?> classes) {
     Check.argument(predicted.size() == truth.size(),
         "The predicted and actual values must have the same size.");
+    Check.argument(classes != null, "If score matrix is given, classes are required");
+
     if (scores != null) {
-      Check.argument(classes != null, "If score matrix is given, classes are required");
       Check.argument(scores.rows() == predicted.size(), "Illegal score matrix (illegal rows)");
     }
 
-    // TODO: 3/9/16 fixme
-    // if (classes == null) {
-    // classes = Vectors.unique(truth);
-    // }
-    // TODO: 3/9/16 FIX ME
-    // Vector weight = truth.valueCounts().div((double) truth.size());
-    // Vector precision =
-    // precision(predicted, truth, classes).mapWithIndex(Double.class,
-    // (key, value) -> weight.getIndex().contains(key) ? weight.getAsDouble(key) * value : 0);
-    // Vector recall =
-    // recall(predicted, truth, classes).mapWithIndex(Double.class,
-    // (key, value) -> weight.getIndex().contains(key) ? weight.getAsDouble(key) * value : 0);
-    // Vector fMeasure =
-    // fMeasure(predicted, truth, classes).mapWithIndex(Double.class,
-    // (key, value) -> weight.getIndex().contains(key) ? weight.getAsDouble(key) * value : 0);
     this.accuracy = accuracy(predicted, truth);
-    this.precision = averagePrecision(predicted, truth, classes);
-    this.recall = averageRecall(predicted, truth, classes);
+    this.precision = precision(predicted, truth, classes);
+    this.recall = recall(predicted, truth, classes);
     this.fMeasure = 2 * precision * recall / (precision + recall);
 
     if (scores != null) {
@@ -107,7 +94,7 @@ public class ClassifierMeasure {
     }
   }
 
-  private double averageRecall(Output<?> prediction, Output<?> truth, List<?> classes) {
+  private double recall(Output<?> prediction, Output<?> truth, List<?> classes) {
     Check.argument(prediction.size() == truth.size(), "illegal size");
     double[] recall = new double[classes.size()];
     for (int i = 0; i < classes.size(); i++) {
@@ -126,7 +113,7 @@ public class ClassifierMeasure {
     return mean(doubleVector(recall));
   }
 
-  public double averagePrecision(Output<?> prediction, Output<?> truth, List<?> classes) {
+  public double precision(Output<?> prediction, Output<?> truth, List<?> classes) {
     Check.argument(prediction.size() == truth.size(), "illegal size");
     double[] precision = new double[classes.size()];
     for (int i = 0; i < classes.size(); i++) {
@@ -143,64 +130,6 @@ public class ClassifierMeasure {
       precision[i] = predicted > 0 ? (double) truePositive / predicted : 0;
     }
     return mean(doubleVector(precision));
-  }
-
-
-
-  /**
-   * Compute the precision of each class
-   * 
-   * @param predicted the predicted values
-   * @param truth the true values
-   * @param classes the classes
-   * @return a vector of precision values
-   */
-  public static Vector precision(Vector predicted, Vector truth, Vector classes) {
-    Check.argument(predicted.size() == truth.size(), PREDICTED_ACTUAL_SIZE);
-    DataFrame table = DataFrames.table(predicted, truth);
-    Vector.Builder precision = new DoubleVector.Builder();
-    for (Object key : classes.toList()) {
-      if (table.getIndex().contains(key) && table.getColumnIndex().contains(key)) {
-        precision.set(key, table.getAsDouble(key, key) / table.getRecord(key).sum());
-      } else {
-        precision.set(key, 0);
-      }
-    }
-    return precision.build();
-  }
-
-  /**
-   * Compute the recall of each class
-   *
-   * @param predicted the predicted values
-   * @param truth the true values
-   * @param classes the classes
-   * @return a vector of recall values
-   */
-  public static Vector recall(Vector predicted, Vector truth, Vector classes) {
-    Check.argument(predicted.size() == truth.size(), PREDICTED_ACTUAL_SIZE);
-    DataFrame table = DataFrames.table(predicted, truth);
-    Vector.Builder precision = new DoubleVector.Builder();
-    for (Object key : classes.toList()) {
-      if (table.getIndex().contains(key) && table.getColumnIndex().contains(key)) {
-        precision.set(key, table.getAsDouble(key, key) / table.get(key).sum());
-      } else {
-        precision.set(key, 0);
-      }
-    }
-    return precision.build();
-  }
-
-  public static Vector fMeasure(Vector predicted, Vector truth, Vector classes) {
-    Vector precision = precision(predicted, truth, classes);
-    Vector recall = recall(predicted, truth, classes);
-    Vector.Builder fMeasure = new DoubleVector.Builder();
-    for (Object key : classes.toList()) {
-      double p = precision.getAsDouble(key);
-      double r = recall.getAsDouble(key);
-      fMeasure.set(key, (2 * p * r) / (p + r));
-    }
-    return fMeasure.build();
   }
 
   /**

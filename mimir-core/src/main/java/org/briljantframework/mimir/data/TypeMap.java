@@ -23,7 +23,7 @@ package org.briljantframework.mimir.data;
 import java.util.*;
 
 /**
- * Properties is a heterogenoues key-value store where the keys encode the class of the value.
+ * Properties is a heterogeneous key-value store where the keys encode the class of the value.
  * 
  * @author Isak Karlsson
  */
@@ -78,7 +78,7 @@ public final class TypeMap {
    * 
    * @param typeKey the key
    * @param <T> the type of the return value
-   * @return the value of the specified key (or the default value of the key)
+   * @return the value of the specified key
    * @throws NoSuchElementException if the property does not exist
    */
   public <T> T get(TypeKey<T> typeKey) {
@@ -90,6 +90,15 @@ public final class TypeMap {
     }
   }
 
+  /**
+   * Get the value of the specified key or the default value.
+   *
+   * @param typeKey the key
+   * @param defaultValue the default value
+   * @param <T> the type of the return value
+   * @return the value of the specified key or the default value
+   * @throws NullPointerException if the default value is null
+   */
   public <T> T getOrDefault(TypeKey<T> typeKey, T defaultValue) {
     if (defaultValue == null) {
       throw new NullPointerException();
@@ -98,6 +107,14 @@ public final class TypeMap {
     return typeKey.getType().cast(value);
   }
 
+  /**
+   * Get the value of the specified key or the default value for the key if specified.
+   * 
+   * @param typeKey the key
+   * @param <T> the type of return value
+   * @return the value or the default value for the key
+   * @throws NullPointerException if the default value is null
+   */
   public <T> T getOrDefault(TypeKey<T> typeKey) {
     return getOrDefault(typeKey, typeKey.defaultValue());
   }
@@ -108,7 +125,10 @@ public final class TypeMap {
    * 
    * @param typeKey the key
    * @param value the value
-   * @param <T>
+   * @param <T> the type of the value
+   * @throws NullPointerException if the value is null
+   * @throws IllegalArgumentException if value is not an instance suitable for the key or the key
+   *         fail to validate the key
    */
   public <T> void set(TypeKey<T> typeKey, T value) {
     if (value == null) {

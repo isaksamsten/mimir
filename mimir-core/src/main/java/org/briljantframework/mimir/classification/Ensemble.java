@@ -27,9 +27,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
+import org.briljantframework.Check;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.tree.ClassSet;
+import org.briljantframework.mimir.data.Dataset;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.TypeKey;
 import org.briljantframework.mimir.supervised.AbstractLearner;
@@ -57,8 +59,11 @@ public class Ensemble<In> extends AbstractClassifier<In> {
     this.oobIndicator = oobIndicator;
   }
 
-  public static <In> DoubleArray oobEstimates(Ensemble<In> ensemble, Input<? extends In> x) {
+  public static <In> DoubleArray estimateOutOfBagProbabilities(Ensemble<In> ensemble,
+      Input<? extends In> x) {
     BooleanArray ind = ensemble.getOobIndicator();
+    Check.argument(ind.rows() == x.size(), "input and oob indicator does not match");
+
     List<Classifier<In>> members = ensemble.getEnsembleMembers();
     DoubleArray estimates = DoubleArray.zeros(x.size(), ensemble.getClasses().size());
     for (int i = 0; i < x.size(); i++) {

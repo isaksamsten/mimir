@@ -122,6 +122,14 @@ public final class Outputs {
     return new ArrayList<>(new HashSet<>(output));
   }
 
+  public static <T> List<T> unique(Collection<? extends Output<? extends T>> outputs) {
+    HashSet<T> set = new HashSet<>();
+    for (Output<? extends T> output : outputs) {
+      set.addAll(output);
+    }
+    return new ArrayList<>(set);
+  }
+
   /**
    * Returns a map with the counts of each distinct output value.
    * 
@@ -130,8 +138,8 @@ public final class Outputs {
    */
   public static Map<Object, Integer> valueCounts(Output<?> output) {
     Map<Object, Integer> counts = new HashMap<>();
-    for (int i = 0; i < output.size(); i++) {
-      counts.compute(output.get(i), (k, v) -> v == null ? 1 : v + 1);
+    for (Object value : output) {
+      counts.compute(value, (k, v) -> v == null ? 1 : v + 1);
     }
     return counts;
   }

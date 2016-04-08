@@ -36,18 +36,18 @@ import org.briljantframework.mimir.distance.Distance;
  */
 public class DistanceNonconformity<In> implements ClassifierNonconformity<In> {
 
-  private final NearestNeighbours<? super In> classifier;
+  private final NearestNeighbours<? super In> nnSearch;
   private final int k;
 
-  public DistanceNonconformity(NearestNeighbours<? super In> classifier, int k) {
-    this.classifier = classifier;
+  public DistanceNonconformity(NearestNeighbours<? super In> nnSearch, int k) {
+    this.nnSearch = nnSearch;
     this.k = k;
   }
 
   @Override
   public double estimate(In example, Object label) {
-    Output<?> labels = classifier.getTarget();
-    DoubleArray distances = classifier.distance(example);
+    Output<?> labels = nnSearch.getTarget();
+    DoubleArray distances = nnSearch.distance(example);
     IntArray order = Arrays.order(distances);
     double posDist = 0;
     double negDist = 0;
@@ -75,7 +75,7 @@ public class DistanceNonconformity<In> implements ClassifierNonconformity<In> {
 
   @Override
   public List<?> getClasses() {
-    return classifier.getClasses();
+    return nnSearch.getClasses();
   }
 
   /**

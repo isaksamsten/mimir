@@ -21,7 +21,6 @@
 package org.briljantframework.mimir.classification.conformal;
 
 import java.util.List;
-import java.util.Objects;
 
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.Ensemble;
@@ -37,11 +36,11 @@ public class BootstrapConformalClassifier<In> extends AbstractConformalClassifie
   private final ClassifierCalibratorScores<In> calibratorScores;
   private final ClassifierNonconformity<In> nonconformity;
 
-  protected BootstrapConformalClassifier(ClassifierCalibratorScores<In> calibratorScores,
-      ClassifierNonconformity<In> nonconformity, List<?> classes) {
-    super(true, classes);
-    this.calibratorScores = Objects.requireNonNull(calibratorScores);
-    this.nonconformity = Objects.requireNonNull(nonconformity);
+  private BootstrapConformalClassifier(boolean stochasticSmoothing, List<?> classes,
+      ClassifierCalibratorScores<In> calibratorScores, ClassifierNonconformity<In> nonconformity) {
+    super(stochasticSmoothing, classes);
+    this.calibratorScores = calibratorScores;
+    this.nonconformity = nonconformity;
   }
 
   @Override
@@ -67,11 +66,11 @@ public class BootstrapConformalClassifier<In> extends AbstractConformalClassifie
     public BootstrapConformalClassifier<In> fit(Input<? extends In> x, Output<?> y) {
       ProbabilityEstimateNonconformity<In, ? extends Ensemble<In>> pen = learner.fit(x, y);
       Ensemble<In> ensemble = pen.getClassifier();
-      DoubleArray estimate = Ensemble.oobEstimates(ensemble, x);
+      DoubleArray estimate = Ensemble.estimateOutOfBagProbabilities(ensemble, x);
       DoubleArray calibrationScores = ProbabilityCostFunction
           .estimate(pen.getProbabilityCostFunction(), estimate, y, ensemble.getClasses());
-      return new BootstrapConformalClassifier<>((example, label) -> calibrationScores, pen,
-          ensemble.getClasses());
+      return new BootstrapConformalClassifier<>(getOrDefault(STOCHASTIC_SMOOTHING),
+          ensemble.getClasses(), (example, label) -> calibrationScores, pen);
     }
   }
 
