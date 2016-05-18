@@ -24,7 +24,7 @@ import java.util.List;
 
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.supervised.Predictor;
 
@@ -73,7 +73,7 @@ public interface Classifier<In> extends Predictor<In, Object> {
    *
    * <p>
    * Each column corresponds to the probability of a particular class (the j:th column correspond to
-   * the j:th element (using {@link Vector#loc()}) in {@linkplain #getClasses()}) and each row
+   * the j:th element (using {@link Series#loc()}) in {@linkplain #getClasses()}) and each row
    * corresponds to a particular record in the supplied data frame.
    *
    * @param x the data frame of records to estimate the posterior probabilities for

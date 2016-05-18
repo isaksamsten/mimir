@@ -21,13 +21,13 @@
 package org.briljantframework.mimir.distance;
 
 import org.briljantframework.DoubleSequence;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.shapelet.Shapelet;
 
 /**
  * @author Isak Karlsson
  */
-public class SlidingDistance implements Distance<Vector> {
+public class SlidingDistance implements Distance<Series> {
 
   private final Distance<? super DoubleSequence> distanceMeasure;
 
@@ -36,15 +36,15 @@ public class SlidingDistance implements Distance<Vector> {
   }
 
   @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     double minDistance = Double.POSITIVE_INFINITY;
 
     // Assumed to be normalized!
-    Vector candidate = a.size() < b.size() ? a : b;
-    Vector vector = a.size() >= b.size() ? a : b;
+    Series candidate = a.size() < b.size() ? a : b;
+    Series vector = a.size() >= b.size() ? a : b;
     for (int i = 0; i <= vector.size() - candidate.size(); i++) {
-      Shapelet subShapelet = new Shapelet(i, candidate.size(), vector);
-      double sumDistance = distanceMeasure.compute(candidate.loc(), subShapelet.loc());
+      Shapelet subShapelet = new Shapelet(i, candidate.size(), vector.loc());
+      double sumDistance = distanceMeasure.compute(candidate.loc(), subShapelet);
       if (sumDistance < minDistance) {
         minDistance = sumDistance;
       }

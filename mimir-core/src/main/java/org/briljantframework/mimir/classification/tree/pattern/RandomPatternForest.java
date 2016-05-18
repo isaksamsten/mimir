@@ -64,57 +64,7 @@ public class RandomPatternForest<In> extends Ensemble<In> {
     return depth / getEnsembleMembers().size();
   }
 
-  // public static class Configurator<In, E>
-  // implements Classifier.Configurator<In, Object, Learner<In>> {
-  //
-  // private final PatternTree.Configurator<In, E> shapeletTree;
-  // private int size = 100;
-  //
-  // public Configurator(PatternFactory<? super In, ? extends E> patternFactory,
-  // PatternDistance<? super In, ? super E> patternDistance, int size) {
-  // this.size = size;
-  // this.shapeletTree = new PatternTree.Configurator<>(patternFactory, patternDistance);
-  // }
-  //
-  // public Configurator<In, E> setMinimumSplitSize(double minSplitSize) {
-  // shapeletTree.setMinimumSplit(minSplitSize);
-  // return this;
-  // }
-  //
-  // public Configurator<In, E> setPatternDistance(
-  // PatternDistance<? super In, ? super E> patternDistance) {
-  // shapeletTree.setPatternDistance(patternDistance);
-  // return this;
-  // }
-  //
-  // public Configurator<In, E> setPatternFactory(
-  // PatternFactory<? super In, ? extends E> patternFactory) {
-  // shapeletTree.setPatternFactory(patternFactory);
-  // return this;
-  // }
-  //
-  // public Configurator<In, E> setPatternCount(int maxShapelets) {
-  // shapeletTree.setPatternCount(maxShapelets);
-  // return this;
-  // }
-  //
-  // public Configurator<In, E> setSize(int size) {
-  // this.size = size;
-  // return this;
-  // }
-  //
-  // public Configurator<In, E> setAssessment(PatternTree.Learner.Assessment assessment) {
-  // shapeletTree.setAssessment(assessment);
-  // return this;
-  // }
-  //
-  // @Override
-  // public Learner<In> configure() {
-  // return new Learner<>(shapeletTree, size);
-  // }
-  // }
-
-  public static class Evaluator<In> implements
+  public static class DepthEvaluator<In> implements
       org.briljantframework.mimir.evaluation.Evaluator<In, Object, RandomPatternForest<In>> {
 
     @Override
@@ -128,14 +78,22 @@ public class RandomPatternForest<In> extends Ensemble<In> {
     // private final PatternTree.Configurator<In, ?> configurator;
     private final PatternFactory<? super In, ? extends E> patternFactory;
     private final PatternDistance<? super In, ? super E> patternDistance;
+    private final PatternVisitorFactory<In, E> patternVisitorFactory;
 
 
 
     public Learner(PatternFactory<? super In, ? extends E> patternFactory,
         PatternDistance<? super In, ? super E> patternDistance, int size) {
+      this(patternFactory, patternDistance, new DefaultPatternVisitorFactory<>(), size);
+    }
+
+    public Learner(PatternFactory<? super In, ? extends E> patternFactory,
+        PatternDistance<? super In, ? super E> patternDistance,
+        PatternVisitorFactory<In, E> patternVisitorFactory, int size) {
       super(size);
       this.patternFactory = patternFactory;
       this.patternDistance = patternDistance;
+      this.patternVisitorFactory = patternVisitorFactory;
     }
 
     @Override
@@ -144,13 +102,13 @@ public class RandomPatternForest<In> extends Ensemble<In> {
 
       ClassSet classSet = new ClassSet(y, classes);
       List<FitTask<In>> tasks = new ArrayList<>();
-      BooleanArray oobIndicator = Arrays.booleanArray(x.size(), size());
-      int size = get(Ensemble.SIZE);
-      for (int i = 0; i < size; i++) {
+      int members = get(Ensemble.SIZE);
+      BooleanArray oobIndicator = Arrays.booleanArray(x.size(), members);
+      for (int i = 0; i < members; i++) {
         BooleanArray oobI = oobIndicator.getColumn(i);
         ClassSet sample = sample(classSet, ThreadLocalRandom.current(), oobI);
         PatternTree.Learner<In, ?> patternTree = new PatternTree.Learner<>(patternFactory,
-            patternDistance, sample, classes, getParameters());
+            patternDistance, patternVisitorFactory, sample, classes, getParameters());
         tasks.add(new FitTask<>(x, y, patternTree));
       }
 

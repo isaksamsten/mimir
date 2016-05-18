@@ -49,7 +49,7 @@ public final class Inputs {
    * @param dataFrame the data frame
    * @return a new instance input
    */
-  public static Input<Instance> newInput(DataFrame dataFrame) {
+  public static Input<Instance> asInput(DataFrame dataFrame) {
     return new DataFrameInput(dataFrame);
   }
 
@@ -91,7 +91,7 @@ public final class Inputs {
     for (int i = 0; i < n; i++) {
       DoubleSequence v = x.get(i);
       for (int j = 0; j < m; j++) {
-        out.set(i, j, operator.applyAsDouble(v.getAsDouble(j)));
+        out.set(i, j, operator.applyAsDouble(v.getDouble(j)));
       }
     }
     return out;

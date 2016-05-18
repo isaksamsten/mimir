@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.data.*;
 
 /**
@@ -49,7 +49,7 @@ public class MeanImputer<T extends Instance> implements Transformation<T, Instan
       }
       for (int j = 0; j < instance.size(); j++) {
         if (Number.class.isAssignableFrom(featureTypes.get(j))) {
-          double value = instance.getAsDouble(j);
+          double value = instance.getDouble(j);
           if (!Is.NA(value)) {
             means.plusAssign(value / x.size());
           }
@@ -94,10 +94,10 @@ public class MeanImputer<T extends Instance> implements Transformation<T, Instan
     @Override
     public Instance transform(T x) {
       Check.state(x.size() == means.size(), "illegal feature size");
-      Vector.Builder vector = Vector.Builder.of(Object.class);
+      Series.Builder vector = Series.Builder.of(Object.class);
       for (int i = 0; i < x.size(); i++) {
         if (Number.class.isAssignableFrom(x.getType(i))) {
-          double value = x.getAsDouble(i);
+          double value = x.getDouble(i);
           if (Is.NA(value)) {
             vector.set(i, means.get(i));
           } else {

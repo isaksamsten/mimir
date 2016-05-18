@@ -52,11 +52,11 @@ class DataFrameInput extends AbstractInput<Instance> {
   private static TypeMap createProperties(DataFrame df) {
     TypeMap properties = new TypeMap();
     List<Class<?>> types =
-        df.getColumns().stream().map(v -> v.getType().getDataClass()).collect(Collectors.toList());
+        df.columns().stream().map(v -> v.getType().getDataClass()).collect(Collectors.toList());
     properties.set(Dataset.FEATURE_TYPES, types);
     properties.set(Dataset.FEATURE_NAMES,
         df.getColumnIndex().keySet().stream().map(Object::toString).collect(Collectors.toList()));
-    properties.set(Dataset.FEATURE_SIZE, df.columns());
+    properties.set(Dataset.FEATURE_SIZE, df.size(1));
     return properties;
   }
 
@@ -67,12 +67,12 @@ class DataFrameInput extends AbstractInput<Instance> {
 
   @Override
   public int size() {
-    return df.rows();
+    return df.size(0);
   }
 
   @Override
   public Instance get(int index) {
-    return new VectorInstance(df.loc().getRecord(index));
+    return new SeriesInstance(df.loc().getRow(index));
   }
 
 }

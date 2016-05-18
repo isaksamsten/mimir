@@ -21,7 +21,6 @@
 package org.briljantframework.mimir.classification.tree;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
 
 /**
  * @author Isak Karlsson

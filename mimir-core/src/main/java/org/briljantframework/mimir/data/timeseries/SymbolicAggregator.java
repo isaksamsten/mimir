@@ -28,8 +28,9 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.apache.commons.math3.distribution.RealDistribution;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Type;
+import org.briljantframework.data.series.Series;
+import org.briljantframework.data.series.Type;
+import org.briljantframework.data.series.Types;
 
 /**
  * Symbolic aggregation (when normalized) is a representation method for data series that allow for
@@ -61,7 +62,7 @@ import org.briljantframework.data.vector.Type;
  */
 public class SymbolicAggregator implements Aggregator {
 
-  private final Vector alphabet;
+  private final Series alphabet;
   private final DoubleArray thresholds;
 
   /**
@@ -70,7 +71,7 @@ public class SymbolicAggregator implements Aggregator {
    * @param alphabet the alphabet
    */
   public SymbolicAggregator(List<String> alphabet) {
-    this(Vector.singleton(alphabet));
+    this(Series.of(alphabet));
   }
 
   /**
@@ -78,7 +79,7 @@ public class SymbolicAggregator implements Aggregator {
    *
    * @param alphabet the alphabet
    */
-  public SymbolicAggregator(Vector alphabet) {
+  public SymbolicAggregator(Series alphabet) {
     this.alphabet = alphabet;
     thresholds = calculateThresholds(alphabet);
   }
@@ -87,7 +88,7 @@ public class SymbolicAggregator implements Aggregator {
    * Compute the thresholds for the alphabet using the normal distribution. Given an alphabet A,
    * computes the thresholds as [ppf(1/|A|), ppf(2/|A|), ..., ppf((|A|-1)/|A|)].
    */
-  private static DoubleArray calculateThresholds(Vector alphabet) {
+  private static DoubleArray calculateThresholds(Series alphabet) {
     double prob = 1.0 / alphabet.size();
     int length = alphabet.size() - 1;
     RealDistribution distribution = new NormalDistribution(0, 1);
@@ -102,7 +103,7 @@ public class SymbolicAggregator implements Aggregator {
    * @param alphabet the alphabet
    */
   public SymbolicAggregator(String... alphabet) {
-    this(Vector.of(alphabet));
+    this(Series.of(alphabet));
   }
 
   /**
@@ -112,14 +113,14 @@ public class SymbolicAggregator implements Aggregator {
    * @return the lookup table
    */
   public static Map<String, Map<String, Double>> newLookupTable(List<String> alphabet) {
-    Vector vector = Vector.singleton(alphabet); // TODO: note of(...)
+    Series vector = Series.of(alphabet); // TODO: note of(...)
     return createLookupTable(vector, calculateThresholds(vector));
   }
 
   /*
    * Creates a lookup table for the similarity between two items in alphabet
    */
-  private static Map<String, Map<String, Double>> createLookupTable(Vector alphabet,
+  private static Map<String, Map<String, Double>> createLookupTable(Series alphabet,
       DoubleArray thresholds) {
     Map<String, Map<String, Double>> tab = new HashMap<>();
     for (int r = 0; r < alphabet.size(); r++) {
@@ -149,14 +150,14 @@ public class SymbolicAggregator implements Aggregator {
 
   @Override
   public Type getAggregatedType() {
-    return Type.of(String.class);
+    return Types.from(String.class);
   }
 
   @Override
-  public Vector.Builder partialAggregate(Vector in) {
-    Vector.Builder sax = Vector.Builder.of(String.class);
+  public Series.Builder partialAggregate(Series in) {
+    Series.Builder sax = Series.Builder.of(String.class);
     for (int j = 0; j < in.size(); j++) {
-      double value = in.loc().getAsDouble(j);
+      double value = in.loc().getDouble(j);
       if (value <= thresholds.get(0)) {
         sax.loc().set(j, alphabet.loc().get(String.class, 0));
       } else if (value >= thresholds.get(thresholds.size() - 1)) {

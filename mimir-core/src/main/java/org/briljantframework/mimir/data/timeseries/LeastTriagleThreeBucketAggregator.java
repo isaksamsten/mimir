@@ -22,8 +22,9 @@ package org.briljantframework.mimir.data.timeseries;
 
 import java.util.Objects;
 
-import org.briljantframework.data.vector.Type;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
+import org.briljantframework.data.series.Type;
+import org.briljantframework.data.series.Types;
 
 /**
  * Implements the Least Triangle ... ... Data Series resampler found in [cite the thesis].
@@ -42,16 +43,16 @@ public class LeastTriagleThreeBucketAggregator implements Aggregator {
 
   @Override
   public Type getAggregatedType() {
-    return Type.DOUBLE;
+    return Types.DOUBLE;
   }
 
   @Override
-  public Vector.Builder partialAggregate(Vector in) {
+  public Series.Builder partialAggregate(Series in) {
     Objects.requireNonNull(in);
     if (in.size() < threshold || threshold == 0) {
       return in.newCopyBuilder();
     }
-    Vector.Builder sampled = in.newBuilder();
+    Series.Builder sampled = in.newBuilder();
 
     // Bucket size
     double every = (double) (in.size() - 2) / (threshold - 2);
@@ -63,7 +64,7 @@ public class LeastTriagleThreeBucketAggregator implements Aggregator {
     for (int i = 0; i < in.size(); i++) {
       indexes[i] = i;
     }
-    sampled.add(in, a);
+    sampled.addFromLocation(in, a);
     for (int i = 0; i < threshold - 2; i++) {
       int avgX = 0;
       double avgY = 0;
@@ -73,7 +74,7 @@ public class LeastTriagleThreeBucketAggregator implements Aggregator {
 
       for (; avgRangeStart < avgRangeEnd; avgRangeStart++) {
         avgX += indexes[avgRangeStart];
-        avgY += in.loc().getAsDouble(avgRangeStart);
+        avgY += in.loc().getDouble(avgRangeStart);
       }
       avgX /= rangeLength;
       avgY /= rangeLength;
@@ -82,10 +83,10 @@ public class LeastTriagleThreeBucketAggregator implements Aggregator {
       int rangeTo = (int) Math.floor((i + 1) * every) + 1;
 
       int pointX = indexes[a];
-      double pointY = in.loc().getAsDouble(a);
+      double pointY = in.loc().getDouble(a);
       double maxArea = Double.NEGATIVE_INFINITY;
       for (; rangeOffset < rangeTo; rangeOffset++) {
-        double xDiff = pointX - avgX * (in.loc().getAsDouble(rangeOffset) - pointY);
+        double xDiff = pointX - avgX * (in.loc().getDouble(rangeOffset) - pointY);
         double yDiff = pointY - avgY * (pointX - indexes[rangeOffset]);
         double area = Math.abs(xDiff - yDiff) * 0.5;
         if (area > maxArea) {
@@ -93,10 +94,10 @@ public class LeastTriagleThreeBucketAggregator implements Aggregator {
           nextA = rangeOffset;
         }
       }
-      sampled.add(in, nextA);
+      sampled.addFromLocation(in, nextA);
       a = nextA;
     }
 
-    return sampled.add(in, in.size() - 1);
+    return sampled.addFromLocation(in, in.size() - 1);
   }
 }

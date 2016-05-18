@@ -24,7 +24,7 @@ import java.util.Objects;
 
 import org.briljantframework.DoubleSequence;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.dataseries.DataSeriesCollection;
+//import org.briljantframework.data.dataseries.DataSeriesCollection;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.transform.Transformer;
 

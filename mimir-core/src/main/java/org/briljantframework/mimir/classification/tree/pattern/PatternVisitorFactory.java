@@ -18,16 +18,16 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.shapelet;
+package org.briljantframework.mimir.classification.tree.pattern;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.classification.tree.TreeNode;
+import org.briljantframework.mimir.classification.tree.TreeVisitor;
 
 /**
- * Created by isak on 16/04/15.
+ * Created by isak on 5/12/16.
  */
-public class DerivativeShapelet extends IndexSortedNormalizedShapelet {
+public interface PatternVisitorFactory<T, E> {
 
-  public DerivativeShapelet(int start, int length, Vector build) {
-    super(start, length, build);
-  }
+  TreeVisitor<T, PatternTree.Threshold<E>> createVisitor(TreeNode<T, PatternTree.Threshold<E>> root,
+      PatternDistance<? super T, ? super E> patternDistance);
 }

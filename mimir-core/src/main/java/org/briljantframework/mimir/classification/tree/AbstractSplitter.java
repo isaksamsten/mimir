@@ -23,7 +23,7 @@ package org.briljantframework.mimir.classification.tree;
 import java.util.Random;
 
 import org.briljantframework.data.Is;
-import org.briljantframework.data.vector.Convert;
+import org.briljantframework.data.series.Convert;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Instance;
 
@@ -78,7 +78,7 @@ public abstract class AbstractSplitter implements Splitter {
             direction = Is.equal(threshold, record.get(axis)) ? LEFT : RIGHT;
 //                axisVector.loc().get(Object.class, index).equals(threshold) ? LEFT : RIGHT;
           } else {
-            double leftValue = record.getAsDouble(axis);
+            double leftValue = record.getDouble(axis);
             direction = Double.compare(leftValue, Convert.to(Double.class, threshold)) <= 0 ? LEFT : RIGHT;
           }
         }

@@ -118,7 +118,7 @@ public class EnsembleClassifierMeasure<In> {
     DoubleArray inbEstimates = DoubleArray.zeros(x.size(), classes.size());
 
     // Count the number of times each training sample have been included
-    IntArray counts = Arrays.sum(1, oobIndicator.asInt());
+    IntArray counts = Arrays.sum(1, oobIndicator.asIntArray());
 
     // Compute the in-bag and out-of-bag estimates for all examples
     DoubleAdder oobAccuracy = new DoubleAdder();

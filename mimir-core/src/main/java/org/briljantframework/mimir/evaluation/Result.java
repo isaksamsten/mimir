@@ -21,7 +21,7 @@
 package org.briljantframework.mimir.evaluation;
 
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.data.Output;
 
 /**
@@ -90,7 +90,7 @@ public class Result<T> {
    * @param measure the measurement
    * @return a vector of measurements
    */
-  public Vector getMeasure(String measure) {
+  public Series getMeasure(String measure) {
     return measures.get(measure);
   }
 

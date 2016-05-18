@@ -64,7 +64,7 @@ public abstract class AbstractClassifier<In> implements Classifier<In> {
   public Output<Object> predict(Input<? extends In> x) {
     Object[] labels = new Object[x.size()];
     IntStream.range(0, x.size()).parallel().forEach(i -> labels[i] = predict(x.get(i)));
-    return Outputs.newOutput(labels);
+    return Outputs.asOutput(labels);
   }
 
   @Override

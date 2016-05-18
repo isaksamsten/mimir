@@ -23,17 +23,17 @@ package org.briljantframework.mimir.shapelet;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.briljantframework.data.Is;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.classification.tree.pattern.SamplingPatternFactory;
 import org.briljantframework.util.primitive.IntList;
 
 /**
  * Created by isak on 3/17/16.
  */
-public class ShapeletFactory extends SamplingPatternFactory<Vector, Shapelet> {
+public class ShapeletFactory extends SamplingPatternFactory<Series, Shapelet> {
   private final double lowerLength = 0.025, upperLength = 1;
 
-  private static IntList nonNaIndicies(Vector vector) {
+  private static IntList nonNaIndicies(Series vector) {
     IntList nonNas = new IntList();
     for (int i = 0; i < vector.size(); i++) {
       if (!Is.NA(vector.loc().get(i))) {
@@ -43,11 +43,11 @@ public class ShapeletFactory extends SamplingPatternFactory<Vector, Shapelet> {
     return nonNas;
   }
 
-  private static boolean isCategorical(Vector timeSeries) {
+  private static boolean isCategorical(Series timeSeries) {
     return timeSeries != null && String.class.isAssignableFrom(timeSeries.getType().getDataClass());
   }
 
-  private Shapelet getUnivariateShapelet(Vector timeSeries) {
+  private Shapelet getUnivariateShapelet(Series timeSeries) {
     if (timeSeries == null) {
       return null;
     }
@@ -82,20 +82,20 @@ public class ShapeletFactory extends SamplingPatternFactory<Vector, Shapelet> {
     } else {
       // TODO: normalization should be a param
       // TODO: normalized
-      shapelet = new IndexSortedNormalizedShapelet(start, length, timeSeries);
+      shapelet = new IndexSortedNormalizedShapelet(start, length, timeSeries.loc());
     }
     return shapelet;
   }
 
   @Override
-  public Shapelet createPattern(Vector timeSeries) {
+  public Shapelet createPattern(Series timeSeries) {
     Shapelet shapelet;
     // MTS
-    if (Vector.class.isAssignableFrom(timeSeries.getType().getDataClass())) {
+    if (Series.class.isAssignableFrom(timeSeries.getType().getDataClass())) {
       IntList nonNas = nonNaIndicies(timeSeries);
       if (!nonNas.isEmpty()) {
         int channelIndex = nonNas.get(ThreadLocalRandom.current().nextInt(nonNas.size()));
-        Vector channel = timeSeries.loc().get(Vector.class, channelIndex);
+        Series channel = timeSeries.loc().get(Series.class, channelIndex);
         Shapelet univariateShapelet = getUnivariateShapelet(channel);
         if (univariateShapelet == null) {
           shapelet = null;

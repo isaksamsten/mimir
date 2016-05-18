@@ -21,7 +21,7 @@
 package org.briljantframework.mimir.distance;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * In time series analysis, dynamic time warping (DTW) is an algorithm for measuring similarity
@@ -36,7 +36,7 @@ import org.briljantframework.data.vector.Vector;
  * <p>
  * Created by Isak Karlsson on 01/09/14.
  */
-public class DynamicTimeWarping implements Distance<Vector> {
+public class DynamicTimeWarping implements Distance<Series> {
 
   private final int constraint;
 
@@ -57,7 +57,7 @@ public class DynamicTimeWarping implements Distance<Vector> {
   }
 
   @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     int n = a.size(), m = b.size();
     DoubleArray dtw = DoubleArray.zeros(n, m);
     dtw.assign(Double.POSITIVE_INFINITY);
@@ -68,7 +68,7 @@ public class DynamicTimeWarping implements Distance<Vector> {
       int end = constraint <= -1 ? m : Math.min(m, i + width);
       int start = constraint <= -1 ? 1 : Math.max(1, i - width);
       for (int j = start; j < end; j++) {
-        double cost = compute(a.loc().getAsDouble(i), b.loc().getAsDouble(j));
+        double cost = compute(a.loc().getDouble(i), b.loc().getDouble(j));
         dtw.set(i, j,
             cost + Math.min(dtw.get(i - 1, j), Math.min(dtw.get(i, j - 1), dtw.get(i - 1, j - 1))));
       }

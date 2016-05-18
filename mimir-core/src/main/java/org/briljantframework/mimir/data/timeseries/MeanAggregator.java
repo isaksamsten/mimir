@@ -21,8 +21,9 @@
 package org.briljantframework.mimir.data.timeseries;
 
 import org.briljantframework.Check;
-import org.briljantframework.data.vector.Type;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
+import org.briljantframework.data.series.Type;
+import org.briljantframework.data.series.Types;
 
 /**
  * Implementation of the perhaps simplest resampling (approximation) method for data series. Divide
@@ -43,16 +44,16 @@ public class MeanAggregator implements Aggregator {
 
   @Override
   public Type getAggregatedType() {
-    return Type.DOUBLE;
+    return Types.DOUBLE;
   }
 
   @Override
-  public Vector.Builder partialAggregate(Vector in) {
+  public Series.Builder partialAggregate(Series in) {
     Check.argument(in.size() >= targetSize, "Input size must be larger than target size.");
     if (in.size() == targetSize) {
       return in.newCopyBuilder();
     }
-    Vector.Builder out = Vector.Builder.withCapacity(Double.class, targetSize);
+    Series.Builder out = Series.Builder.withCapacity(Double.class, targetSize);
     int bin = in.size() / targetSize;
     int pad = in.size() % targetSize;
 
@@ -66,7 +67,7 @@ public class MeanAggregator implements Aggregator {
       double sum = 0;
       int binInc = bin + inc;
       for (int j = 0; j < binInc; j++) {
-        sum += in.loc().getAsDouble(currentIndex++);
+        sum += in.loc().getDouble(currentIndex++);
       }
       out.add(sum / binInc);
     }

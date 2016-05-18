@@ -20,6 +20,9 @@
  */
 package org.briljantframework.mimir.classification;
 
+import static org.briljantframework.data.dataframe.DataFrames.mean;
+import static org.briljantframework.data.dataframe.DataFrames.sort;
+
 import java.io.*;
 import java.util.List;
 import java.util.Random;
@@ -37,11 +40,12 @@ import org.briljantframework.data.Is;
 import org.briljantframework.data.SortOrder;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
-import org.briljantframework.data.dataseries.DataSeriesCollection;
+import org.briljantframework.data.dataframe.MixedDataFrame;
 import org.briljantframework.data.parser.CsvParser;
+import org.briljantframework.data.series.Convert;
+import org.briljantframework.data.series.Series;
+import org.briljantframework.data.series.Vectors;
 import org.briljantframework.data.statistics.FastStatistics;
-import org.briljantframework.data.vector.Convert;
-import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.DatasetReader;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.dataset.io.MatlabDatasetReader;
@@ -76,12 +80,15 @@ public class LearnerTest {
     gridSearch.add(Updatables.enumeration(LogisticRegression.MAX_ITERATIONS, 100));
     gridSearch.add(Updatables.linspace(LogisticRegression.REGULARIZATION, 0.001, 10, 25));
 
-    DataFrame iris = DataFrames.permuteRecords(Datasets.loadIris());
-    DataFrame replaceNa = iris.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean()));
-    Vector classVector = iris.get("Class");
+    DataFrame iris = DataFrames.permute(Datasets.loadIris());
+    DataFrame replaceNa = iris.drop("Class").apply(v -> {
+      v.set(v.where(Is::NA), v.mean());
+      return v;
+    });
+    Series classVector = iris.get("Class");
 
-    Input<Instance> x = Inputs.newInput(replaceNa);
-    Output<?> y = Outputs.newOutput(classVector);
+    Input<Instance> x = Inputs.asInput(replaceNa);
+    Output<?> y = Outputs.asOutput(classVector);
     LogisticRegression.Learner learner = new LogisticRegression.Learner(1);
     List<Configuration<Object>> tune = gridSearch.tune(learner, x, y);
 
@@ -96,7 +103,7 @@ public class LearnerTest {
 
   @Test
   public void sampleRegion() throws Exception {
-    DoubleArray x = Arrays.range(10 * 10).asDouble().reshape(10, 10);
+    DoubleArray x = Arrays.range(10 * 10).asDoubleArray().reshape(10, 10);
     System.out.println(x);
     System.out.println(x.getView(Range.of(1, 3), Range.of(3, 8)));
 
@@ -110,12 +117,12 @@ public class LearnerTest {
 
     try {
       CsvParser parser = new CsvParser(new FileReader("/home/isak/Tmp/madelon.txt"));
-      DataFrame df = DataFrames.permuteRecords(parser.parse(DataFrame::builder), new Random(123));
+      DataFrame df = DataFrames.permute(parser.parse(DataFrame::builder), new Random(123));
       Object column = "class";
       DataFrame x = df.drop(column);
-      Vector y = df.get(column);
+      Series y = df.get(column);
 
-      return new ImmutablePair<>(Inputs.newInput(x), Outputs.newOutput(y));
+      return new ImmutablePair<>(Inputs.asInput(x), Outputs.asOutput(y));
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
@@ -282,7 +289,7 @@ public class LearnerTest {
             for (int i = 0; i < features; i++) {
               FastStatistics statistics = new FastStatistics();
               for (int j = 0; j < in.size(); j++) {
-                double value = in.get(j).getAsDouble(i);
+                double value = in.get(j).getDouble(i);
                 if (!Is.NA(value)) {
                   statistics.addValue(value);
                 }
@@ -335,7 +342,7 @@ public class LearnerTest {
     ClassifierValidator<DoubleSequence, Classifier<DoubleSequence>> v =
         ClassifierValidator.crossValidator(10);
     // v.add(new EnsembleEvaluator<>());
-    System.out.println(v.test(rbfForest, x, y).getMeasures().mean());
+    System.out.println(mean(v.test(rbfForest, x, y).getMeasures()));
 
   }
 
@@ -343,8 +350,8 @@ public class LearnerTest {
     double e = 0;
     int size = Math.min(a.size(), b.size());
     for (int i = 0; i < size; i++) {
-      double ad = a.getAsDouble(i);
-      double bd = b.getAsDouble(i);
+      double ad = a.getDouble(i);
+      double bd = b.getDouble(i);
       if (!Double.isNaN(ad) && !Double.isNaN(bd)) {
         e += Math.pow(ad - bd, 2);
       }
@@ -360,7 +367,7 @@ public class LearnerTest {
 
       double[] tmp = new double[instance.size()];
       for (int j = 0; j < instance.size(); j++) {
-        double value = instance.getAsDouble(j);
+        double value = instance.getDouble(j);
         if (Double.isNaN(value)) {
           tmp[j] = mean[j];
         } else if (std[j] == 0) {
@@ -377,7 +384,7 @@ public class LearnerTest {
   private double[] toArray(DoubleSequence instance) {
     double[] e = new double[instance.size()];
     for (int i = 0; i < instance.size(); i++) {
-      e[i] = instance.getAsDouble(i);
+      e[i] = instance.getDouble(i);
     }
     return e;
   }
@@ -390,7 +397,7 @@ public class LearnerTest {
 
     RandomForest.Learner rfl = new RandomForest.Learner(100);
     ClassifierValidator<Instance, RandomForest> v = ClassifierValidator.crossValidator(10);
-    System.out.println(v.test(rfl, x, y).getMeasures().mean());
+    System.out.println(DataFrames.mean(v.test(rfl, x, y).getMeasures()));
   }
 
   @Test
@@ -407,7 +414,7 @@ public class LearnerTest {
       Object value = b.getValue();
       int axis = b.getKey();
       if (Is.numeric(value)) {
-        return Convert.to(Double.class, value).compareTo(a.getAsDouble(axis)) <= 0 ? 0 : 1;
+        return Convert.to(Double.class, value).compareTo(a.getDouble(axis)) <= 0 ? 0 : 1;
       } else {
         return !Is.equal(value, a.get(axis)) ? 0 : 1;
       }
@@ -429,29 +436,29 @@ public class LearnerTest {
     ClassifierValidator<Instance, RandomPatternForest<Instance>> v =
         ClassifierValidator.crossValidator(10);
 
-    System.out.println(v.test(rfl, x, y).getMeasures().mean());
+    System.out.println(mean(v.test(rfl, x, y).getMeasures()));
   }
 
   @Test
   public void testTesda2() throws Exception {
-    DataFrame data = DataFrames.permuteRecords(Datasets.loadSyntheticControl());
-    Input<Vector> x = new ArrayInput<>(data.drop(0).getRecords());
-    Output<?> y = Outputs.newOutput(data.get(0));
+    DataFrame data = DataFrames.permute(Datasets.loadSyntheticControl());
+    Input<Series> x = new ArrayInput<>(data.drop(0).rows());
+    Output<?> y = Outputs.asOutput(data.get(0));
 
-    ClassifierValidator<Vector, RandomPatternForest<Vector>> v =
+    ClassifierValidator<Series, RandomPatternForest<Series>> v =
         ClassifierValidator.splitValidator(0.33);
 
-    RandomPatternForest.Learner<Vector, ?> rfl =
+    RandomPatternForest.Learner<Series, ?> rfl =
         new RandomPatternForest.Learner<>(new ShapeletFactory(), new ShapeletDistance(), 100);
 
-    System.out.println(v.test(rfl, x, y).getMeasures().mean());
+    System.out.println(DataFrames.mean(v.test(rfl, x, y).getMeasures()));
 
 
 
     // ArrayPrinter.setMinimumTruncateSize(100000);
     // DataFrame iris = DataFrames.permuteRecords(Datasets.loadIris());
     // DataFrame x = iris.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean()));
-    // Vector y = iris.get("Class");
+    // Series y = iris.get("Class");
     //
     // IntArray idx = Arrays.shuffle(Range.of(iris.rows()));
     // IntArray train = idx.get(Range.of(0, 50));
@@ -476,22 +483,25 @@ public class LearnerTest {
   @Test
   public void testFit() throws Exception {
     // Load the iris data set
-    DataFrame iris = DataFrames.permuteRecords(Datasets.loadIris());
+    DataFrame iris = DataFrames.permute(Datasets.loadIris());
 
     // Remove the class variable from the input data and set each NA value to the column mean
-    DataFrame x = iris.drop("Class").apply(v -> v.set(v.where(Is::NA), v.mean()));
+    DataFrame x = iris.drop("Class").apply(v -> {
+      v.set(v.where(Is::NA), v.mean());
+      return v;
+    });
 
     // Get the class variable
-    Vector y = iris.get("Class");
+    Series y = iris.get("Class");
 
 
     // Create a classifier learner to use for estimating the non-conformity scores
     RandomForest.Learner classifier = new RandomForest.Learner(100);
     ClassifierValidator<Instance, RandomForest> rfv = ClassifierValidator.crossValidator(10);
 
-    System.out.println(
-        rfv.test(new RandomForest.Learner(100), Inputs.newInput(x), new ArrayOutput<>(y.toList()))
-            .getMeasures().mean());
+    System.out.println(mean(
+        rfv.test(new RandomForest.Learner(100), Inputs.asInput(x), new ArrayOutput<>(y))
+            .getMeasures()));
 
     // System.out.println(ClassifierValidator.crossValidator(10).test(classifier, x,
     // y).getMeasures()
@@ -511,7 +521,7 @@ public class LearnerTest {
     Validator<Instance, Object, InductiveConformalClassifier<Instance>> validator =
         ConformalClassifierValidator.crossValidator(10, 0.25, DoubleArray.range(0.05, 1.01, 0.05));
 
-    Result<?> result = validator.test(cp, Inputs.newInput(x), Outputs.newOutput(y));
+    Result<?> result = validator.test(cp, Inputs.asInput(x), Outputs.asOutput(y));
 
     // Get the measures
     DataFrame measures = result.getMeasures();
@@ -519,7 +529,8 @@ public class LearnerTest {
     // Compute the mean of all measures grouped by significance level
     DataFrame meanPerSignificance =
         measures.groupBy(Double.class, v -> String.format("%.2f", v), "significance")
-            .collect(Vector::mean).sort(SortOrder.ASC);
+            .collect(Vectors::mean);
+    meanPerSignificance = sort(meanPerSignificance, SortOrder.ASC);
     System.out.println(meanPerSignificance);
 
     // RandomShapeletForest f = forest.fit(x, y);
@@ -539,7 +550,7 @@ public class LearnerTest {
     String testFile = "/Users/isak-kar/Downloads/dataset/OliveOil/OliveOil_TEST";
     try (DatasetReader train = new MatlabDatasetReader(new FileInputStream(trainFile));
         DatasetReader test = new MatlabDatasetReader(new FileInputStream(testFile))) {
-      DataFrame.Builder dataset = new DataSeriesCollection.Builder(double.class);
+      DataFrame.Builder dataset = new MixedDataFrame.Builder();
       dataset.readAll(train);
       dataset.readAll(test);
       return dataset.build();

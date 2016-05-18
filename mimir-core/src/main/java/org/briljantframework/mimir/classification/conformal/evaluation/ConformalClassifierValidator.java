@@ -25,12 +25,12 @@ import java.util.function.DoubleFunction;
 import java.util.stream.Collectors;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.data.ArrayOutput;
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.classification.conformal.BootstrapConformalClassifier;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
 import org.briljantframework.mimir.classification.conformal.InductiveConformalClassifier;
+import org.briljantframework.mimir.data.ArrayOutput;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.MutableEvaluationContext;
 import org.briljantframework.mimir.evaluation.Validator;
@@ -50,7 +50,7 @@ public abstract class ConformalClassifierValidator<In, P extends ConformalClassi
   protected ConformalClassifierValidator(Partitioner<In, Object> partitioner,
       DoubleArray confidences) {
     super(partitioner);
-    this.conformalEvaluators = confidences.stream()
+    this.conformalEvaluators = confidences.doubleStream()
         .mapToObj(
             (DoubleFunction<ConformalClassifierEvaluator<In>>) ConformalClassifierEvaluator::new)
         .collect(Collectors.toList());

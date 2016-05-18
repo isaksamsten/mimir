@@ -20,8 +20,8 @@
  */
 package org.briljantframework.mimir.data.timeseries;
 
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Type;
+import org.briljantframework.data.series.Series;
+import org.briljantframework.data.series.Type;
 
 /**
  * Performs an aggregation of a particular data series, represented as a vector. For example, one
@@ -30,9 +30,9 @@ import org.briljantframework.data.vector.Type;
  * can then be aggregated by, e.g., averaging to produce the vector {@code [1.5, 3.5, 5.5]}.
  * <p/>
  * 
- * The {@link #partialAggregate(org.briljantframework.data.vector.Vector)}, takes an input vector
- * and produces a mutable {@link org.briljantframework.data.vector.Vector.Builder} for futher
- * transformation. The {@link #aggregate(org.briljantframework.data.vector.Vector)} produces a new,
+ * The {@link #partialAggregate(org.briljantframework.data.series.Series)}, takes an input vector
+ * and produces a mutable {@link org.briljantframework.data.series.Series.Builder} for futher
+ * transformation. The {@link #aggregate(org.briljantframework.data.series.Series)} produces a new,
  * aggregated, vector.
  * 
  * @author Isak Karlsson
@@ -50,7 +50,7 @@ public interface Aggregator {
    * @param in the vector
    * @return an aggregate of {@code in}
    */
-  default Vector aggregate(Vector in) {
+  default Series aggregate(Series in) {
     return partialAggregate(in).build();
   }
 
@@ -60,5 +60,5 @@ public interface Aggregator {
    * @param in the vector
    * @return a mutable aggregate of {@code in}
    */
-  Vector.Builder partialAggregate(Vector in);
+  Series.Builder partialAggregate(Series in);
 }

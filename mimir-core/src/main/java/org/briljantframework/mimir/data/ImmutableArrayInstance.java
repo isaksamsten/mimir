@@ -22,7 +22,7 @@ package org.briljantframework.mimir.data;
 
 import java.util.Arrays;
 
-import org.briljantframework.data.vector.Convert;
+import org.briljantframework.data.series.Convert;
 
 /**
  * Created by isak on 3/29/16.
@@ -40,7 +40,7 @@ class ImmutableArrayInstance implements Instance {
   }
 
   @Override
-  public double getAsDouble(int index) {
+  public double getDouble(int index) {
     return Convert.to(Double.class, index);
   }
 

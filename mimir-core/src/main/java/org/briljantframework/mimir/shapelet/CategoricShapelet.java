@@ -20,7 +20,7 @@
  */
 package org.briljantframework.mimir.shapelet;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * Created by isak on 3/17/16.
@@ -28,10 +28,12 @@ import org.briljantframework.data.vector.Vector;
 public class CategoricShapelet extends Shapelet {
 
   public CategoricShapelet(String value) {
-    super(0, 1, Vector.singleton(value));
+    super(0, 1, null);
+    throw new UnsupportedOperationException();
   }
 
-  public CategoricShapelet(int start, int end, Vector values) {
-    super(start, end, values);
+  public CategoricShapelet(int start, int end, Series values) {
+    super(start, end, null);
+    throw new UnsupportedOperationException();
   }
 }

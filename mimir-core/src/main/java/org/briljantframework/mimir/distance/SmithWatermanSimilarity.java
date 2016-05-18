@@ -21,7 +21,7 @@
 package org.briljantframework.mimir.distance;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * @author Isak Karlsson
@@ -37,7 +37,7 @@ public class SmithWatermanSimilarity implements Similarity {
   }
 
   @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     DoubleArray h = DoubleArray.zeros(a.size() + 1, b.size() + 1);
     double maxScore = Double.NEGATIVE_INFINITY;
     for (int i = 1; i < h.rows(); i++) {

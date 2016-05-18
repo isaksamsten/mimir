@@ -20,77 +20,50 @@
  */
 package org.briljantframework.mimir.jfree;
 
-import java.util.Collections;
 import java.util.List;
 
-import org.briljantframework.data.Is;
-import org.briljantframework.data.vector.Vector;
-import org.jfree.data.category.CategoryDataset;
+import org.briljantframework.data.series.Series;
 import org.jfree.data.general.AbstractDataset;
+import org.jfree.data.general.PieDataset;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class VectorCategoryDataset extends AbstractDataset implements CategoryDataset {
+public class SeriesPieDataset extends AbstractDataset implements PieDataset {
 
-  private final Vector vector;
+  private final Series vector;
 
-  public VectorCategoryDataset(Vector vector) {
+  public SeriesPieDataset(Series vector) {
     this.vector = vector;
   }
 
   @Override
-  public Comparable getRowKey(int row) {
-    return (Comparable) vector.getIndex().get(row);
+  public Comparable getKey(int index) {
+    return (Comparable) vector.getIndex().get(index);
   }
 
   @Override
-  public int getRowIndex(Comparable key) {
+  public int getIndex(Comparable key) {
     return vector.getIndex().getLocation(key);
   }
 
   @Override
-  public List getRowKeys() {
+  public List getKeys() {
     return vector.getIndex();
   }
 
   @Override
-  public Comparable getColumnKey(int column) {
-    return 0;
+  public Number getValue(Comparable key) {
+    return vector.get(Number.class, key);
   }
 
   @Override
-  public int getColumnIndex(Comparable key) {
-    return 0;
-  }
-
-  @Override
-  public List getColumnKeys() {
-    return Collections.singletonList(0);
-  }
-
-  @Override
-  public Number getValue(Comparable rowKey, Comparable columnKey) {
-    return vector.get(Number.class, rowKey);
-  }
-
-  @Override
-  public int getRowCount() {
+  public int getItemCount() {
     return vector.size();
   }
 
   @Override
-  public int getColumnCount() {
-    return 1;
+  public Number getValue(int index) {
+    return vector.get(Number.class, vector.getIndex().get(index));
   }
-
-  @Override
-  public Number getValue(int row, int column) {
-    Number value = vector.get(Number.class, vector.getIndex().get(row));
-    if (Is.NA(value)) {
-      return null;
-    }
-    return value;
-  }
-
 }

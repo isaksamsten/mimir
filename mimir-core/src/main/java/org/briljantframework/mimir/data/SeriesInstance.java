@@ -18,52 +18,44 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.jfree;
+package org.briljantframework.mimir.data;
 
-import java.util.List;
+import java.util.Objects;
 
-import org.briljantframework.data.vector.Vector;
-import org.jfree.data.general.AbstractDataset;
-import org.jfree.data.general.PieDataset;
+import org.briljantframework.data.series.Series;
 
 /**
- * @author Isak Karlsson <isak-kar@dsv.su.se>
+ * @author Isak Karlsson
  */
-public class VectorPieDataset extends AbstractDataset implements PieDataset {
+class SeriesInstance implements Instance {
+  private final Series record;
 
-  private final Vector vector;
-
-  public VectorPieDataset(Vector vector) {
-    this.vector = vector;
+  public SeriesInstance(Series record) {
+    this.record = Objects.requireNonNull(record);
   }
 
   @Override
-  public Comparable getKey(int index) {
-    return (Comparable) vector.getIndex().get(index);
+  public int size() {
+    return record.size();
   }
 
   @Override
-  public int getIndex(Comparable key) {
-    return vector.getIndex().getLocation(key);
+  public int getInt(int index) {
+    return record.loc().getInt(index);
   }
 
   @Override
-  public List getKeys() {
-    return vector.getIndex();
+  public double getDouble(int index) {
+    return record.loc().getInt(index);
   }
 
   @Override
-  public Number getValue(Comparable key) {
-    return vector.get(Number.class, key);
+  public <T> T get(Class<T> cls, int index) {
+    return record.loc().get(cls, index);
   }
 
   @Override
-  public int getItemCount() {
-    return vector.size();
-  }
-
-  @Override
-  public Number getValue(int index) {
-    return vector.get(Number.class, vector.getIndex().get(index));
+  public Object get(int index) {
+    return record.loc().get(index);
   }
 }

@@ -21,7 +21,6 @@
 package org.briljantframework.mimir.classification.conformal;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>

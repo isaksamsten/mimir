@@ -127,8 +127,8 @@ public class RandomSplitter extends AbstractSplitter {
     Instance exa = in.get(a.getIndex());
     Instance exb = in.get(b.getIndex());
 
-    double valueA = exa.getAsDouble(axis);
-    double valueB = exb.getAsDouble(axis);
+    double valueA = exa.getDouble(axis);
+    double valueB = exb.getDouble(axis);
 
     // TODO - what if both A and B are missing?
     if (Is.NA(valueA)) {

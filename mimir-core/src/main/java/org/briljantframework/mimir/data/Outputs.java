@@ -26,7 +26,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.briljantframework.DoubleSequence;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * Utilities for output variables
@@ -38,7 +38,7 @@ public final class Outputs {
   public static Output<Double> copyOf(DoubleSequence sequence) {
     Output<Double> output = new ArrayOutput<>();
     for (int i = 0; i < sequence.size(); i++) {
-      output.add(sequence.getAsDouble(i));
+      output.add(sequence.getDouble(i));
     }
     return unmodifiableOutput(output);
   }
@@ -67,7 +67,7 @@ public final class Outputs {
    */
   @SafeVarargs
   @SuppressWarnings("varargs")
-  public static <T> Output<T> newOutput(T... values) {
+  public static <T> Output<T> asOutput(T... values) {
     return new ImmutableArrayOutput<>(values);
   }
 
@@ -79,7 +79,7 @@ public final class Outputs {
    * @param <T> the class of outputs
    * @return a new ummutable output.
    */
-  public static <T> Output<T> newOutput(Class<T> cls, Vector vector) {
+  public static <T> Output<T> asOutput(Class<T> cls, Series vector) {
     Objects.requireNonNull(vector);
     Objects.requireNonNull(cls, "illegal class");
     return new VectorOutput<>(vector, cls);
@@ -91,8 +91,8 @@ public final class Outputs {
    * @param vector the vector
    * @return a new immutable output.
    */
-  public static Output<?> newOutput(Vector vector) {
-    return newOutput(Object.class, vector);
+  public static Output<?> asOutput(Series vector) {
+    return asOutput(Object.class, vector);
   }
 
   /**
@@ -101,12 +101,12 @@ public final class Outputs {
    * @param vector the vector
    * @return a new immutable double output
    */
-  public static Output<Double> newDoubleOutput(Vector vector) {
+  public static Output<Double> newDoubleOutput(Series vector) {
     Objects.requireNonNull(vector);
     return new VectorOutput<Double>(vector, Double.class) {
       @Override
       public Double get(int index) {
-        return this.vector.loc().getAsDouble(index);
+        return this.vector.loc().getDouble(index);
       }
     };
   }
@@ -300,10 +300,10 @@ public final class Outputs {
 
 
   private static class VectorOutput<T> extends AbstractOutput<T> {
-    protected final Vector vector;
+    protected final Series vector;
     protected final Class<T> cls;
 
-    public VectorOutput(Vector vector, Class<T> cls) {
+    VectorOutput(Series vector, Class<T> cls) {
       this.vector = vector;
       this.cls = cls;
     }
@@ -330,7 +330,7 @@ public final class Outputs {
 
     @Override
     public Iterator<T> iterator() {
-      return vector.toList(cls).iterator();
+      return vector.asList(cls).iterator();
     }
   }
 }

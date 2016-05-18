@@ -22,7 +22,7 @@ package org.briljantframework.mimir.data;
 
 import java.util.List;
 
-import org.briljantframework.data.vector.Convert;
+import org.briljantframework.data.series.Convert;
 
 /**
  * An output represents a collection of indexed output variables.

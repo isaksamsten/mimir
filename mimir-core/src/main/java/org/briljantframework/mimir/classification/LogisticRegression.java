@@ -31,7 +31,7 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
 import org.briljantframework.data.Is;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.classification.optimization.BinaryLogisticFunction;
 import org.briljantframework.mimir.classification.optimization.MultiClassLogisticFunction;
 import org.briljantframework.mimir.data.*;
@@ -65,10 +65,10 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
    */
   private final DoubleArray coefficients;
 
-  private final Vector names;
+  private final Series names;
   private final double logLoss;
 
-  private LogisticRegression(Vector names, DoubleArray coefficients, double logLoss,
+  private LogisticRegression(Series names, DoubleArray coefficients, double logLoss,
       List<?> classes) {
     super(classes);
     this.names = names;
@@ -81,7 +81,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
     DoubleArray x = DoubleArray.zeros(record.size() + 1);
     x.set(0, 1); // set the intercept
     for (int i = 0; i < record.size(); i++) {
-      x.set(i + 1, record.getAsDouble(i));
+      x.set(i + 1, record.getDouble(i));
     }
 
     List<?> classes = getClasses();
@@ -208,7 +208,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
           new LimitedMemoryBfgsOptimizer(MEMORY, getOrDefault(MAX_ITERATIONS), GRADIENT_TOLERANCE);
       double logLoss = optimizer.optimize(objective, theta);
 
-      Vector.Builder names = Vector.Builder.of(String.class).add("(Intercept)");
+      Series.Builder names = Series.Builder.of(String.class).add("(Intercept)");
       if (in.getProperties().contains(Dataset.FEATURE_NAMES)) {
         in.getProperty(Dataset.FEATURE_NAMES).forEach(names::add);
       } else {
@@ -225,7 +225,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
         x.set(i, 0, 1);
         Instance record = input.get(i);
         for (int j = 0; j < m; j++) {
-          double v = record.getAsDouble(j);
+          double v = record.getDouble(j);
           if (Is.NA(v) || Double.isNaN(v)) {
             throw new IllegalArgumentException(
                 String.format("Illegal input value at (%d, %d)", i, j - 1));

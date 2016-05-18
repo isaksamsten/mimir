@@ -20,26 +20,24 @@
  */
 package org.briljantframework.mimir.shapelet;
 
-import org.briljantframework.data.Is;
-import org.briljantframework.data.Na;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.DoubleSequence;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.classification.tree.pattern.PatternDistance;
-import org.briljantframework.mimir.classification.tree.pattern.PatternTree;
 import org.briljantframework.mimir.distance.Distance;
 import org.briljantframework.mimir.distance.EarlyAbandonSlidingDistance;
 
 /**
  * Created by isak on 3/17/16.
  */
-public class ShapeletDistance implements PatternDistance<Vector, Shapelet> {
-  private final Distance<Vector> categoricDistance = new ZeroOneDistance();
-  private final Distance<Vector> numericDistance = new EarlyAbandonSlidingDistance();
+public class ShapeletDistance implements PatternDistance<Series, Shapelet> {
+  private final Distance<Series> categoricDistance = new ZeroOneDistance();
+  private final Distance<DoubleSequence> numericDistance = new EarlyAbandonSlidingDistance();
 
 
-  private static class ZeroOneDistance implements Distance<Vector> {
+  private static class ZeroOneDistance implements Distance<Series> {
 
     @Override
-    public double compute(Vector a, Vector b) {
+    public double compute(Series a, Series b) {
       if (a instanceof Shapelet) {
         return b.loc().indexOf(a.loc().get(0)) < 0 ? 1 : 0;
       }
@@ -49,27 +47,27 @@ public class ShapeletDistance implements PatternDistance<Vector, Shapelet> {
 
 
   @Override
-  public double computeDistance(Vector record, Shapelet shapelet) {
+  public double computeDistance(Series record, Shapelet shapelet) {
     double distance;
-    if (shapelet instanceof ChannelShapelet) {
-      int channelIndex = ((ChannelShapelet) shapelet).getChannel();
-      Vector channel = record.loc().get(Vector.class, channelIndex);
-      if (shapelet.getDelegate() instanceof CategoricShapelet) {
-        if (Is.NA(channel)) {
-          distance = Na.DOUBLE;
-        } else {
-          distance = categoricDistance.compute(channel, shapelet);
-        }
-      } else {
-        if (Is.NA(channel)) {
-          distance = Na.DOUBLE;
-        } else {
-          distance = numericDistance.compute(channel, shapelet);
-        }
-      }
-    } else {
-      distance = numericDistance.compute(record, shapelet);
-    }
-    return distance;
+    // if (shapelet instanceof ChannelShapelet) {
+    // int channelIndex = ((ChannelShapelet) shapelet).getChannel();
+    // Series channel = record.loc().get(Series.class, channelIndex);
+    // if (shapelet.getDelegate() instanceof CategoricShapelet) {
+    // if (Is.NA(channel)) {
+    // distance = Na.DOUBLE;
+    // } else {
+    // distance = categoricDistance.compute(channel, shapelet);
+    // }
+    // } else {
+    // if (Is.NA(channel)) {
+    // distance = Na.DOUBLE;
+    // } else {
+    // distance = numericDistance.compute(channel, shapelet);
+    // }
+    // }
+    // } else {
+    // distance = numericDistance.compute(record, shapelet);
+    // }
+    return 0;
   }
 }

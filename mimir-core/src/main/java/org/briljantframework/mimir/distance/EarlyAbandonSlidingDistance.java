@@ -22,14 +22,15 @@ package org.briljantframework.mimir.distance;
 
 import java.util.Objects;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.DoubleSequence;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.shapelet.IndexSortedNormalizedShapelet;
 import org.briljantframework.mimir.shapelet.NormalizedShapelet;
 
 /**
  * Created by Isak Karlsson on 23/09/14.
  */
-public class EarlyAbandonSlidingDistance implements Distance<Vector> {
+public class EarlyAbandonSlidingDistance implements Distance<DoubleSequence> {
 
   /**
    * If {@code a} is shorter than {@code b}, then {@code a} is considered a shapelet and slid
@@ -43,10 +44,10 @@ public class EarlyAbandonSlidingDistance implements Distance<Vector> {
    * @return the shortest possible distance of a (or b) as it is slid against b (or a)
    */
   @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(DoubleSequence a, DoubleSequence b) {
     double minDistance = Double.POSITIVE_INFINITY;
-    Vector candidate = a.size() < b.size() ? a : b;
-    Vector vector = a.size() >= b.size() ? a : b;
+    DoubleSequence candidate = a.size() < b.size() ? a : b;
+    DoubleSequence vector = a.size() >= b.size() ? a : b;
     if (!(candidate instanceof NormalizedShapelet)) {
       if (!(vector instanceof NormalizedShapelet)) {
         vector = new NormalizedShapelet(0, vector.size(), vector);
@@ -70,7 +71,7 @@ public class EarlyAbandonSlidingDistance implements Distance<Vector> {
     double ex = 0;
     double ex2 = 0;
     for (int i = 0; i < seriesSize; i++) {
-      double d = vector.loc().getAsDouble(i);
+      double d = vector.getDouble(i);
       ex += d;
       ex2 += d * d;
       t[i % m] = d;
@@ -92,14 +93,14 @@ public class EarlyAbandonSlidingDistance implements Distance<Vector> {
     return Math.sqrt(minDistance / candidate.size());
   }
 
-  double distance(Vector c, double[] t, int j, int m, int[] order, double mean, double std,
+  double distance(DoubleSequence c, double[] t, int j, int m, int[] order, double mean, double std,
       double bsf) {
     double sum = 0;
     for (int i = 0; i < m && sum < bsf; i++) {
       if (order != null) {
         i = order[i];
       }
-      double x = normalize(t[i + j], mean, std) - c.loc().getAsDouble(i);
+      double x = normalize(t[i + j], mean, std) - c.getDouble(i);
       // double x = ((t[i + j] - mean) / std) - c.loc().getAsDouble(i);
       sum += x * x;
     }

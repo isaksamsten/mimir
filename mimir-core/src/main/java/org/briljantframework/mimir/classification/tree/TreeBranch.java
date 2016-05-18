@@ -23,7 +23,7 @@ package org.briljantframework.mimir.classification.tree;
 import java.util.List;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * Created by isak on 2/11/15.
@@ -34,7 +34,7 @@ public final class TreeBranch<In, T> implements TreeNode<In, T> {
   private final TreeNode<In, T> right;
   private final TreeNode<In, T> missing;
   private final List<?> domain;
-  private final Vector classDistribution;
+  private final Series classDistribution;
   private final T threshold;
   private final double weight;
 
@@ -50,7 +50,7 @@ public final class TreeBranch<In, T> implements TreeNode<In, T> {
   }
 
   public TreeBranch(TreeNode<In, T> left, TreeNode<In, T> right, TreeNode<In, T> missing,
-      List<?> domain, Vector classDistribution, T threshold, double weight) {
+      List<?> domain, Series classDistribution, T threshold, double weight) {
     this.left = left;
     this.right = right;
     this.domain = domain;
@@ -89,7 +89,7 @@ public final class TreeBranch<In, T> implements TreeNode<In, T> {
     return domain;
   }
 
-  public Vector getClassDistribution() {
+  public Series getClassDistribution() {
     return classDistribution;
   }
 

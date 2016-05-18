@@ -20,11 +20,11 @@
  */
 package org.briljantframework.mimir.distance;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  *
  */
 public interface Similarity {
-  double compute(Vector a, Vector b);
+  double compute(Series a, Series b);
 }

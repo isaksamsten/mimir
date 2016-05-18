@@ -20,14 +20,14 @@
  */
 package org.briljantframework.mimir.distance;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * Manhattan distance, i.e sum of absolute difference
  * <p>
  * Created by Isak Karlsson on 01/09/14.
  */
-public class ManhattanDistance implements Distance<Vector> {
+public class ManhattanDistance implements Distance<Series> {
 
   private static Distance instance = new ManhattanDistance();
 
@@ -38,11 +38,11 @@ public class ManhattanDistance implements Distance<Vector> {
   }
 
   @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     int size = Math.min(a.size(), b.size());
     double distance = 0.0;
     for (int i = 0; i < size; i++) {
-      distance += Math.abs(a.loc().getAsDouble(i) - b.loc().getAsDouble(i));
+      distance += Math.abs(a.loc().getDouble(i) - b.loc().getDouble(i));
     }
     return distance;
   }

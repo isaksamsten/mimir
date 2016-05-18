@@ -22,12 +22,13 @@ package org.briljantframework.mimir.classification.tree.pattern;
 
 import java.util.*;
 
+import org.briljantframework.DoubleSequence;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.Na;
 import org.briljantframework.data.dataframe.DataFrame;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.data.statistics.FastStatistics;
-import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.classification.tree.*;
 import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.distance.Distance;
@@ -57,6 +58,9 @@ public class PatternTree<In> extends TreeClassifier<In> {
   public static final TypeKey<Double> MIN_SPLIT_SIZE =
       TypeKey.of("min_split_size", Double.class, 1.0, i -> i > 0);
 
+  /**
+   * The branch assessment strategy
+   */
   public static final TypeKey<Learner.Assessment> ASSESSMENT =
       TypeKey.of("assessment", Learner.Assessment.class, Learner.Assessment.IG);
 
@@ -78,38 +82,35 @@ public class PatternTree<In> extends TreeClassifier<In> {
    *
    * @author Isak Karlsson
    */
-  public static class Learner<In, E> extends AbstractLearner<In, Object, PatternTree<In>> {
+  static class Learner<In, E> extends AbstractLearner<In, Object, PatternTree<In>> {
 
-    protected final Gain gain = Gain.INFO;
+    final Gain gain = Gain.INFO;
 
     private final PatternFactory<? super In, ? extends E> patternFactory;
     private final PatternDistance<? super In, ? super E> patternDistance;
+    private PatternVisitorFactory<In, E> patternVisitorFactory =
+        new DefaultPatternVisitorFactory<>();
 
     private final ClassSet classSet;
-//    private final Assessment assessment;
+    // private final Assessment assessment;
     private List<?> classes;
 
-    protected Learner(Configurator<In, E> builder, ClassSet classSet, List<?> classes) {
-      this.patternDistance = builder.patternDistance;
-      this.patternFactory = builder.patternFactory;
-      this.set(PATTERN_COUNT, builder.patternCount);
-//      this.assessment = builder.assessment;
-      set(ASSESSMENT, builder.assessment);
-      this.set(MIN_SPLIT_SIZE, builder.minSplit);
-
-      this.classSet = classSet;
-      this.classes = classes;
+    Learner(PatternFactory<? super In, ? extends E> factory,
+        PatternDistance<? super In, ? super E> patternDistance, ClassSet classSet, List<?> classes,
+        TypeMap properties) {
+      this(factory, patternDistance, new DefaultPatternVisitorFactory<>(), classSet, classes, properties);
     }
 
-    public Learner(PatternFactory<? super In, ? extends E> factory,
-        PatternDistance<? super In, ? super E> patternDistance, ClassSet classSet, List<?> classes,
+    Learner(PatternFactory<? super In, ? extends E> factory,
+        PatternDistance<? super In, ? super E> patternDistance,
+        PatternVisitorFactory<In, E> patternVisitorFactory, ClassSet classSet, List<?> classes,
         TypeMap properties) {
       super(properties);
       this.patternFactory = factory;
       this.patternDistance = patternDistance;
+      this.patternVisitorFactory = patternVisitorFactory;
       this.classSet = classSet;
       this.classes = classes;
-//      this.assessment = Assessment.IG;
     }
 
     private Gain getGain() {
@@ -127,8 +128,11 @@ public class PatternTree<In> extends TreeClassifier<In> {
       Params params = new Params();
       params.noExamples = classSet.getTotalWeight();
       TreeNode<In, PatternTree.Threshold<E>> node = build(x, y, classSet, params);
-      DefaultPatternTreeVisitor<In, E> visitor =
-          new DefaultPatternTreeVisitor<>(node, patternDistance);
+      // DefaultPatternTreeVisitor<In, E> visitor =
+      // new DefaultPatternTreeVisitor<>(node, patternDistance);
+      // WeightVisitor
+
+      TreeVisitor<In, ?> visitor = patternVisitorFactory.createVisitor(node, patternDistance);
       return new PatternTree<>(classes, visitor, params.depth);
     }
 
@@ -157,7 +161,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
             missingNode = build(x, y, maxSplit.getMissing(), params);
           }
 
-          Vector.Builder classDist = Vector.Builder.of(double.class);
+          Series.Builder classDist = Series.Builder.of(double.class);
           for (Object target : classSet.getTargets()) {
             classDist.set(target, classSet.get(target).getWeight());
           }
@@ -205,8 +209,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
         boolean lowerImpurity = threshold.impurity < bestThreshold.impurity;
         boolean equalImpuritySmallerGap =
             threshold.impurity == bestThreshold.impurity && threshold.gap > bestThreshold.gap;
-        // || equalImpuritySmallerGap
-        if (lowerImpurity) {
+        if (lowerImpurity || equalImpuritySmallerGap) {
           bestShapelet = subPattern;
           bestThreshold = threshold;
           bestDistanceMap = distanceMap;
@@ -218,14 +221,14 @@ public class PatternTree<In> extends TreeClassifier<In> {
             split(bestDistanceMap, classSet, bestThreshold.threshold, bestShapelet);
         bestSplit.setImpurity(bestThreshold.impurity);
         // PatternTree.Threshold threshold = bestSplit.getThreshold();
-        // threshold.setClassDistances(computeMeanDistance(bestDistanceMap, classSet, y));
+        bestSplit.getThreshold().setClassDistances(computeMeanDistance(bestDistanceMap, classSet, y));
         return bestSplit;
       } else {
         return null;
       }
     }
 
-    private Vector computeMeanDistance(IntDoubleMap bestDistanceMap, ClassSet classSet,
+    private Series computeMeanDistance(IntDoubleMap bestDistanceMap, ClassSet classSet,
         Output<?> y) {
       Map<Object, FastStatistics> cmd = new HashMap<>();
       for (Example example : classSet) {
@@ -238,7 +241,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
         }
         statistics.addValue(distance);
       }
-      Vector.Builder builder = Vector.Builder.of(double.class);
+      Series.Builder builder = Series.Builder.of(double.class);
       for (Map.Entry<Object, FastStatistics> entry : cmd.entrySet()) {
         builder.set(entry.getKey(), entry.getValue().getMean());
       }
@@ -544,11 +547,6 @@ public class PatternTree<In> extends TreeClassifier<In> {
         return new Threshold(Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY,
             Double.NEGATIVE_INFINITY);
       }
-
-      public boolean isBetterThan(Threshold bestThreshold) {
-        return this.impurity < bestThreshold.impurity
-            || (this.impurity == bestThreshold.impurity && this.gap > bestThreshold.gap);
-      }
     }
 
     private static class Params {
@@ -558,43 +556,43 @@ public class PatternTree<In> extends TreeClassifier<In> {
     }
 
     private static class GuessVisitor
-        implements TreeVisitor<Vector, PatternTree.Threshold<Shapelet>> {
+        implements TreeVisitor<Series, PatternTree.Threshold<Shapelet>> {
 
-      private final TreeNode<Vector, PatternTree.Threshold<Shapelet>> root;
-      private final Distance<Vector> distanceMeasure;
+      private final TreeNode<Series, PatternTree.Threshold<Shapelet>> root;
+      private final Distance<DoubleSequence> distanceMeasure;
 
-      private GuessVisitor(TreeNode<Vector, PatternTree.Threshold<Shapelet>> root,
-          Distance<Vector> distanceMeasure) {
+      private GuessVisitor(TreeNode<Series, PatternTree.Threshold<Shapelet>> root,
+          Distance<DoubleSequence> distanceMeasure) {
         this.root = root;
         this.distanceMeasure = distanceMeasure;
       }
 
       @Override
-      public TreeNode<Vector, PatternTree.Threshold<Shapelet>> getRoot() {
+      public TreeNode<Series, PatternTree.Threshold<Shapelet>> getRoot() {
         return root;
       }
 
       @Override
-      public DoubleArray visitLeaf(TreeLeaf<Vector, PatternTree.Threshold<Shapelet>> leaf,
-          Vector example) {
+      public DoubleArray visitLeaf(TreeLeaf<Series, PatternTree.Threshold<Shapelet>> leaf,
+          Series example) {
         return leaf.getProbabilities();
       }
 
       @Override
-      public DoubleArray visitBranch(TreeBranch<Vector, PatternTree.Threshold<Shapelet>> node,
-          Vector example) {
+      public DoubleArray visitBranch(TreeBranch<Series, PatternTree.Threshold<Shapelet>> node,
+          Series example) {
         Shapelet shapelet = node.getThreshold().getPattern();
-        Vector useExample = example;
+        Series useExample = example;
         if (shapelet instanceof ChannelShapelet) {
           int channelIndex = ((ChannelShapelet) shapelet).getChannel();
-          useExample = example.loc().get(Vector.class, channelIndex);
+          useExample = example.loc().get(Series.class, channelIndex);
         }
 
 
         double threshold = node.getThreshold().getDistance();
         if (shapelet.size() > useExample.size()) {
-          Vector mcd = node.getThreshold().getClassDistances();
-          double d = distanceMeasure.compute(useExample, shapelet);
+          Series mcd = node.getThreshold().getClassDistances();
+          double d = distanceMeasure.compute(useExample.loc(), shapelet);
           double sqrt = Math.sqrt((d * d * useExample.size()) / shapelet.size());
           // if (sqrt < threshold) {
           // return visit(node.getLeft(), example);
@@ -605,17 +603,17 @@ public class PatternTree<In> extends TreeClassifier<In> {
           double min = Double.POSITIVE_INFINITY;
           Object minKey = null;
           for (Object key : mcd.getIndex()) {
-            double dist = Math.abs(sqrt - mcd.getAsDouble(key));
+            double dist = Math.abs(sqrt - mcd.getDouble(key));
             if (dist < min) {
               min = dist;
               minKey = key;
             }
           }
 
-          double left =
-              node.getLeft().getClassDistribution().getAsDouble(minKey, Double.NEGATIVE_INFINITY);
-          double right =
-              node.getRight().getClassDistribution().getAsDouble(minKey, Double.NEGATIVE_INFINITY);
+          double left = node.getLeft().getClassDistribution().getDouble(minKey);
+          double right = node.getRight().getClassDistribution().getDouble(minKey);
+          left = Is.NA(left) ? Double.NEGATIVE_INFINITY : left;
+          right = Is.NA(right) ? Double.NEGATIVE_INFINITY : right;
           if (left > right) {
             return visit(node.getLeft(), example);
           } else {
@@ -633,10 +631,10 @@ public class PatternTree<In> extends TreeClassifier<In> {
           double computedDistance;
           // if (shapelet instanceof ChannelShapelet) {
           // int shapeletChannel = ((ChannelShapelet) shapelet).getChannel();
-          // Vector exampleChannel = example.loc().get(Vector.class, shapeletChannel);
+          // Series exampleChannel = example.loc().get(Series.class, shapeletChannel);
           // computedDistance = distanceMeasure.compute(exampleChannel, shapelet);
           // } else {
-          computedDistance = distanceMeasure.compute(useExample, shapelet);
+          computedDistance = distanceMeasure.compute(useExample.loc(), shapelet);
           // }
           if (computedDistance < threshold) {
             return visit(node.getLeft(), example);
@@ -648,16 +646,16 @@ public class PatternTree<In> extends TreeClassifier<In> {
     }
 
     private static class OneNnVisitor
-        implements TreeVisitor<Vector, PatternTree.Threshold<Shapelet>> {
+        implements TreeVisitor<Series, PatternTree.Threshold<Shapelet>> {
 
       public static final EuclideanDistance EUCLIDEAN = EuclideanDistance.getInstance();
-      private final TreeNode<Vector, PatternTree.Threshold<Shapelet>> root;
-      private final Distance<Vector> distanceMeasure;
+      private final TreeNode<Series, PatternTree.Threshold<Shapelet>> root;
+      private final Distance<DoubleSequence> distanceMeasure;
       private final DataFrame x;
-      private final Vector y;
+      private final Series y;
 
-      private OneNnVisitor(TreeNode<Vector, PatternTree.Threshold<Shapelet>> root,
-          Distance<Vector> distanceMeasure, DataFrame x, Vector y) {
+      private OneNnVisitor(TreeNode<Series, PatternTree.Threshold<Shapelet>> root,
+          Distance<DoubleSequence> distanceMeasure, DataFrame x, Series y) {
         this.root = root;
         this.distanceMeasure = distanceMeasure;
         this.x = x;
@@ -665,19 +663,19 @@ public class PatternTree<In> extends TreeClassifier<In> {
       }
 
       @Override
-      public TreeNode<Vector, PatternTree.Threshold<Shapelet>> getRoot() {
+      public TreeNode<Series, PatternTree.Threshold<Shapelet>> getRoot() {
         return root;
       }
 
       @Override
-      public DoubleArray visitLeaf(TreeLeaf<Vector, PatternTree.Threshold<Shapelet>> leaf,
-          Vector example) {
+      public DoubleArray visitLeaf(TreeLeaf<Series, PatternTree.Threshold<Shapelet>> leaf,
+          Series example) {
         return leaf.getProbabilities();
       }
 
       @Override
-      public DoubleArray visitBranch(TreeBranch<Vector, PatternTree.Threshold<Shapelet>> node,
-          Vector example) {
+      public DoubleArray visitBranch(TreeBranch<Series, PatternTree.Threshold<Shapelet>> node,
+          Series example) {
         Shapelet shapelet = node.getThreshold().getPattern();
         double threshold = node.getThreshold().getDistance();
         if (shapelet.size() >= example.size()) {
@@ -686,16 +684,16 @@ public class PatternTree<In> extends TreeClassifier<In> {
           double minDistance = Double.POSITIVE_INFINITY;
           Object cls = null;
           for (Example ex : included) {
-            double distance = EUCLIDEAN.compute(example.loc(), x.getRecord(ex.getIndex()).loc());
+            double distance = EUCLIDEAN.compute(example.loc(), x.loc().getRow(ex.getIndex()).loc());
             if (distance < minDistance) {
               minDistance = distance;
               cls = y.loc().get(Object.class, ex.getIndex());
             }
           }
-          double left =
-              node.getLeft().getClassDistribution().getAsDouble(cls, Double.NEGATIVE_INFINITY);
-          double right =
-              node.getRight().getClassDistribution().getAsDouble(cls, Double.NEGATIVE_INFINITY);
+          double left = node.getLeft().getClassDistribution().getDouble(cls);
+          double right = node.getRight().getClassDistribution().getDouble(cls);
+          left = Is.NA(left) ? Double.NEGATIVE_INFINITY : left;
+          right = Is.NA(right) ? Double.NEGATIVE_INFINITY : right;
           if (left > right) {
             return visit(node.getLeft(), example);
           } else {
@@ -713,10 +711,10 @@ public class PatternTree<In> extends TreeClassifier<In> {
           double computedDistance;
           if (shapelet instanceof ChannelShapelet) {
             int shapeletChannel = ((ChannelShapelet) shapelet).getChannel();
-            Vector exampleChannel = example.loc().get(Vector.class, shapeletChannel);
-            computedDistance = distanceMeasure.compute(exampleChannel, shapelet);
+            Series exampleChannel = example.loc().get(Series.class, shapeletChannel);
+            computedDistance = distanceMeasure.compute(exampleChannel.loc(), shapelet);
           } else {
-            computedDistance = distanceMeasure.compute(example, shapelet);
+            computedDistance = distanceMeasure.compute(example.loc(), shapelet);
           }
           if (computedDistance < threshold) {
             return visit(node.getLeft(), example);
@@ -728,111 +726,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
     }
 
 
-    private static class WeightVisitor
-        implements TreeVisitor<Vector, PatternTree.Threshold<Shapelet>> {
 
-      private final TreeNode<Vector, PatternTree.Threshold<Shapelet>> root;
-      private final Distance<Vector> distanceMeasure;
-      private final double weight;
-
-      public WeightVisitor(TreeNode<Vector, PatternTree.Threshold<Shapelet>> root,
-          Distance<Vector> distanceMeasure) {
-        this(root, distanceMeasure, 1);
-      }
-
-      private WeightVisitor(TreeNode<Vector, PatternTree.Threshold<Shapelet>> root,
-          Distance<Vector> distanceMeasure, double weight) {
-        this.root = root;
-        this.distanceMeasure = distanceMeasure;
-        this.weight = weight;
-      }
-
-      @Override
-      public TreeNode<Vector, PatternTree.Threshold<Shapelet>> getRoot() {
-        return root;
-      }
-
-      @Override
-      public DoubleArray visitLeaf(TreeLeaf<Vector, PatternTree.Threshold<Shapelet>> leaf,
-          Vector example) {
-        return leaf.getProbabilities().times(weight);
-      }
-
-      @Override
-      public DoubleArray visitBranch(TreeBranch<Vector, PatternTree.Threshold<Shapelet>> node,
-          Vector example) {
-        Shapelet shapelet = node.getThreshold().getPattern();
-        double threshold = node.getThreshold().getDistance();
-        Vector useExample = example;
-        if (shapelet instanceof ChannelShapelet) {
-          int channelIndex = ((ChannelShapelet) shapelet).getChannel();
-          useExample = example.loc().get(Vector.class, channelIndex);
-        }
-
-
-        if (shapelet.size() > useExample.size()) {
-          WeightVisitor leftVisitor =
-              new WeightVisitor(root, distanceMeasure, node.getLeft().getWeight());
-          WeightVisitor rightVisitor =
-              new WeightVisitor(root, distanceMeasure, node.getRight().getWeight());
-
-          DoubleArray leftProbabilities = leftVisitor.visit(node.getLeft(), example);
-          DoubleArray rightProbabilities = rightVisitor.visit(node.getRight(), example);
-          return leftProbabilities.plus(rightProbabilities);
-        } else {
-          WeightVisitor visitor = new WeightVisitor(root, distanceMeasure, weight);
-          double computedDistance;
-          computedDistance = distanceMeasure.compute(useExample, shapelet);
-          if (computedDistance < threshold) {
-            return visitor.visit(node.getLeft(), example);
-          } else {
-            return visitor.visit(node.getRight(), example);
-          }
-        }
-      }
-    }
-
-    private static class DefaultPatternTreeVisitor<In, E>
-        implements TreeVisitor<In, PatternTree.Threshold<E>> {
-
-      private final TreeNode<In, PatternTree.Threshold<E>> root;
-      private final PatternDistance<? super In, ? super E> patternDistance;
-
-      private DefaultPatternTreeVisitor(TreeNode<In, PatternTree.Threshold<E>> root,
-          PatternDistance<? super In, ? super E> patternDistance) {
-        this.root = root;
-        this.patternDistance = patternDistance;
-      }
-
-      @Override
-      public TreeNode<In, PatternTree.Threshold<E>> getRoot() {
-        return root;
-      }
-
-      @Override
-      public DoubleArray visitLeaf(TreeLeaf<In, PatternTree.Threshold<E>> leaf, In example) {
-        return leaf.getProbabilities();
-      }
-
-      @Override
-      public DoubleArray visitBranch(TreeBranch<In, PatternTree.Threshold<E>> node, In example) {
-        E shapelet = node.getThreshold().getPattern();
-        double threshold = node.getThreshold().getDistance();
-        double computedDistance = patternDistance.computeDistance(example, shapelet);
-        if (Is.NA(computedDistance)) {
-          if (node.getMissing() != null) {
-            return visit(node.getMissing(), example);
-          }
-          return visit(node.getRight(), example);
-        } else {
-          if (computedDistance < threshold) {
-            return visit(node.getLeft(), example);
-          } else {
-            return visit(node.getRight(), example);
-          }
-        }
-      }
-    }
   }
 
   public static class Configurator<T, E>
@@ -891,7 +785,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
 
     private final T pattern;
     private final double distance;
-    private Vector classDistances;
+    private Series classDistances;
     private ClassSet classSet;
 
     public Threshold(T pattern, double distance, ClassSet classSet) {
@@ -912,11 +806,11 @@ public class PatternTree<In> extends TreeClassifier<In> {
       return distance;
     }
 
-    public Vector getClassDistances() {
+    public Series getClassDistances() {
       return classDistances;
     }
 
-    public void setClassDistances(Vector classDistances) {
+    public void setClassDistances(Series classDistances) {
       this.classDistances = classDistances;
     }
   }

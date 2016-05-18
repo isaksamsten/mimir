@@ -22,15 +22,15 @@ package org.briljantframework.mimir.distance;
 
 import java.util.Objects;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class HammingDistance implements Distance<Vector> {
+public class HammingDistance implements Distance<Series> {
 
   @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     int size = Math.min(a.size(), b.size());
     double distance = 0;
     for (int i = 0; i < size; i++) {

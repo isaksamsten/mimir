@@ -20,12 +20,12 @@
  */
 package org.briljantframework.mimir.distance;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * Created by isak on 10/03/15.
  */
-public class SimilarityDistance implements Distance<Vector> {
+public class SimilarityDistance implements Distance<Series> {
   private final Similarity similarity;
 
   public SimilarityDistance(Similarity similarity) {
@@ -33,7 +33,7 @@ public class SimilarityDistance implements Distance<Vector> {
   }
 
   @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     return -similarity.compute(a, b);
   }
 

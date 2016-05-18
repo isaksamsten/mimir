@@ -25,11 +25,10 @@ import java.util.List;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.classification.tree.*;
 import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.supervised.AbstractLearner;
-import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * Created by isak on 11/16/15.
@@ -83,7 +82,7 @@ public class HyperPlaneTree extends TreeClassifier<Instance> {
       DoubleArray row = DoubleArray.zeros(example.size() + 1);
       row.set(0, 1);
       for (int i = 1; i < example.size(); i++) {
-        row.set(i, example.getAsDouble(i));
+        row.set(i, example.getDouble(i));
       }
       row = take(row, node.getThreshold().getFeatures());
       DoubleArray weights = node.getThreshold().getWeights();
@@ -144,7 +143,7 @@ public class HyperPlaneTree extends TreeClassifier<Instance> {
     }
 
     private TreeSplit<HyperPlaneThreshold> findHyperPlaneRandomPoint(ClassSet set, DoubleArray x,
-        Vector y) {
+        Series y) {
       TreeSplit<HyperPlaneThreshold> bestSplit = null;
       double bestImpurity = Double.POSITIVE_INFINITY;
       for (int i = 0; i < noHyperPlanes; i++) {

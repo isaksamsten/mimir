@@ -21,7 +21,7 @@
 package org.briljantframework.mimir.classification.tree;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public interface TreeNode<In, T> {
 
   List<?> getDomain();
 
-  Vector getClassDistribution();
+  Series getClassDistribution();
 
   DoubleArray visit(TreeVisitor<In, T> visitor, In example);
 }

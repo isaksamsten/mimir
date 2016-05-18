@@ -27,7 +27,7 @@ import java.util.Set;
 import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
-import org.briljantframework.data.vector.Convert;
+import org.briljantframework.data.series.Convert;
 import org.briljantframework.mimir.classification.AbstractClassifier;
 import org.briljantframework.mimir.classification.ClassifierCharacteristic;
 import org.briljantframework.mimir.data.Dataset;

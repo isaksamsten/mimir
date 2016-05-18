@@ -23,15 +23,15 @@ package org.briljantframework.mimir.distance;
 import java.util.function.DoubleSupplier;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * @author Isak Karlsson
  */
-public class EditDistance implements Distance<Vector> {
+public class EditDistance implements Distance<Series> {
 
   @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     if (a.size() < b.size()) {
       return compute(b, a);
     }

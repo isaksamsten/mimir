@@ -31,8 +31,8 @@ import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.Na;
-import org.briljantframework.data.vector.DoubleVector;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.DoubleSeries;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.data.Outputs;
 
@@ -81,8 +81,8 @@ public class ClassifierMeasure {
     }
 
     this.accuracy = accuracy(predicted, truth);
-    this.precision = precision(predicted, truth, classes);
-    this.recall = recall(predicted, truth, classes);
+    this.precision = averagePrecision(predicted, truth, classes);
+    this.recall = averageRecall(predicted, truth, classes);
     this.fMeasure = 2 * precision * recall / (precision + recall);
 
     if (scores != null) {
@@ -94,7 +94,7 @@ public class ClassifierMeasure {
     }
   }
 
-  private double recall(Output<?> prediction, Output<?> truth, List<?> classes) {
+  private double averageRecall(Output<?> prediction, Output<?> truth, List<?> classes) {
     Check.argument(prediction.size() == truth.size(), "illegal size");
     double[] recall = new double[classes.size()];
     for (int i = 0; i < classes.size(); i++) {
@@ -113,7 +113,7 @@ public class ClassifierMeasure {
     return mean(doubleVector(recall));
   }
 
-  public double precision(Output<?> prediction, Output<?> truth, List<?> classes) {
+  public double averagePrecision(Output<?> prediction, Output<?> truth, List<?> classes) {
     Check.argument(prediction.size() == truth.size(), "illegal size");
     double[] precision = new double[classes.size()];
     for (int i = 0; i < classes.size(); i++) {
@@ -199,13 +199,13 @@ public class ClassifierMeasure {
    */
   public static double averageAreaUnderRocCurve(Output<?> p, Output<?> a, DoubleArray score,
       List<?> c) {
-    Vector auc = areaUnderRocCurve(p, a, score, c);
+    Series auc = areaUnderRocCurve(p, a, score, c);
     Map<Object, Integer> dist = Outputs.valueCounts(a);
     double averageAuc = 0;
     for (Object classKey : auc.getIndex()) {
       if (dist.containsKey(classKey)) {
         double classCount = dist.get(classKey);
-        averageAuc += auc.getAsDouble(classKey) * (classCount / a.size());
+        averageAuc += auc.getDouble(classKey) * (classCount / a.size());
       }
     }
     return averageAuc;
@@ -220,11 +220,11 @@ public class ClassifierMeasure {
    *        the j:th column of the score matrix
    * @return a vector of labels (from {@code c}) and its associated area under roc-curve
    */
-  public static Vector areaUnderRocCurve(Output<?> p, Output<?> t, DoubleArray score, List<?> c) {
+  public static Series areaUnderRocCurve(Output<?> p, Output<?> t, DoubleArray score, List<?> c) {
     Check.argument(score.isMatrix() && score.columns() == c.size() && score.rows() == p.size(),
         ILLEGAL_SCORE_MATRIX);
     Check.argument(p.size() == t.size(), PREDICTED_ACTUAL_SIZE);
-    Vector.Builder builder = new DoubleVector.Builder();
+    Series.Builder builder = new DoubleSeries.Builder();
     for (int i = 0; i < c.size(); i++) {
       Object value = c.get(i);
       DoubleArray s = score.getColumn(i);

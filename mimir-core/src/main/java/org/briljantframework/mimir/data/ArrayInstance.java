@@ -26,7 +26,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import org.briljantframework.data.vector.Convert;
+import org.briljantframework.data.series.Convert;
 
 /**
  * @author Isak Karlsson
@@ -35,7 +35,7 @@ public class ArrayInstance extends AbstractList<Object> implements Instance {
 
   private final List<Object> values;
 
-  public ArrayInstance(List<Object> values) {
+  public ArrayInstance(Collection<?> values) {
     this.values = new ArrayList<>(values);
   }
 
@@ -204,7 +204,7 @@ public class ArrayInstance extends AbstractList<Object> implements Instance {
   }
 
   @Override
-  public double getAsDouble(int index) {
+  public double getDouble(int index) {
     return Convert.to(Double.class, values.get(index));
   }
 }

@@ -22,8 +22,9 @@ package org.briljantframework.mimir.data.timeseries;
 
 
 import org.briljantframework.Check;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Type;
+import org.briljantframework.data.series.Series;
+import org.briljantframework.data.series.Type;
+import org.briljantframework.data.series.Types;
 
 /**
  * Linearly connects points.
@@ -40,14 +41,14 @@ public class LinearAggregator implements Aggregator {
 
   @Override
   public Type getAggregatedType() {
-    return Type.DOUBLE;
+    return Types.DOUBLE;
   }
 
   @Override
-  public Vector.Builder partialAggregate(Vector in) {
+  public Series.Builder partialAggregate(Series in) {
     Check.argument(in.size() > targetSize, "Can't linearly oversample data series.");
 
-    Vector.Builder builder = Vector.Builder.withCapacity(Double.class, targetSize);
+    Series.Builder builder = Series.Builder.withCapacity(Double.class, targetSize);
     int bin = in.size() / targetSize;
     int pad = in.size() % targetSize;
 
@@ -65,7 +66,7 @@ public class LinearAggregator implements Aggregator {
       int start = currentIndex;
       int end = currentIndex + binInc - 1;
       double w = (double) 1 / 5;
-      builder.add(lerp(in.loc().getAsDouble(start), in.loc().getAsDouble(end), w));
+      builder.add(lerp(in.loc().getDouble(start), in.loc().getDouble(end), w));
       currentIndex += binInc;
     }
     return builder;

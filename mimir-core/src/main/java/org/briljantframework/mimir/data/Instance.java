@@ -23,8 +23,8 @@ package org.briljantframework.mimir.data;
 import java.util.List;
 
 import org.briljantframework.DoubleSequence;
-import org.briljantframework.data.vector.Convert;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Convert;
+import org.briljantframework.data.series.Series;
 
 /**
  * An m-feature vector of heterogeneous values. Generally, an input collection of instances should
@@ -40,12 +40,12 @@ import org.briljantframework.data.vector.Vector;
  */
 public interface Instance extends DoubleSequence {
 
-  static Instance of(Vector vector) {
-    return new VectorInstance(vector);
-  }
-
   static Instance of(Object... value) {
     return new ImmutableArrayInstance(value);
+  }
+
+  static Instance copyOf(Series vector) {
+    return new SeriesInstance(vector);
   }
 
   static Instance copyOf(List<?> values) {
@@ -100,7 +100,7 @@ public interface Instance extends DoubleSequence {
    * @param index the index
    * @return the value as an int
    */
-  default int getAsInt(int index) {
+  default int getInt(int index) {
     return get(Integer.class, index);
   }
 }

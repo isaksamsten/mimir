@@ -21,7 +21,7 @@
 package org.briljantframework.mimir.data.transform;
 
 import org.briljantframework.DoubleSequence;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.data.Input;
 
 /**
@@ -37,8 +37,8 @@ public class MinMaxNormalizer<T extends DoubleSequence> implements Transformatio
 
   @Override
   public Transformer<T, T> fit(Input<? extends T> x) {
-    Vector.Builder min = Vector.Builder.of(Double.class);
-    Vector.Builder max = Vector.Builder.of(Double.class);
+    Series.Builder min = Series.Builder.of(Double.class);
+    Series.Builder max = Series.Builder.of(Double.class);
     // for (Object columnKey : df) {
     // TODO: 11/14/15 Only consider numerical vectors
     // StatisticalSummary summary = df.get(columnKey).statisticalSummary();
@@ -57,10 +57,10 @@ public class MinMaxNormalizer<T extends DoubleSequence> implements Transformatio
   private static class MinMaxNormalizeTransformer<T extends DoubleSequence>
       implements Transformer<T, T> {
 
-    private final Vector max;
-    private final Vector min;
+    private final Series max;
+    private final Series min;
 
-    public MinMaxNormalizeTransformer(Vector max, Vector min) {
+    public MinMaxNormalizeTransformer(Series max, Series min) {
       this.max = max;
       this.min = min;
     }
@@ -73,8 +73,8 @@ public class MinMaxNormalizer<T extends DoubleSequence> implements Transformatio
       // TODO: 11/14/15 Only consider numerical vectors
       // double min = this.min.getAsDouble(columnKey);
       // double max = this.max.getAsDouble(columnKey);
-      // Vector.Builder normalized = Vector.Builder.of(Double.class);
-      // Vector column = x.get(columnKey);
+      // Series.Builder normalized = Series.Builder.of(Double.class);
+      // Series column = x.get(columnKey);
       // for (int i = 0, size = column.size(); i < size; i++) {
       // double v = column.loc().getAsDouble(i);
       // if (Is.NA(v)) {

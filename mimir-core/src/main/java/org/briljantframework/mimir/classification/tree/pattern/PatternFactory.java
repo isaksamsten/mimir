@@ -20,6 +20,7 @@
  */
 package org.briljantframework.mimir.classification.tree.pattern;
 
+import org.briljantframework.mimir.classification.tree.TreeVisitor;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 
@@ -28,5 +29,4 @@ import org.briljantframework.mimir.classification.tree.ClassSet;
  */
 public interface PatternFactory<T, S> {
   S createPattern(Input<? extends T> inputs, ClassSet classSet);
-
 }

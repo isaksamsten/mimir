@@ -23,7 +23,7 @@ package org.briljantframework.mimir.classification.tree;
 import java.util.List;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * @author Isak Karlsson
@@ -74,8 +74,8 @@ public final class TreeLeaf<In, T> implements TreeNode<In, T> {
   }
 
   @Override
-  public Vector getClassDistribution() {
-    Vector.Builder dist = Vector.Builder.of(double.class);
+  public Series getClassDistribution() {
+    Series.Builder dist = Series.Builder.of(double.class);
     for (int i = 0; i < probabilities.size(); i++) {
       dist.set(getDomain().get(i), probabilities.get(i));
     }

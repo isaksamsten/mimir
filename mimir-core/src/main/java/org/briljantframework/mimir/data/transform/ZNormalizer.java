@@ -56,7 +56,7 @@ public class ZNormalizer<T extends Instance> implements Transformation<T, Instan
       Check.state(instance.size() == columns);
       for (int i = 0; i < instance.size(); i++) {
         if (Number.class.isAssignableFrom(featureType.get(i))) {
-          double value = instance.getAsDouble(i);
+          double value = instance.getDouble(i);
           if (!Is.NA(value)) {
             stats.get(i).addValue(value);
           }
@@ -92,7 +92,7 @@ public class ZNormalizer<T extends Instance> implements Transformation<T, Instan
       Check.state(x.size() == summaries.size());
       ArrayInstance o = new ArrayInstance();
       for (int i = 0; i < x.size(); i++) {
-        double value = x.getAsDouble(i);
+        double value = x.getDouble(i);
         if (Is.NA(value) || !Number.class.isAssignableFrom(featureTypes.get(i))) {
           o.add(x.get(i));
         } else {

@@ -20,9 +20,6 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
-import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**

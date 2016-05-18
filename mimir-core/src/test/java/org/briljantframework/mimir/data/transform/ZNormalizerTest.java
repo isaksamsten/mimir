@@ -21,7 +21,6 @@
 package org.briljantframework.mimir.data.transform;
 
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Inputs;
@@ -36,7 +35,7 @@ public class ZNormalizerTest {
   @Test
   public void fit() throws Exception {
     DataFrame x = Datasets.loadIris();
-    Input<Instance> in = Inputs.newInput(x);
+    Input<Instance> in = Inputs.asInput(x);
 
     Transformation<Instance, Instance> transformation = new ZNormalizer<>();
     Transformer<Instance, Instance> transformer = transformation.fit(in);

@@ -20,13 +20,6 @@
  */
 package org.briljantframework.mimir.regression;
 
-import org.briljantframework.Check;
-import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.Is;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.dataframe.DataFrames;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**

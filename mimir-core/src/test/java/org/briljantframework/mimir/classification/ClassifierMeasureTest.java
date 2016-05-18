@@ -22,11 +22,11 @@ package org.briljantframework.mimir.classification;
 
 import static org.junit.Assert.assertEquals;
 
-import org.briljantframework.data.vector.Vector;
+import java.util.Arrays;
+
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.data.ArrayOutput;
 import org.junit.Test;
-
-import java.util.Arrays;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -35,10 +35,10 @@ public class ClassifierMeasureTest {
 
   @Test
   public void testGetPrecision() throws Exception {
-    Vector t = Vector.of(1, 1, 1, 2);
-    Vector p = Vector.of(1, 1, 2, 1);
-    ClassifierMeasure cm =
-        new ClassifierMeasure(new ArrayOutput<>(p.toList()), new ArrayOutput<>(t.toList()), null, Arrays.asList(1, 2));
+    Series t = Series.of(1, 1, 1, 2);
+    Series p = Series.of(1, 1, 2, 1);
+    ClassifierMeasure cm = new ClassifierMeasure(new ArrayOutput<>(p),
+        new ArrayOutput<>(t), null, Arrays.asList(1, 2));
     assertEquals(0.333, cm.getPrecision(), 0.01);
     assertEquals(0.333, cm.getRecall(), 0.01);
     assertEquals(0.5, cm.getAccuracy(), 0.01);
