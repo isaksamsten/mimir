@@ -37,7 +37,8 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class ClassifierValidator<In, T extends Classifier<In>> extends Validator<In, Object, T> {
+public class ClassifierValidator<In, T extends Classifier<In, Object>>
+    extends Validator<In, Object, T> {
 
   public ClassifierValidator(Set<? extends Evaluator<In, Object, ? super T>> evaluators,
       Partitioner<In, Object> partitioner) {
@@ -49,8 +50,7 @@ public class ClassifierValidator<In, T extends Classifier<In>> extends Validator
   }
 
   @Override
-  protected T fit(Predictor.Learner<In, Object, ? extends T> learner, Input<In> x,
-      Output<Object> y) {
+  protected T fit(Predictor.Learner<In, Object, ? extends T> learner, Input<In> x, Output<?> y) {
     return learner.fit(x, y);
   }
 
@@ -76,7 +76,7 @@ public class ClassifierValidator<In, T extends Classifier<In>> extends Validator
     }
   }
 
-  public static <In, T extends Classifier<In>> ClassifierValidator<In, T> holdoutValidator(
+  public static <In, T extends Classifier<In, Object>> ClassifierValidator<In, T> holdoutValidator(
       Input<? extends In> testX, Output<?> testY) {
     return createValidator(new Partitioner<In, Object>() {
       @Override
@@ -88,21 +88,21 @@ public class ClassifierValidator<In, T extends Classifier<In>> extends Validator
     });
   }
 
-  public static <In, T extends Classifier<In>> ClassifierValidator<In, T> splitValidator(
+  public static <In, T extends Classifier<In, Object>> ClassifierValidator<In, T> splitValidator(
       double testFraction) {
     return createValidator(new SplitPartitioner<>(testFraction));
   }
 
-  public static <In, T extends Classifier<In>> ClassifierValidator<In, T> leaveOneOutValidator() {
+  public static <In, T extends Classifier<In, Object>> ClassifierValidator<In, T> leaveOneOutValidator() {
     return createValidator(new LeaveOneOutPartitioner<>());
   }
 
-  public static <In, T extends Classifier<In>> ClassifierValidator<In, T> crossValidator(
+  public static <In, T extends Classifier<In, Object>> ClassifierValidator<In, T> crossValidator(
       int folds) {
     return createValidator(new FoldPartitioner<>(folds));
   }
 
-  private static <In, T extends Classifier<In>> ClassifierValidator<In, T> createValidator(
+  private static <In, T extends Classifier<In, Object>> ClassifierValidator<In, T> createValidator(
       Partitioner<In, Object> partitioner) {
     ClassifierValidator<In, T> v = new ClassifierValidator<>(partitioner);
     v.add(new ClassifierEvaluator<>());

@@ -53,15 +53,15 @@ import org.briljantframework.mimir.supervised.Characteristic;
  *
  * @author Isak Karlsson
  */
-public class NearestNeighbours<In> extends AbstractClassifier<In> {
+public class NearestNeighbours<In,Out> extends AbstractClassifier<In,Out> {
 
   private final Input<? extends In> x;
-  private final Output<?> y;
+  private final Output<? extends Out> y;
   private final Distance<In> distance;
   private final int k;
 
-  private NearestNeighbours(Input<? extends In> x, Output<?> y, Distance<In> distance, int k,
-      List<?> classes) {
+  private NearestNeighbours(Input<? extends In> x, Output<? extends Out> y, Distance<In> distance, int k,
+      List<Out> classes) {
     super(classes);
     this.x = x;
     this.y = y;
@@ -133,7 +133,7 @@ public class NearestNeighbours<In> extends AbstractClassifier<In> {
   /**
    * A nearest neighbour learner learns a nearest neighbours classifier
    */
-  public static class Learner<In> extends AbstractLearner<In, Object, NearestNeighbours<In>> {
+  public static class Learner<In,Out> extends AbstractLearner<In, Out, NearestNeighbours<In,Out>> {
 
     public static final TypeKey<Integer> NEIGHBORS = TypeKey.of("neighbors", Integer.class, 1);
     private final Distance<In> distance;
@@ -144,7 +144,7 @@ public class NearestNeighbours<In> extends AbstractClassifier<In> {
     }
 
     @Override
-    public NearestNeighbours<In> fit(Input<? extends In> x, Output<?> y) {
+    public NearestNeighbours<In,Out> fit(Input<? extends In> x, Output<? extends Out> y) {
       Check.argument(x.size() == y.size(), "The size of x and y don't match: %s != %s.", x.size(),
           y.size());
       return new NearestNeighbours<>(x, y, distance, get(NEIGHBORS), Outputs.unique(y));

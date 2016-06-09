@@ -23,9 +23,11 @@ package org.briljantframework.mimir.data;
 import java.util.function.Function;
 
 /**
+ * A key with an associated type. Referential equality and identity hash code is guaranteed.
+ *
  * @author Isak Karlsson
  */
-public interface TypeKey<T> {
+public abstract class TypeKey<T> {
 
   /**
    * Returns a key with the specified name and type
@@ -35,7 +37,7 @@ public interface TypeKey<T> {
    * @param <T> the class
    * @return a new key
    */
-  static <T> TypeKey<T> of(String name, Class<T> cls) {
+  public static <T> TypeKey<T> of(String name, Class<T> cls) {
     return new StringTypeKey<>(cls, name);
   }
 
@@ -48,7 +50,7 @@ public interface TypeKey<T> {
    * @param <T> the class
    * @return a new key
    */
-  static <T> TypeKey<T> of(String name, Class<T> cls, T defaultValue) {
+  public static <T> TypeKey<T> of(String name, Class<T> cls, T defaultValue) {
     return new StringTypeKey<>(cls, name, defaultValue);
   }
 
@@ -62,7 +64,7 @@ public interface TypeKey<T> {
    * @param <T> the class
    * @return a new key
    */
-  static <T> TypeKey<T> of(String name, Class<T> cls, T defaultValue,
+  public static <T> TypeKey<T> of(String name, Class<T> cls, T defaultValue,
       Function<? super T, Boolean> validator) {
     return new StringTypeKey<T>(cls, name, defaultValue, validator);
   }
@@ -72,14 +74,14 @@ public interface TypeKey<T> {
    * 
    * @return the class of the property
    */
-  Class<T> getType();
+  public abstract Class<T> getType();
 
   /**
    * Get the default value for this key, or null if no default value.
    * 
    * @return the default value
    */
-  default T defaultValue() {
+  public T defaultValue() {
     return null;
   }
 
@@ -89,22 +91,31 @@ public interface TypeKey<T> {
    * @param value the value
    * @return true if the value is valid (default: value != null)
    */
-  default boolean validate(T value) {
+  public boolean validate(T value) {
     return value != null;
   }
 
   /**
    * Return the name of the property
-   * 
+   *
    * @return the property name
    */
-  String getName();
+  abstract String getName();
 
   /**
    * Return the description of the property
    * 
    * @return the property description
    */
-  String getDescription();
+  abstract String getDescription();
 
+  @Override
+  public final boolean equals(Object obj) {
+    return this == obj;
+  }
+
+  @Override
+  public final int hashCode() {
+    return System.identityHashCode(this);
+  }
 }

@@ -372,21 +372,21 @@ public class RandomPatternForestTest {
   public DataFrame vectorize(DataFrame x) {
     Set<Object> columns = new HashSet<>();
     for (Object recordKey : x.getIndex().keySet()) {
-      List<Object> list = x.getRow(recordKey).asList();
+      List<Object> list = x.ix().getRow(recordKey).asList();
       columns.addAll(list.subList(1, list.size() - 1));
     }
 
     DataFrame.Builder builder = DataFrame.builder();
-    builder.set("Class", x.get(0));
+    builder.setColumn("Class", x.get(0));
     for (Object column : columns) {
       if (StringUtils.isWhitespace(column.toString())) {
         continue;
       }
       Series.Builder columnBuilder = Series.Builder.of(Boolean.class);
       for (Object recordKey : x.getIndex().keySet()) {
-        columnBuilder.add(x.getRow(recordKey).asList().contains(column));
+        columnBuilder.add(x.ix().getRow(recordKey).asList().contains(column));
       }
-      builder.set(column, columnBuilder);
+      builder.setColumn(column, columnBuilder);
     }
 
     return builder.build();

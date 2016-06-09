@@ -45,7 +45,7 @@ public class EnsembleClassifierMeasure<In> {
   private double mse;
   private double baseModelError;
 
-  public EnsembleClassifierMeasure(Ensemble<In> ensemble, Input<? extends In> trainingData,
+  public EnsembleClassifierMeasure(Ensemble<In,?> ensemble, Input<? extends In> trainingData,
       Output<?> trainingTarget, Input<? extends In> validationData, Output<?> validationTarget) {
     initializeStrengthCorrelation(ensemble, trainingData, trainingTarget);
     initializeBiasVarianceDecomposition(ensemble, validationData, validationTarget);
@@ -107,18 +107,18 @@ public class EnsembleClassifierMeasure<In> {
     return argMax;
   }
 
-  private void initializeStrengthCorrelation(Ensemble<In> ensemble, Input<? extends In> x,
+  private void initializeStrengthCorrelation(Ensemble<In,?> ensemble, Input<? extends In> x,
       Output<?> y) {
     List<?> classes = ensemble.getClasses();
     BooleanArray oobIndicator = ensemble.getOobIndicator();
-    List<Classifier<In>> members = ensemble.getEnsembleMembers();
+    List<? extends Classifier<In,?>> members = ensemble.getEnsembleMembers();
 
     // Store the out-of-bag and in-bag probability estimates
     DoubleArray oobEstimates = DoubleArray.zeros(x.size(), classes.size());
     DoubleArray inbEstimates = DoubleArray.zeros(x.size(), classes.size());
 
     // Count the number of times each training sample have been included
-    IntArray counts = Arrays.sum(1, oobIndicator.asIntArray());
+    IntArray counts = Arrays.sum(1, oobIndicator.intArray());
 
     // Compute the in-bag and out-of-bag estimates for all examples
     DoubleAdder oobAccuracy = new DoubleAdder();
@@ -156,7 +156,7 @@ public class EnsembleClassifierMeasure<In> {
     double variance = strengthSquare - s2;
     double std = 0;
     for (int j = 0; j < members.size(); j++) {
-      Classifier<In> member = members.get(j);
+      Classifier<In,?> member = members.get(j);
       AtomicInteger oobSizeA = new AtomicInteger(0);
       DoubleAdder p1A = new DoubleAdder();
       DoubleAdder p2A = new DoubleAdder();
@@ -185,7 +185,7 @@ public class EnsembleClassifierMeasure<In> {
 
   }
 
-  private void initializeBiasVarianceDecomposition(Ensemble<In> ensemble, Input<? extends In> x,
+  private void initializeBiasVarianceDecomposition(Ensemble<In,?> ensemble, Input<? extends In> x,
       Output<?> y) {
     List<?> classes = ensemble.getClasses();
 
@@ -199,11 +199,11 @@ public class EnsembleClassifierMeasure<In> {
 
 
       /* Stores the probability of the m:th member for the j:th class */
-      List<Classifier<In>> members = ensemble.getEnsembleMembers();
+      List<? extends Classifier<In,?>> members = ensemble.getEnsembleMembers();
       int estimators = members.size();
       DoubleArray memberEstimates = DoubleArray.zeros(estimators, classes.size());
       for (int j = 0; j < estimators; j++) {
-        Classifier<In> member = members.get(j);
+        Classifier<In,?> member = members.get(j);
         memberEstimates.setRow(j, member.estimate(record));
       }
 

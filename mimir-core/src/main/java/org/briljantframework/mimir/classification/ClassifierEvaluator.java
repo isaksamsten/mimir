@@ -27,10 +27,10 @@ import org.briljantframework.mimir.evaluation.Evaluator;
 /**
  * @author Isak Karlsson
  */
-public class ClassifierEvaluator<In> implements Evaluator<In, Object, Classifier<In>> {
+public class ClassifierEvaluator<In> implements Evaluator<In, Object, Classifier<In, Object>> {
 
   @Override
-  public void accept(EvaluationContext<? extends In, ?, ? extends Classifier<In>> ctx) {
+  public void accept(EvaluationContext<? extends In, ?, ? extends Classifier<In, Object>> ctx) {
     Output<?> predictions = ctx.getPredictions();
     Output<?> truth = ctx.getPartition().getValidationTarget();
     ClassifierMeasure cm = new ClassifierMeasure(predictions, truth, ctx.getEstimates(),

@@ -67,7 +67,7 @@ class TestIt {
     // JFreeChart chart = testStatisticalDataFrameChart();
     Array<Integer> x = Array.of(1, 2, 3, 4, 5, 6).reshape(3, 2);
     Array<Integer> y = Array.of(1, 2, 3, 4, 5, 6).reshape(3, 2);
-    XYDataset ds = new ArrayXYDataset(x, y, Array.of("A", "B").asList());
+    XYDataset ds = new ArrayXYDataset(x, y, java.util.Arrays.asList("A", "B"));
 
     XYPlot chart =
         new XYPlot(ds, new NumberAxis(), new NumberAxis(), new XYLineAndShapeRenderer(true, true));

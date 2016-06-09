@@ -36,13 +36,13 @@ import org.briljantframework.mimir.supervised.Characteristic;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class DecisionTree extends TreeClassifier<Instance> {
+public class DecisionTree<Out> extends TreeClassifier<Instance, Out> {
 
   public static TypeKey<Double> MIN_LEAF_SIZE = TypeKey.of("min_leaf_size", Double.class, 1.0);
   public static TypeKey<Splitter> SPLITTER = TypeKey.of("splitter", Splitter.class);
   private final int depth;
 
-  private DecisionTree(List<?> classes, int depth,
+  private DecisionTree(List<Out> classes, int depth,
       TreeVisitor<Instance, ValueThreshold> predictionVisitor) {
     super(classes, predictionVisitor);
     this.depth = depth;
@@ -60,33 +60,33 @@ public class DecisionTree extends TreeClassifier<Instance> {
   /**
    * @author Isak Karlsson
    */
-  public static class Learner extends AbstractLearner<Instance, Object, DecisionTree> {
+  public static class Learner<Out> extends AbstractLearner<Instance, Out, DecisionTree<Out>> {
 
     protected ClassSet classSet;
-    protected List<?> classes = null;
+    protected List<Out> classes = null;
 
-    public Learner(Splitter splitter) {
-      this(splitter, null, null);
-    }
-
-    protected Learner(Splitter splitter, ClassSet classSet, List<?> classes) {
-      set(SPLITTER, splitter);
+    protected Learner(TypeMap parameters, List<Out> classes, ClassSet classSet) {
+      super(parameters);
       this.classSet = classSet;
       this.classes = classes;
     }
 
+    public Learner(TypeMap parameters) {
+
+    }
+
     @Override
-    public DecisionTree fit(Input<? extends Instance> in, Output<?> out) {
+    public DecisionTree<Out> fit(Input<? extends Instance> in, Output<? extends Out> out) {
       Check.argument(Dataset.isDataset(in), "requires a dataset");
       ClassSet classSet = this.classSet;
-      List<?> classes = this.classes != null ? this.classes : Outputs.unique(out);
+      List<Out> classes = this.classes != null ? this.classes : Outputs.unique(out);
       if (classSet == null) {
         classSet = new ClassSet(out, classes);
       }
 
       Params p = new Params();
       TreeNode<Instance, ValueThreshold> node = build(in, out, p, classSet);
-      return new DecisionTree(classes, p.depth, new SimplePredictionVisitor(node));
+      return new DecisionTree<>(classes, p.depth, new SimplePredictionVisitor(node));
     }
 
     protected TreeNode<Instance, ValueThreshold> build(Input<? extends Instance> frame,

@@ -28,7 +28,7 @@ import java.util.function.Function;
  * 
  * @author Isak Karlsson
  */
-class StringTypeKey<T> implements TypeKey<T> {
+class StringTypeKey<T> extends TypeKey<T> {
   private final Class<T> cls;
   private final String name;
   private final T defaultValue;
@@ -74,27 +74,27 @@ class StringTypeKey<T> implements TypeKey<T> {
     return validator.apply(value);
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
-
-    StringTypeKey<?> that = (StringTypeKey<?>) o;
-    if (cls != null ? !cls.equals(that.cls) : that.cls != null) {
-      return false;
-    } else {
-      return name != null ? name.equals(that.name) : that.name == null;
-    }
-  }
-
-  @Override
-  public int hashCode() {
-    int result = cls != null ? cls.hashCode() : 0;
-    result = 31 * result + (name != null ? name.hashCode() : 0);
-    return result;
-  }
+//  @Override
+//  public boolean equals(Object o) {
+//    if (this == o)
+//      return true;
+//    if (o == null || getClass() != o.getClass())
+//      return false;
+//
+//    StringTypeKey<?> that = (StringTypeKey<?>) o;
+//    if (cls != null ? !cls.equals(that.cls) : that.cls != null) {
+//      return false;
+//    } else {
+//      return name != null ? name.equals(that.name) : that.name == null;
+//    }
+//  }
+//
+//  @Override
+//  public int hashCode() {
+//    int result = cls != null ? cls.hashCode() : 0;
+//    result = 31 * result + (name != null ? name.hashCode() : 0);
+//    return result;
+//  }
 
   @Override
   public String toString() {

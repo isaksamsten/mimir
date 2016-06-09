@@ -159,7 +159,7 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
    * @param y the input label
    */
   protected abstract P fit(Predictor.Learner<In, Out, ? extends P> learner, Input<In> x,
-      Output<Out> y);
+      Output<?extends Out> y);
 
   protected abstract void predict(MutableEvaluationContext<In, Out, ? extends P> ctx);
 

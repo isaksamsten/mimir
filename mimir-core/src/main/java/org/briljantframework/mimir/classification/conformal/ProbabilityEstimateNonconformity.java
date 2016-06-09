@@ -27,9 +27,9 @@ import java.util.Objects;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
+import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.classification.Classifier;
 
 /**
  * Implements a nonconformity scorer based on an underlying classifier and a probability cost
@@ -37,8 +37,8 @@ import org.briljantframework.mimir.classification.Classifier;
  * 
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class ProbabilityEstimateNonconformity<In, T extends Classifier<In>>
-    implements ClassifierNonconformity<In> {
+public class ProbabilityEstimateNonconformity<In, Out, T extends Classifier<In, Out>>
+    implements ClassifierNonconformity<In, Out> {
 
   private final T classifier;
   private final ProbabilityCostFunction probabilityCostFunction;
@@ -68,7 +68,7 @@ public class ProbabilityEstimateNonconformity<In, T extends Classifier<In>>
   }
 
   @Override
-  public DoubleArray estimate(Input<? extends In> x, Output<?> y) {
+  public DoubleArray estimate(Input<? extends In> x, Output<? extends Out> y) {
     Objects.requireNonNull(x, "Input data required.");
     Objects.requireNonNull(y, "Input target required.");
     Check.argument(x.size() == y.size(), "The size of input data and input target don't match.");
@@ -78,7 +78,7 @@ public class ProbabilityEstimateNonconformity<In, T extends Classifier<In>>
   }
 
   @Override
-  public double estimate(In example, Object label) {
+  public double estimate(In example, Out label) {
     Objects.requireNonNull(example, "Require an example.");
     int trueClassIndex = getClasses().indexOf(label);
     if (trueClassIndex < 0) {
@@ -89,17 +89,17 @@ public class ProbabilityEstimateNonconformity<In, T extends Classifier<In>>
   }
 
   @Override
-  public List<?> getClasses() {
+  public List<Out> getClasses() {
     return getClassifier().getClasses();
   }
 
   /**
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  public static class Learner<In, T extends Classifier<In>>
-      implements ClassifierNonconformity.Learner<In, ProbabilityEstimateNonconformity<In, T>> {
+  public static class Learner<In, Out, T extends Classifier<In, Out>> implements
+      ClassifierNonconformity.Learner<In, Out, ProbabilityEstimateNonconformity<In, Out, T>> {
 
-    private final Classifier.Learner<In, Object, ? extends T> classifier;
+    private final Classifier.Learner<In, Out, ? extends T> classifier;
     private final ProbabilityCostFunction probabilityCostFunction;
 
     /**
@@ -108,7 +108,7 @@ public class ProbabilityEstimateNonconformity<In, T extends Classifier<In>>
      * @param classifier the classifier
      * @param probabilityCostFunction the probability cost function
      */
-    public Learner(Classifier.Learner<In, Object, ? extends T> classifier,
+    public Learner(Classifier.Learner<In, Out, ? extends T> classifier,
         ProbabilityCostFunction probabilityCostFunction) {
       this.classifier = Objects.requireNonNull(classifier, "A classifier is required.");
       this.probabilityCostFunction =
@@ -120,7 +120,7 @@ public class ProbabilityEstimateNonconformity<In, T extends Classifier<In>>
      * 
      * @return the classifier learner
      */
-    protected Classifier.Learner<In, Object, ? extends T> getClassifierLearner() {
+    protected Classifier.Learner<In, Out, ? extends T> getClassifierLearner() {
       return classifier;
     }
 
@@ -134,7 +134,8 @@ public class ProbabilityEstimateNonconformity<In, T extends Classifier<In>>
     }
 
     @Override
-    public ProbabilityEstimateNonconformity<In, T> fit(Input<? extends In> x, Output<?> y) {
+    public ProbabilityEstimateNonconformity<In, Out, T> fit(Input<? extends In> x,
+        Output<? extends Out> y) {
       Objects.requireNonNull(x, "Input data is required.");
       Objects.requireNonNull(y, "Input target is required.");
       Check.argument(x.size() == y.size(), "The size of input data and input target don't match");

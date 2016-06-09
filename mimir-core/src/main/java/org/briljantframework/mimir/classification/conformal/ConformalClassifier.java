@@ -35,7 +35,7 @@ import org.briljantframework.mimir.data.TypeKey;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface ConformalClassifier<In> extends Classifier<In> {
+public interface ConformalClassifier<In, Out> extends Classifier<In, Out> {
 
   TypeKey<Boolean> STOCHASTIC_SMOOTHING = TypeKey.of("stochastic_smoothing", Boolean.class, true);
 
@@ -62,7 +62,7 @@ public interface ConformalClassifier<In> extends Classifier<In> {
    * @return a class-label or {@code NA}
    */
   @Override
-  Object predict(In record);
+  Out predict(In record);
 
   /**
    * Returns an {@code [n-samples, n-classes]} double array of p-values associated with each class.

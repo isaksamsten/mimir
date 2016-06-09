@@ -34,7 +34,7 @@ import org.briljantframework.mimir.evaluation.MeasureCollection;
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public class ConformalClassifierEvaluator<In>
-    implements Evaluator<In, Object, ConformalClassifier<In>> {
+    implements Evaluator<In, Object, ConformalClassifier<In, Object>> {
 
   private final double significance;
 
@@ -60,7 +60,7 @@ public class ConformalClassifierEvaluator<In>
   }
 
   @Override
-  public void accept(EvaluationContext<? extends In, ?, ? extends ConformalClassifier<In>> ctx) {
+  public void accept(EvaluationContext<? extends In, ?, ? extends ConformalClassifier<In, Object>> ctx) {
     Output<?> truth = ctx.getPartition().getValidationTarget();
     List<?> classes = ctx.getPredictor().getClasses();
     DoubleArray scores = ctx.getEstimates();

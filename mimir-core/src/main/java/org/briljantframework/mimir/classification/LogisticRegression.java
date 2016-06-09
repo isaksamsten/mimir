@@ -46,7 +46,7 @@ import org.briljantframework.optimize.NonlinearOptimizer;
 /**
  * @author Isak Karlsson
  */
-public class LogisticRegression extends AbstractClassifier<Instance> {
+public class LogisticRegression<Out> extends AbstractClassifier<Instance, Out> {
 
   /**
    * Maximum number of iterations before convergence.
@@ -69,7 +69,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
   private final double logLoss;
 
   private LogisticRegression(Series names, DoubleArray coefficients, double logLoss,
-      List<?> classes) {
+      List<Out> classes) {
     super(classes);
     this.names = names;
     this.coefficients = coefficients;
@@ -102,7 +102,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
         probs.set(i, Math.exp(probs.get(i) - max));
         z += probs.get(i);
       }
-      probs.divAssign(z);
+      Arrays.scal(1 / z, probs);
       return probs;
     } else {
       double prob = logistic(Arrays.inner(x, coefficients));
@@ -146,10 +146,11 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
   }
 
   public static class Evaluator implements
-      org.briljantframework.mimir.evaluation.Evaluator<Instance, Object, LogisticRegression> {
+      org.briljantframework.mimir.evaluation.Evaluator<Instance, Object, LogisticRegression<Object>> {
 
     @Override
-    public void accept(EvaluationContext<? extends Instance, ?, ? extends LogisticRegression> ctx) {
+    public void accept(
+        EvaluationContext<? extends Instance, ?, ? extends LogisticRegression<Object>> ctx) {
       ctx.getMeasureCollection().add("logLoss", MeasureSample.IN_SAMPLE,
           ctx.getPredictor().getLogLoss());
     }
@@ -167,7 +168,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
    *
    * @author Isak Karlsson
    */
-  public static class Learner extends AbstractLearner<Instance, Object, LogisticRegression> {
+  public static class Learner<Out> extends AbstractLearner<Instance, Out, LogisticRegression<Out>> {
 
     static final double GRADIENT_TOLERANCE = 1E-5;
     static final int MEMORY = 20;
@@ -177,7 +178,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
     }
 
     @Override
-    public LogisticRegression fit(Input<? extends Instance> in, Output<?> out) {
+    public LogisticRegression<Out> fit(Input<? extends Instance> in, Output<? extends Out> out) {
       Check.argument(Dataset.isDataset(in) && Dataset.isAllNumeric(in),
           "All features must be numeric.");
 
@@ -185,7 +186,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
       int m = in.getProperty(Dataset.FEATURE_SIZE);
       Check.argument(n == out.size(),
           "The number of training instances must equal the number of targets");
-      List<?> classes = Outputs.unique(out);
+      List<Out> classes = Outputs.unique(out);
       DoubleArray x = constructInputMatrix(in, n, m);
       IntArray y = Arrays.intArray(out.size());
       for (int i = 0; i < y.size(); i++) {
@@ -216,7 +217,7 @@ public class LogisticRegression extends AbstractClassifier<Instance> {
           names.add(String.valueOf(i));
         }
       }
-      return new LogisticRegression(names.build(), theta, logLoss, classes);
+      return new LogisticRegression<>(names.build(), theta, logLoss, classes);
     }
 
     DoubleArray constructInputMatrix(Input<? extends Instance> input, int n, int m) {

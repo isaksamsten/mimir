@@ -62,7 +62,7 @@ public final class MeasureCollection {
       // TODO: don't ignore in sample measures
       // TODO: ensure that all measures are of the same length
       // TODO: measures with both in-sample and out-sample will be overwritten
-      df.set(entry.getKey().measure, entry.getValue());
+      df.setColumn(entry.getKey().measure, entry.getValue());
     }
     return DataFrames.sortColumns(df.build(), Comparator.comparing(Object::toString));
   }

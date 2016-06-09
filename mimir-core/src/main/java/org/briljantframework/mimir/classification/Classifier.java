@@ -57,7 +57,7 @@ import org.briljantframework.mimir.supervised.Predictor;
  *
  * @author Isak Karlsson
  */
-public interface Classifier<In> extends Predictor<In, Object> {
+public interface Classifier<In, Out> extends Predictor<In, Out> {
 
   /**
    * The classes this predictor is able to predict, i.e. its co-domain. Note that the i:th element
@@ -66,7 +66,7 @@ public interface Classifier<In> extends Predictor<In, Object> {
    *
    * @return the list of classes.
    */
-  List<?> getClasses();
+  List<Out> getClasses();
 
   /**
    * Estimates the posterior probabilities for all objects in the given input

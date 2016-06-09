@@ -20,6 +20,9 @@
  */
 package org.briljantframework.mimir.classification;
 
+import static org.briljantframework.array.Arrays.divAssign;
+import static org.briljantframework.array.Arrays.plusAssign;
+
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -31,7 +34,6 @@ import org.briljantframework.Check;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.tree.ClassSet;
-import org.briljantframework.mimir.data.Dataset;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.TypeKey;
 import org.briljantframework.mimir.supervised.AbstractLearner;
@@ -41,7 +43,7 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class Ensemble<In> extends AbstractClassifier<In> {
+public class Ensemble<In, Out> extends AbstractClassifier<In, Out> {
 
   /**
    * The number of members in the ensemble
@@ -49,22 +51,22 @@ public class Ensemble<In> extends AbstractClassifier<In> {
   public static final TypeKey<Integer> SIZE =
       TypeKey.of("ensemble_size", Integer.class, 100, i -> i > 0);
 
-  private final List<? extends Classifier<In>> members;
+  private final List<? extends Classifier<In, Out>> members;
   private final BooleanArray oobIndicator;
 
-  protected Ensemble(List<?> classes, List<? extends Classifier<In>> members,
+  protected Ensemble(List<Out> classes, List<? extends Classifier<In, Out>> members,
       BooleanArray oobIndicator) {
     super(classes);
     this.members = members;
     this.oobIndicator = oobIndicator;
   }
 
-  public static <In> DoubleArray estimateOutOfBagProbabilities(Ensemble<In> ensemble,
+  public static <In> DoubleArray estimateOutOfBagProbabilities(Ensemble<In, ?> ensemble,
       Input<? extends In> x) {
     BooleanArray ind = ensemble.getOobIndicator();
     Check.argument(ind.rows() == x.size(), "input and oob indicator does not match");
 
-    List<Classifier<In>> members = ensemble.getEnsembleMembers();
+    List<? extends Classifier<In, ?>> members = ensemble.getEnsembleMembers();
     DoubleArray estimates = DoubleArray.zeros(x.size(), ensemble.getClasses().size());
     for (int i = 0; i < x.size(); i++) {
       In example = x.get(i);
@@ -73,11 +75,11 @@ public class Ensemble<In> extends AbstractClassifier<In> {
       int size = 0;
       for (int j = 0; j < oob.size(); j++) {
         if (oob.get(j)) {
-          estimate.plusAssign(members.get(j).estimate(example));
+          plusAssign(estimate, members.get(j).estimate(example));
           size++;
         }
       }
-      estimate.divAssign(size);
+      divAssign(estimate, DoubleArray.of(size));
     }
     return estimates;
   }
@@ -92,7 +94,7 @@ public class Ensemble<In> extends AbstractClassifier<In> {
     return oobIndicator;
   }
 
-  public List<Classifier<In>> getEnsembleMembers() {
+  public List<Classifier<In, Out>> getEnsembleMembers() {
     return Collections.unmodifiableList(members);
   }
 
@@ -115,15 +117,15 @@ public class Ensemble<In> extends AbstractClassifier<In> {
     return m;
   }
 
-  public interface BaseLearner<In, T extends Classifier<In>> {
-    Predictor.Learner<In, Object, ? extends T> getLearner(ClassSet set, List<?> classes);
+  public interface BaseLearner<In, Out, T extends Classifier<In, Out>> {
+    Predictor.Learner<In, Out, ? extends T> getLearner(ClassSet set, List<Out> classes);
   }
 
   /**
    * @author Isak Karlsson
    */
-  public abstract static class Learner<In, P extends Ensemble<In>>
-      extends AbstractLearner<In, Object, P> {
+  public abstract static class Learner<In, Out, P extends Ensemble<In, Out>>
+      extends AbstractLearner<In, Out, P> {
 
     private final static ThreadPoolExecutor THREAD_POOL;
     private final static int CORES;
@@ -155,7 +157,7 @@ public class Ensemble<In> extends AbstractClassifier<In> {
      * @return a list of produced models
      * @throws Exception if something goes wrong
      */
-    protected static <In, T extends Classifier<In>> List<T> execute(
+    protected static <In, T extends Classifier<In, ?>> List<T> execute(
         Collection<? extends Callable<T>> callables) throws Exception {
       List<T> models = new ArrayList<>();
       if (THREAD_POOL != null && THREAD_POOL.getActiveCount() < CORES) {

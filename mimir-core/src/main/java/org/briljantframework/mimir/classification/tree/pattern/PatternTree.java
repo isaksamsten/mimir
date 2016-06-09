@@ -44,7 +44,7 @@ import com.carrotsearch.hppc.cursors.ObjectDoubleCursor;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class PatternTree<In> extends TreeClassifier<In> {
+public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
 
   /**
    * Number of patterns to inspect at each node
@@ -66,7 +66,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
 
   private final int depth;
 
-  private PatternTree(List<?> classes, TreeVisitor<In, ?> predictionVisitor, int depth) {
+  private PatternTree(List<Out> classes, TreeVisitor<In, ?> predictionVisitor, int depth) {
     super(classes, predictionVisitor);
     this.depth = depth;
   }
@@ -82,7 +82,7 @@ public class PatternTree<In> extends TreeClassifier<In> {
    *
    * @author Isak Karlsson
    */
-  static class Learner<In, E> extends AbstractLearner<In, Object, PatternTree<In>> {
+  static class Learner<In, Out, E> extends AbstractLearner<In, Out, PatternTree<In, Out>> {
 
     final Gain gain = Gain.INFO;
 
@@ -93,17 +93,17 @@ public class PatternTree<In> extends TreeClassifier<In> {
 
     private final ClassSet classSet;
     // private final Assessment assessment;
-    private List<?> classes;
+    private List<Out> classes;
 
     Learner(PatternFactory<? super In, ? extends E> factory,
-        PatternDistance<? super In, ? super E> patternDistance, ClassSet classSet, List<?> classes,
+        PatternDistance<? super In, ? super E> patternDistance, ClassSet classSet, List<Out> classes,
         TypeMap properties) {
       this(factory, patternDistance, new DefaultPatternVisitorFactory<>(), classSet, classes, properties);
     }
 
     Learner(PatternFactory<? super In, ? extends E> factory,
         PatternDistance<? super In, ? super E> patternDistance,
-        PatternVisitorFactory<In, E> patternVisitorFactory, ClassSet classSet, List<?> classes,
+        PatternVisitorFactory<In, E> patternVisitorFactory, ClassSet classSet, List<Out> classes,
         TypeMap properties) {
       super(properties);
       this.patternFactory = factory;
@@ -118,9 +118,9 @@ public class PatternTree<In> extends TreeClassifier<In> {
     }
 
     @Override
-    public PatternTree<In> fit(Input<? extends In> x, Output<?> y) {
+    public PatternTree<In, Out> fit(Input<? extends In> x, Output<? extends Out> y) {
       ClassSet classSet = this.classSet;
-      List<?> classes = this.classes != null ? this.classes : Outputs.unique(y);
+      List<Out> classes = this.classes != null ? this.classes : Outputs.unique(y);
       if (classSet == null) {
         classSet = new ClassSet(y, classes);
       }
@@ -727,55 +727,6 @@ public class PatternTree<In> extends TreeClassifier<In> {
 
 
 
-  }
-
-  public static class Configurator<T, E>
-      implements Predictor.Configurator<T, Object, Learner<T, E>> {
-    public Learner.Assessment assessment = Learner.Assessment.IG;
-
-    public PatternFactory<? super T, ? extends E> patternFactory;
-    public PatternDistance<? super T, ? super E> patternDistance;
-
-    public double minSplit = 1;
-    public int patternCount = 100;
-
-    public Configurator(PatternFactory<? super T, ? extends E> patternFactory,
-        PatternDistance<? super T, ? super E> patternDistance) {
-      this.patternFactory = Objects.requireNonNull(patternFactory);
-      this.patternDistance = Objects.requireNonNull(patternDistance);
-    }
-
-    public Configurator<T, E> setPatternDistance(
-        PatternDistance<? super T, ? super E> patternDistance) {
-      this.patternDistance = patternDistance;
-      return this;
-    }
-
-    public Configurator<T, E> setPatternFactory(
-        PatternFactory<? super T, ? extends E> patternFactory) {
-      this.patternFactory = patternFactory;
-      return this;
-    }
-
-    public Configurator<T, E> setMinimumSplit(double minSplit) {
-      this.minSplit = minSplit;
-      return this;
-    }
-
-    public Configurator<T, E> setAssessment(Learner.Assessment assessment) {
-      this.assessment = assessment;
-      return this;
-    }
-
-    public Configurator<T, E> setPatternCount(int patternCount) {
-      this.patternCount = patternCount;
-      return this;
-
-    }
-
-    public Learner<T, E> configure() {
-      throw new UnsupportedOperationException();
-    }
   }
 
   /**

@@ -69,10 +69,29 @@ public interface Predictor<In, Out> {
      */
     P fit(Input<? extends In> in, Output<? extends Out> out);
 
+    /**
+     * Set the specified parameter to the specified value.
+     *
+     * @param key the parameter key
+     * @param value the parameter value
+     * @param <T> the type of parameter value
+     */
     <T> void set(TypeKey<T> key, T value);
 
+    /**
+     * Get the parameter value for the specified key.
+     *
+     * @param key the parameter key
+     * @param <T> the type of parameter value
+     * @return the parameter value
+     */
     <T> T get(TypeKey<T> key);
 
+    /**
+     * Get a typed map of parameter values.
+     *
+     * @return the parameters
+     */
     TypeMap getParameters();
   }
 

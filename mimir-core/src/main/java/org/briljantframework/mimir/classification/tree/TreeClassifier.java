@@ -30,11 +30,11 @@ import org.briljantframework.mimir.classification.AbstractClassifier;
  * 
  * @author Isak Karlsson
  */
-public class TreeClassifier<In> extends AbstractClassifier<In> {
+public class TreeClassifier<In, Out> extends AbstractClassifier<In, Out> {
 
   private final TreeVisitor<In, ?> predictionVisitor;
 
-  protected TreeClassifier(List<?> classes, TreeVisitor<In, ?> predictionVisitor) {
+  protected TreeClassifier(List<Out> classes, TreeVisitor<In, ?> predictionVisitor) {
     super(classes);
     this.predictionVisitor = predictionVisitor;
   }

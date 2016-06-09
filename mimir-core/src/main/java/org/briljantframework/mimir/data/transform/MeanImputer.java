@@ -51,7 +51,7 @@ public class MeanImputer<T extends Instance> implements Transformation<T, Instan
         if (Number.class.isAssignableFrom(featureTypes.get(j))) {
           double value = instance.getDouble(j);
           if (!Is.NA(value)) {
-            means.plusAssign(value / x.size());
+            org.briljantframework.array.Arrays.plusAssign(means, DoubleArray.of(value / x.size()));
           }
         }
       }

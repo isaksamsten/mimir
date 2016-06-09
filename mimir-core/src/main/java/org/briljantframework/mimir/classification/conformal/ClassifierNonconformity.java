@@ -30,7 +30,7 @@ import org.briljantframework.mimir.data.Output;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface ClassifierNonconformity<In> {
+public interface ClassifierNonconformity<In, Out> {
 
   /**
    * Estimate the nonconformity score for each example (record) in the given dataframe w.r.t. to the
@@ -40,7 +40,7 @@ public interface ClassifierNonconformity<In> {
    * @param y the true class labels of the examples
    * @return a {@code [no examples]} double array of nonconformity scores
    */
-  default DoubleArray estimate(Input<? extends In> x, Output<?> y) {
+  default DoubleArray estimate(Input<? extends In> x, Output<? extends Out> y) {
     DoubleArray array = DoubleArray.zeros(x.size());
     // Run in parallel
     IntStream.range(0, x.size()).parallel()
@@ -55,14 +55,14 @@ public interface ClassifierNonconformity<In> {
    * @param label the given label
    * @return the nonconformity score of example w.r.t the
    */
-  double estimate(In example, Object label);
+  double estimate(In example, Out label);
 
   /**
    * Get the classes used by this nonconformity scorer
    * 
    * @return the classes
    */
-  List<?> getClasses();
+  List<Out> getClasses();
 
   /**
    * Learn a {@linkplain ClassifierNonconformity nonconformity score function} using the given data
@@ -70,7 +70,7 @@ public interface ClassifierNonconformity<In> {
    *
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  interface Learner<In, T extends ClassifierNonconformity<In>> {
+  interface Learner<In,Out, T extends ClassifierNonconformity<In,Out>> {
 
     /**
      * Fit a {@linkplain ClassifierNonconformity nonconformity score function} using the given data.
@@ -79,6 +79,6 @@ public interface ClassifierNonconformity<In> {
      * @param y the input target
      * @return a nonconformity score function
      */
-    T fit(Input<? extends In> x, Output<?> y);
+    T fit(Input<? extends In> x, Output<? extends Out> y);
   }
 }

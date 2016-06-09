@@ -80,7 +80,7 @@ public final class LinearRegression implements Regression<DoubleSequence> {
 
       double scalar = getOrDefault(REGULARIZATION);
       DoubleArray inner =
-          Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.eye(x.columns()).times(scalar));
+          Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.times(Arrays.eye(x.columns()), scalar));
       DoubleArray v = Arrays.dot(Arrays.linalg.pinv(inner), x.transpose());
       DoubleArray theta = Arrays.dot(v, y);
 

@@ -47,28 +47,29 @@ import org.briljantframework.mimir.supervised.Characteristic;
  *
  * @author Isak Karlsson
  */
-public abstract class AbstractClassifier<In> implements Classifier<In> {
+public abstract class AbstractClassifier<In, Out> implements Classifier<In, Out> {
 
-  private final List<?> classes;
+  private final List<Out> classes;
 
-  protected AbstractClassifier(List<?> classes) {
+  protected AbstractClassifier(List<Out> classes) {
     this.classes = Objects.requireNonNull(classes);
   }
 
   @Override
-  public final List<?> getClasses() {
+  public final List<Out> getClasses() {
     return classes;
   }
 
   @Override
-  public Output<Object> predict(Input<? extends In> x) {
+  @SuppressWarnings("unchecked")
+  public Output<Out> predict(Input<? extends In> x) {
     Object[] labels = new Object[x.size()];
     IntStream.range(0, x.size()).parallel().forEach(i -> labels[i] = predict(x.get(i)));
-    return Outputs.asOutput(labels);
+    return Outputs.asOutput((Out[])labels);
   }
 
   @Override
-  public Object predict(In input) {
+  public Out predict(In input) {
     return getClasses().get(Arrays.argmax(estimate(input)));
   }
 

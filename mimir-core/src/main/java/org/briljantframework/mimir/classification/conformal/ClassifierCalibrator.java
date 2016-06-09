@@ -32,14 +32,14 @@ import org.briljantframework.util.primitive.DoubleList;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface ClassifierCalibrator<In> {
+public interface ClassifierCalibrator<In, Out> {
 
   /**
    * Returns an unconditional classifier calibrator
    * 
    * @return an unconditional classifier calibrator
    */
-  static <In> ClassifierCalibrator<In> unconditional() {
+  static <In, Out> ClassifierCalibrator<In, Out> unconditional() {
     return (nc, x, y) -> {
       DoubleArray calibration = nc.estimate(x, y);
       return (example, label) -> calibration;
@@ -52,12 +52,12 @@ public interface ClassifierCalibrator<In> {
    * 
    * @return a class conditional classifier calibrator
    */
-  static <In> ClassifierCalibrator<In> classConditional() {
+  static <In, Out> ClassifierCalibrator<In, Out> classConditional() {
     return (nc, x, y) -> {
       Map<Object, DoubleList> tmpClassNc = new HashMap<>();
       for (int i = 0; i < x.size(); i++) {
         In e = x.get(i);
-        Object c = y.get(i);
+        Out c = y.get(i);
         DoubleList l = tmpClassNc.get(c);
         if (l == null) {
           l = new DoubleList();
@@ -77,6 +77,6 @@ public interface ClassifierCalibrator<In> {
    * @param x the calibration data
    * @param y the calibration target
    */
-  ClassifierCalibratorScores<In> calibrate(ClassifierNonconformity<In> nc, Input<? extends In> x,
-      Output<?> y);
+  ClassifierCalibratorScores<In> calibrate(ClassifierNonconformity<In, Out> nc,
+      Input<? extends In> x, Output<? extends Out> y);
 }

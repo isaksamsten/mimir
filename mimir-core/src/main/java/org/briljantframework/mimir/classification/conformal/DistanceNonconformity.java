@@ -26,26 +26,26 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
 import org.briljantframework.data.Is;
+import org.briljantframework.mimir.classification.NearestNeighbours;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.classification.NearestNeighbours;
 import org.briljantframework.mimir.distance.Distance;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class DistanceNonconformity<In> implements ClassifierNonconformity<In> {
+public class DistanceNonconformity<In, Out> implements ClassifierNonconformity<In, Out> {
 
-  private final NearestNeighbours<? super In> nnSearch;
+  private final NearestNeighbours<? super In, Out> nnSearch;
   private final int k;
 
-  public DistanceNonconformity(NearestNeighbours<? super In> nnSearch, int k) {
+  public DistanceNonconformity(NearestNeighbours<? super In, Out> nnSearch, int k) {
     this.nnSearch = nnSearch;
     this.k = k;
   }
 
   @Override
-  public double estimate(In example, Object label) {
+  public double estimate(In example, Out label) {
     Output<?> labels = nnSearch.getTarget();
     DoubleArray distances = nnSearch.distance(example);
     IntArray order = Arrays.order(distances);
@@ -74,7 +74,7 @@ public class DistanceNonconformity<In> implements ClassifierNonconformity<In> {
   }
 
   @Override
-  public List<?> getClasses() {
+  public List<Out> getClasses() {
     return nnSearch.getClasses();
   }
 
@@ -95,10 +95,10 @@ public class DistanceNonconformity<In> implements ClassifierNonconformity<In> {
    *
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  public static class Learner<In>
-      implements ClassifierNonconformity.Learner<In, DistanceNonconformity<In>> {
+  public static class Learner<In, Out>
+      implements ClassifierNonconformity.Learner<In, Out, DistanceNonconformity<In, Out>> {
 
-    private final NearestNeighbours.Learner<? super In> nearestNeighbors;
+    private final NearestNeighbours.Learner<? super In, Out> nearestNeighbors;
     private final int k;
 
     public Learner(int k, Distance<? super In> distance) {
@@ -107,7 +107,7 @@ public class DistanceNonconformity<In> implements ClassifierNonconformity<In> {
     }
 
     @Override
-    public DistanceNonconformity<In> fit(Input<? extends In> x, Output<?> y) {
+    public DistanceNonconformity<In, Out> fit(Input<? extends In> x, Output<? extends Out> y) {
       return new DistanceNonconformity<>(nearestNeighbors.fit(x, y), k);
     }
   }

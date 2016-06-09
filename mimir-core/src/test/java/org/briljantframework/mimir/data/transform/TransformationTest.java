@@ -40,13 +40,13 @@ public class TransformationTest {
   public void setUp() throws Exception {
     NormalDistribution distribution = new NormalDistribution(new Well1024a(100), 10, 2,
         NormalDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
-    train = Inputs.asInput(getBuilder().set("a", Series.generate(distribution::sample, 100))
-        .set("b", Series.generate(distribution::sample, 100))
-        .set("c", Series.generate(distribution::sample, 100)).build());
+    train = Inputs.asInput(getBuilder().setColumn("a", Series.generate(distribution::sample, 100))
+        .setColumn("b", Series.generate(distribution::sample, 100))
+        .setColumn("c", Series.generate(distribution::sample, 100)).build());
 
-    test = Inputs.asInput(getBuilder().set("a", Series.generate(distribution::sample, 100))
-        .set("c", Series.generate(distribution::sample, 100))
-        .set("b", Series.generate(distribution::sample, 80)).build());
+    test = Inputs.asInput(getBuilder().setColumn("a", Series.generate(distribution::sample, 100))
+        .setColumn("c", Series.generate(distribution::sample, 100))
+        .setColumn("b", Series.generate(distribution::sample, 80)).build());
 
   }
 

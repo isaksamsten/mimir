@@ -46,9 +46,9 @@ import org.briljantframework.mimir.evaluation.EvaluationContext;
  *
  * @author Isak Karlsson
  */
-public class RandomPatternForest<In> extends Ensemble<In> {
+public class RandomPatternForest<In, Out> extends Ensemble<In, Out> {
 
-  private RandomPatternForest(List<?> classes, List<? extends Classifier<In>> members,
+  private RandomPatternForest(List<Out> classes, List<? extends Classifier<In, Out>> members,
       BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
   }
@@ -65,15 +65,17 @@ public class RandomPatternForest<In> extends Ensemble<In> {
   }
 
   public static class DepthEvaluator<In> implements
-      org.briljantframework.mimir.evaluation.Evaluator<In, Object, RandomPatternForest<In>> {
+      org.briljantframework.mimir.evaluation.Evaluator<In, Object, RandomPatternForest<In, Object>> {
 
     @Override
-    public void accept(EvaluationContext<? extends In, ?, ? extends RandomPatternForest<In>> ctx) {
+    public void accept(
+        EvaluationContext<? extends In, ?, ? extends RandomPatternForest<In, Object>> ctx) {
       ctx.getMeasureCollection().add("depth", ctx.getPredictor().getAverageDepth());
     }
   }
 
-  public static class Learner<In, E> extends Ensemble.Learner<In, RandomPatternForest<In>> {
+  public static class Learner<In, Out, E>
+      extends Ensemble.Learner<In, Out, RandomPatternForest<In, Out>> {
 
     // private final PatternTree.Configurator<In, ?> configurator;
     private final PatternFactory<? super In, ? extends E> patternFactory;
@@ -97,23 +99,23 @@ public class RandomPatternForest<In> extends Ensemble<In> {
     }
 
     @Override
-    public RandomPatternForest<In> fit(Input<? extends In> x, Output<?> y) {
-      List<?> classes = Outputs.unique(y);
+    public RandomPatternForest<In, Out> fit(Input<? extends In> x, Output<? extends Out> y) {
+      List<Out> classes = Outputs.unique(y);
 
       ClassSet classSet = new ClassSet(y, classes);
-      List<FitTask<In>> tasks = new ArrayList<>();
+      List<FitTask<In, Out>> tasks = new ArrayList<>();
       int members = get(Ensemble.SIZE);
       BooleanArray oobIndicator = Arrays.booleanArray(x.size(), members);
       for (int i = 0; i < members; i++) {
         BooleanArray oobI = oobIndicator.getColumn(i);
         ClassSet sample = sample(classSet, ThreadLocalRandom.current(), oobI);
-        PatternTree.Learner<In, ?> patternTree = new PatternTree.Learner<>(patternFactory,
+        PatternTree.Learner<In, Out, ?> patternTree = new PatternTree.Learner<>(patternFactory,
             patternDistance, patternVisitorFactory, sample, classes, getParameters());
         tasks.add(new FitTask<>(x, y, patternTree));
       }
 
       try {
-        List<PatternTree<In>> models = Ensemble.Learner.execute(tasks);
+        List<PatternTree<In, Out>> models = Ensemble.Learner.execute(tasks);
         return new RandomPatternForest<>(classes, models, oobIndicator);
       } catch (Exception e) {
         e.printStackTrace();
@@ -157,10 +159,10 @@ public class RandomPatternForest<In> extends Ensemble<In> {
       return "Ensemble of Randomized Shapelet Trees";
     }
 
-    private static final class FitTask<In> implements Callable<PatternTree<In>> {
+    private static final class FitTask<In, Out> implements Callable<PatternTree<In, Out>> {
       private final Input<? extends In> x;
-      private final Output<?> y;
-      private final PatternTree.Learner<In, ?> patternTree;
+      private final Output<? extends Out> y;
+      private final PatternTree.Learner<In, Out, ?> patternTree;
       // private final BooleanArray oobIndicator;
 
 
@@ -175,7 +177,8 @@ public class RandomPatternForest<In> extends Ensemble<In> {
       // this.oobIndicator = oobIndicator;
       // }
 
-      public FitTask(Input<? extends In> x, Output<?> y, PatternTree.Learner<In, ?> patternTree) {
+      public FitTask(Input<? extends In> x, Output<? extends Out> y,
+          PatternTree.Learner<In, Out, ?> patternTree) {
         this.patternTree = patternTree;
         this.x = x;
         this.y = y;
@@ -184,7 +187,7 @@ public class RandomPatternForest<In> extends Ensemble<In> {
       }
 
       @Override
-      public PatternTree<In> call() throws Exception {
+      public PatternTree<In, Out> call() throws Exception {
         // Random random = new Random(Thread.currentThread().getId() * System.nanoTime());
         // ClassSet sample = sample(classSet, random);
         return patternTree.fit(x, y);

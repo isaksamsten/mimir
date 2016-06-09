@@ -32,8 +32,8 @@ import org.briljantframework.mimir.classification.AbstractClassifier;
  * 
  * @author Isak Karlsson
  */
-public abstract class AbstractConformalClassifier<In> extends AbstractClassifier<In>
-    implements ConformalClassifier<In> {
+public abstract class AbstractConformalClassifier<In,Out> extends AbstractClassifier<In,Out>
+    implements ConformalClassifier<In,Out> {
 
   private final boolean stochasticSmoothing;
 
@@ -43,7 +43,7 @@ public abstract class AbstractConformalClassifier<In> extends AbstractClassifier
    * @param stochasticSmoothing enable stochastic smoothing
    * @param classes the classes
    */
-  protected AbstractConformalClassifier(boolean stochasticSmoothing, List<?> classes) {
+  protected AbstractConformalClassifier(boolean stochasticSmoothing, List<Out> classes) {
     super(classes);
     this.stochasticSmoothing = stochasticSmoothing;
   }
@@ -53,7 +53,7 @@ public abstract class AbstractConformalClassifier<In> extends AbstractClassifier
    * 
    * @param classes the classes
    */
-  protected AbstractConformalClassifier(List<?> classes) {
+  protected AbstractConformalClassifier(List<Out> classes) {
     this(true, classes);
   }
 
@@ -62,7 +62,7 @@ public abstract class AbstractConformalClassifier<In> extends AbstractClassifier
    * 
    * @return a classifier nonconformity
    */
-  protected abstract ClassifierNonconformity<In> getClassifierNonconformity();
+  protected abstract ClassifierNonconformity<In,Out> getClassifierNonconformity();
 
   /**
    * Get the calibration
@@ -76,7 +76,7 @@ public abstract class AbstractConformalClassifier<In> extends AbstractClassifier
     DoubleArray significance = DoubleArray.zeros(getClasses().size());
     double tau = stochasticSmoothing ? ThreadLocalRandom.current().nextDouble() : 1;
     for (int i = 0; i < significance.size(); i++) {
-      Object label = getClasses().get(i);
+      Out label = getClasses().get(i);
       DoubleArray calibration = getCalibrationScores().get(example, label);
       double n = calibration.size() + 1;
       double nc = getClassifierNonconformity().estimate(example, label);

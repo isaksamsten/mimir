@@ -37,7 +37,7 @@ public class OptimizationUtils {
       prob.set(i, p);
       Z += p;
     }
-    prob.divAssign(Z);
+    Arrays.scal(1 / Z, prob);
   }
 
   /**
