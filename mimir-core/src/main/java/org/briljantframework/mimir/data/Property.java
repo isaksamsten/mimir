@@ -27,7 +27,7 @@ import java.util.function.Function;
  *
  * @author Isak Karlsson
  */
-public abstract class TypeKey<T> {
+public abstract class Property<T> {
 
   /**
    * Returns a key with the specified name and type
@@ -37,8 +37,8 @@ public abstract class TypeKey<T> {
    * @param <T> the class
    * @return a new key
    */
-  public static <T> TypeKey<T> of(String name, Class<T> cls) {
-    return new StringTypeKey<>(cls, name);
+  public static <T> Property<T> of(String name, Class<T> cls) {
+    return new StringProperty<>(cls, name);
   }
 
   /**
@@ -50,8 +50,8 @@ public abstract class TypeKey<T> {
    * @param <T> the class
    * @return a new key
    */
-  public static <T> TypeKey<T> of(String name, Class<T> cls, T defaultValue) {
-    return new StringTypeKey<>(cls, name, defaultValue);
+  public static <T> Property<T> of(String name, Class<T> cls, T defaultValue) {
+    return new StringProperty<>(cls, name, defaultValue);
   }
 
   /**
@@ -64,21 +64,14 @@ public abstract class TypeKey<T> {
    * @param <T> the class
    * @return a new key
    */
-  public static <T> TypeKey<T> of(String name, Class<T> cls, T defaultValue,
-      Function<? super T, Boolean> validator) {
-    return new StringTypeKey<T>(cls, name, defaultValue, validator);
+  public static <T> Property<T> of(String name, Class<T> cls, T defaultValue,
+                                   Function<? super T, Boolean> validator) {
+    return new StringProperty<T>(cls, name, defaultValue, validator);
   }
 
   /**
-   * Return the class of the given property
-   * 
-   * @return the class of the property
-   */
-  public abstract Class<T> getType();
-
-  /**
    * Get the default value for this key, or null if no default value.
-   * 
+   *
    * @return the default value
    */
   public T defaultValue() {
@@ -87,7 +80,7 @@ public abstract class TypeKey<T> {
 
   /**
    * Validate that the value is appropriate for this type key.
-   * 
+   *
    * @param value the value
    * @return true if the value is valid (default: value != null)
    */
@@ -96,18 +89,25 @@ public abstract class TypeKey<T> {
   }
 
   /**
+   * Return the class of the given property
+   *
+   * @return the class of the property
+   */
+  public abstract Class<T> getType();
+
+  /**
    * Return the name of the property
    *
    * @return the property name
    */
-  abstract String getName();
+  public abstract String getName();
 
   /**
    * Return the description of the property
    * 
    * @return the property description
    */
-  abstract String getDescription();
+  public abstract String getDescription();
 
   @Override
   public final boolean equals(Object obj) {

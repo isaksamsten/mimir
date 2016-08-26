@@ -20,14 +20,10 @@
  */
 package org.briljantframework.mimir.classification.tune;
 
-import org.briljantframework.mimir.data.TypeKey;
-
 /**
  * Created by Isak Karlsson on 24/09/14.
  */
 public interface Updatable {
-
-  TypeKey<?> getKey();
 
   Updater updator();
 }

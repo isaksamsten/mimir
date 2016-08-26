@@ -120,8 +120,8 @@ public abstract class ConformalClassifierValidator<In, P extends ConformalClassi
       Partitioner<In, Object> partitioner, DoubleArray significances) {
     return new ConformalClassifierValidator<In, T>(partitioner, significances) {
       @Override
-      protected T fit(Predictor.Learner<In, Object, ? extends T> learner, Input<In> x,
-          Output<?> y) {
+      protected T fit(Predictor.Learner<? super In, ? super Object, ? extends T> learner, Input<In> x,
+          Output<Object> y) {
         return learner.fit(x, y);
       }
     };
@@ -143,8 +143,8 @@ public abstract class ConformalClassifierValidator<In, P extends ConformalClassi
     return new ConformalClassifierValidator<In, T>(partitioner, significance) {
 
       @Override
-      protected T fit(Predictor.Learner<In, Object, ? extends T> learner, Input<In> x,
-          Output<?> y) {
+      protected T fit(Predictor.Learner<? super In, ? super Object, ? extends T> learner, Input<In> x,
+          Output<Object> y) {
         SplitPartitioner<In, Object> partitioner = new SplitPartitioner<>(calibrationSize);
         Partition<In, Object> partition = partitioner.partition(x, y).iterator().next();
         T icc = learner.fit(partition.getTrainingData(), partition.getTrainingTarget());

@@ -24,8 +24,8 @@ import java.util.Set;
 
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.TypeKey;
-import org.briljantframework.mimir.data.TypeMap;
+import org.briljantframework.mimir.data.Properties;
+import org.briljantframework.mimir.data.Property;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -76,7 +76,7 @@ public interface Predictor<In, Out> {
      * @param value the parameter value
      * @param <T> the type of parameter value
      */
-    <T> void set(TypeKey<T> key, T value);
+    <T> void set(Property<T> key, T value);
 
     /**
      * Get the parameter value for the specified key.
@@ -85,14 +85,14 @@ public interface Predictor<In, Out> {
      * @param <T> the type of parameter value
      * @return the parameter value
      */
-    <T> T get(TypeKey<T> key);
+    <T> T get(Property<T> key);
 
     /**
      * Get a typed map of parameter values.
      *
      * @return the parameters
      */
-    TypeMap getParameters();
+    Properties getParameters();
   }
 
   @Deprecated

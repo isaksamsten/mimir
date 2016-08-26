@@ -23,7 +23,7 @@ package org.briljantframework.mimir.classification.tune;
 import org.briljantframework.Check;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.data.TypeKey;
+import org.briljantframework.mimir.data.Property;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
@@ -33,13 +33,9 @@ public final class Updatables {
 
   private Updatables() {}
 
-  public static Updatable linspace(TypeKey<? super Number> key, int start, int end, int step) {
+  public static Updatable linspace(Property<? super Number> key, int start, int end, int step) {
     Check.argument(step > 0, "illegal stepsize");
     return new Updatable() {
-      @Override
-      public TypeKey<?> getKey() {
-        return key;
-      }
 
       @Override
       public Updater updator() {
@@ -52,11 +48,11 @@ public final class Updatables {
           }
 
           @Override
-          public Object update(Predictor.Learner<?, ?, ?> predictor) {
+          public Object update(Predictor.Learner<?, ?, ?> learner) {
             if (!hasUpdate()) {
               throw new IllegalStateException();
             }
-            predictor.set(key, current);
+            learner.set(key, current);
             current += step;
 
             return current - step;
@@ -66,13 +62,9 @@ public final class Updatables {
     };
   }
 
-  public static <T> Updatable linspace(TypeKey<Double> key, double start, double end, int size) {
+  public static <T> Updatable linspace(Property<Double> key, double start, double end, int size) {
     Check.argument(size > 0, "Illegal step size");
     return new Updatable() {
-      @Override
-      public TypeKey<?> getKey() {
-        return key;
-      }
 
       @Override
       public Updater updator() {
@@ -86,12 +78,12 @@ public final class Updatables {
           }
 
           @Override
-          public Object update(Predictor.Learner<?, ?, ?> predictor) {
+          public Object update(Predictor.Learner<?, ?, ?> learner) {
             if (!hasUpdate()) {
               throw new IllegalStateException();
             }
             double value = linspace.get(current++);
-            predictor.set(key, value);
+            learner.set(key, value);
             return value;
           }
         };
@@ -100,7 +92,7 @@ public final class Updatables {
   }
 
   @SafeVarargs
-  public static <T> Updatable enumeration(TypeKey<? super T> key, T... enumeration) {
+  public static <T> Updatable enumeration(Property<? super T> key, T... enumeration) {
     Check.argument(enumeration.length > 0, "must enumerate value");
     return new ElementUpdatable<>(key, enumeration);
   }

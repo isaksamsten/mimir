@@ -30,14 +30,14 @@ import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.data.ArrayOutput;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.TypeKey;
+import org.briljantframework.mimir.data.Property;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public interface ConformalClassifier<In, Out> extends Classifier<In, Out> {
 
-  TypeKey<Boolean> STOCHASTIC_SMOOTHING = TypeKey.of("stochastic_smoothing", Boolean.class, true);
+  Property<Boolean> STOCHASTIC_SMOOTHING = Property.of("stochastic_smoothing", Boolean.class, true);
 
   /**
    * Returns the conformal predictions for the records in the given data frame using the given

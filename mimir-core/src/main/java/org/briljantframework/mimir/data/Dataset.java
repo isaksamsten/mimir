@@ -63,7 +63,7 @@ public final class Dataset {
    * This property denotes the number of features in an input dataset. Often, this is the number of
    * columns.
    */
-  public static final TypeKey<Integer> FEATURE_SIZE = new TypeKey<Integer>() {
+  public static final Property<Integer> FEATURE_SIZE = new Property<Integer>() {
     @Override
     public Class<Integer> getType() {
       return Integer.class;
@@ -71,7 +71,7 @@ public final class Dataset {
 
     @Override
     public String getName() {
-      return "Number of input features.";
+      return "feature_size";
     }
 
     @Override
@@ -88,7 +88,7 @@ public final class Dataset {
   /**
    * This property denotes the feature types of a tabular dataset
    */
-  public static final TypeKey<List<Class<?>>> FEATURE_TYPES = new TypeKey<List<Class<?>>>() {
+  public static final Property<List<Class<?>>> FEATURE_TYPES = new Property<List<Class<?>>>() {
 
     @Override
     @SuppressWarnings("unchecked")
@@ -98,7 +98,7 @@ public final class Dataset {
 
     @Override
     public String getName() {
-      return "List of feature types";
+      return "feature_types";
     }
 
     @Override
@@ -107,7 +107,7 @@ public final class Dataset {
     }
   };
 
-  public static final TypeKey<List<String>> FEATURE_NAMES = new TypeKey<List<String>>() {
+  public static final Property<List<String>> FEATURE_NAMES = new Property<List<String>>() {
     @Override
     @SuppressWarnings("unchecked")
     public Class<List<String>> getType() {
@@ -116,7 +116,7 @@ public final class Dataset {
 
     @Override
     public String getName() {
-      return "List of feature names";
+      return "feature_names";
     }
 
     @Override

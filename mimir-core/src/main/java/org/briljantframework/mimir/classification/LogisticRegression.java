@@ -51,11 +51,11 @@ public class LogisticRegression<Out> extends AbstractClassifier<Instance, Out> {
   /**
    * Maximum number of iterations before convergence.
    */
-  public static final TypeKey<Integer> MAX_ITERATIONS =
-      TypeKey.of("max_iterations", Integer.class, 100);
+  public static final Property<Integer> MAX_ITERATIONS =
+      Property.of("max_iterations", Integer.class, 100);
 
-  public static final TypeKey<Double> REGULARIZATION =
-      TypeKey.of("reqularization", Double.class, 1.0);
+  public static final Property<Double> REGULARIZATION =
+      Property.of("regularization", Double.class, 1.0);
   /**
    * If {@code getClasses().size()} is larger than {@code 2}, coefficients is a a 2d-array where
    * each column is the coefficients for the the j:th class and the i:th feature.

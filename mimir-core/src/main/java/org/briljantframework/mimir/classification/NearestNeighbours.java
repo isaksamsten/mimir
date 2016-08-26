@@ -30,7 +30,7 @@ import org.briljantframework.data.Is;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.data.Outputs;
-import org.briljantframework.mimir.data.TypeKey;
+import org.briljantframework.mimir.data.Property;
 import org.briljantframework.mimir.distance.Distance;
 import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
@@ -135,7 +135,7 @@ public class NearestNeighbours<In,Out> extends AbstractClassifier<In,Out> {
    */
   public static class Learner<In,Out> extends AbstractLearner<In, Out, NearestNeighbours<In,Out>> {
 
-    public static final TypeKey<Integer> NEIGHBORS = TypeKey.of("neighbors", Integer.class, 1);
+    public static final Property<Integer> NEIGHBORS = Property.of("neighbors", Integer.class, 1);
     private final Distance<In> distance;
 
     public Learner(int k, Distance<In> distance) {

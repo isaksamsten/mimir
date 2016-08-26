@@ -38,8 +38,8 @@ import org.briljantframework.mimir.supervised.Characteristic;
  */
 public class DecisionTree<Out> extends TreeClassifier<Instance, Out> {
 
-  public static TypeKey<Double> MIN_LEAF_SIZE = TypeKey.of("min_leaf_size", Double.class, 1.0);
-  public static TypeKey<Splitter> SPLITTER = TypeKey.of("splitter", Splitter.class);
+  public static Property<Double> MIN_LEAF_SIZE = Property.of("min_leaf_size", Double.class, 1.0);
+  public static Property<Splitter> SPLITTER = Property.of("splitter", Splitter.class);
   private final int depth;
 
   private DecisionTree(List<Out> classes, int depth,
@@ -65,13 +65,13 @@ public class DecisionTree<Out> extends TreeClassifier<Instance, Out> {
     protected ClassSet classSet;
     protected List<Out> classes = null;
 
-    protected Learner(TypeMap parameters, List<Out> classes, ClassSet classSet) {
+    protected Learner(Properties parameters, List<Out> classes, ClassSet classSet) {
       super(parameters);
       this.classSet = classSet;
       this.classes = classes;
     }
 
-    public Learner(TypeMap parameters) {
+    public Learner(Properties parameters) {
 
     }
 

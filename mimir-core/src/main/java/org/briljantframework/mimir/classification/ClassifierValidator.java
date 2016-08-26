@@ -50,7 +50,8 @@ public class ClassifierValidator<In, T extends Classifier<In, Object>>
   }
 
   @Override
-  protected T fit(Predictor.Learner<In, Object, ? extends T> learner, Input<In> x, Output<?> y) {
+  protected T fit(Predictor.Learner<? super In, ? super Object, ? extends T> learner, Input<In> x,
+      Output<Object> y) {
     return learner.fit(x, y);
   }
 

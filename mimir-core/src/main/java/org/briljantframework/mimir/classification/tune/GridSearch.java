@@ -26,7 +26,7 @@ import java.util.Objects;
 
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.TypeMap;
+import org.briljantframework.mimir.data.Properties;
 import org.briljantframework.mimir.evaluation.Result;
 import org.briljantframework.mimir.evaluation.Validator;
 import org.briljantframework.mimir.supervised.Predictor;
@@ -63,7 +63,7 @@ public class GridSearch<In, Out, P extends Predictor<In, Out>> {
       }
     } else {
       Result<Out> result = validator.test(classifier, x, y);
-      results.add(new Configuration<Out>(result, new TypeMap(classifier.getParameters())));
+      results.add(new Configuration<>(result, new Properties(classifier.getParameters())));
     }
   }
 

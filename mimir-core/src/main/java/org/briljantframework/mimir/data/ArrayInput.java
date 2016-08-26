@@ -35,11 +35,11 @@ import java.util.function.UnaryOperator;
  */
 public class ArrayInput<T> extends AbstractInput<T> {
 
-  private final TypeMap properties;
+  private final Properties properties;
   private final ArrayList<T> inputs = new ArrayList<>();
 
   public ArrayInput() {
-    this.properties = new TypeMap();
+    this.properties = new Properties();
   }
 
   public ArrayInput(Collection<? extends T> collection) {
@@ -47,8 +47,8 @@ public class ArrayInput<T> extends AbstractInput<T> {
     inputs.addAll(collection);
   }
 
-  public ArrayInput(TypeMap properties) {
-    this.properties = new TypeMap(properties);
+  public ArrayInput(Properties properties) {
+    this.properties = new Properties(properties);
   }
 
   public ArrayInput(Input<? extends T> input) {
@@ -155,7 +155,7 @@ public class ArrayInput<T> extends AbstractInput<T> {
   }
 
   @Override
-  public TypeMap getProperties() {
+  public Properties getProperties() {
     return properties;
   }
 

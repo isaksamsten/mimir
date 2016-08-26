@@ -38,7 +38,7 @@ import org.briljantframework.data.dataframe.DataFrame;
  */
 class DataFrameInput extends AbstractInput<Instance> {
   private final DataFrame df;
-  private final TypeMap properties;
+  private final Properties properties;
 
   public DataFrameInput(DataFrame df) {
     Objects.requireNonNull(df, "DataFrame is required.");
@@ -49,25 +49,25 @@ class DataFrameInput extends AbstractInput<Instance> {
   /*
    * Creates a set of input properties based on the given dataframe
    */
-  private static TypeMap createProperties(DataFrame df) {
-    TypeMap properties = new TypeMap();
+  private static Properties createProperties(DataFrame df) {
+    Properties properties = new Properties();
     List<Class<?>> types =
-        df.columns().stream().map(v -> v.getType().getDataClass()).collect(Collectors.toList());
+        df.getColumns().stream().map(v -> v.getType().getDataClass()).collect(Collectors.toList());
     properties.set(Dataset.FEATURE_TYPES, types);
     properties.set(Dataset.FEATURE_NAMES,
         df.getColumnIndex().keySet().stream().map(Object::toString).collect(Collectors.toList()));
-    properties.set(Dataset.FEATURE_SIZE, df.size(1));
+    properties.set(Dataset.FEATURE_SIZE, df.columns());
     return properties;
   }
 
   @Override
-  public TypeMap getProperties() {
+  public Properties getProperties() {
     return properties;
   }
 
   @Override
   public int size() {
-    return df.size(0);
+    return df.rows();
   }
 
   @Override

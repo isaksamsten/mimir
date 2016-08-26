@@ -20,8 +20,8 @@
  */
 package org.briljantframework.mimir.supervised;
 
-import org.briljantframework.mimir.data.TypeKey;
-import org.briljantframework.mimir.data.TypeMap;
+import org.briljantframework.mimir.data.Properties;
+import org.briljantframework.mimir.data.Property;
 
 /**
  * Created by isak on 3/29/16.
@@ -29,36 +29,36 @@ import org.briljantframework.mimir.data.TypeMap;
 public abstract class AbstractLearner<In, Out, P extends Predictor<In, Out>>
     implements Predictor.Learner<In, Out, P> {
 
-  private final TypeMap parameters;
+  private final Properties parameters;
 
-  protected AbstractLearner(TypeMap parameters) {
-    this.parameters = new TypeMap(parameters);
+  protected AbstractLearner(Properties parameters) {
+    this.parameters = new Properties(parameters);
   }
 
   protected AbstractLearner() {
-    this.parameters = new TypeMap();
+    this.parameters = new Properties();
   }
 
   @Override
-  public final <T> void set(TypeKey<T> key, T value) {
+  public final <T> void set(Property<T> key, T value) {
     parameters.set(key, value);
   }
 
   @Override
-  public final <T> T get(TypeKey<T> key) {
+  public final <T> T get(Property<T> key) {
     return parameters.get(key);
   }
 
-  protected <T> T getOrDefault(TypeKey<T> typeKey, T defaultValue) {
-    return parameters.getOrDefault(typeKey, defaultValue);
+  protected <T> T getOrDefault(Property<T> property, T defaultValue) {
+    return parameters.getOrDefault(property, defaultValue);
   }
 
-  protected <T> T getOrDefault(TypeKey<T> typeKey) {
-    return parameters.getOrDefault(typeKey);
+  protected <T> T getOrDefault(Property<T> property) {
+    return parameters.getOrDefault(property);
   }
 
   @Override
-  public final TypeMap getParameters() {
+  public final Properties getParameters() {
     return parameters;
   }
 

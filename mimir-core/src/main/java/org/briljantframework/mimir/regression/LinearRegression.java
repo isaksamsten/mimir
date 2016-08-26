@@ -36,8 +36,8 @@ import org.briljantframework.mimir.supervised.Characteristic;
  */
 public final class LinearRegression implements Regression<DoubleSequence> {
 
-  public static final TypeKey<Double> REGULARIZATION =
-      TypeKey.of("regularization", Double.class, 0.1);
+  public static final Property<Double> REGULARIZATION =
+      Property.of("regularization", Double.class, 0.1);
   private final DoubleArray theta;
 
   private LinearRegression(DoubleArray theta) {

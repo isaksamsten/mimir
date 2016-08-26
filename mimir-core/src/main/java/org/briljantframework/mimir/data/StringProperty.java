@@ -28,21 +28,21 @@ import java.util.function.Function;
  * 
  * @author Isak Karlsson
  */
-class StringTypeKey<T> extends TypeKey<T> {
+class StringProperty<T> extends Property<T> {
   private final Class<T> cls;
   private final String name;
   private final T defaultValue;
   private final Function<? super T, Boolean> validator;
 
-  StringTypeKey(Class<T> cls, String name) {
+  StringProperty(Class<T> cls, String name) {
     this(cls, name, null);
   }
 
-  StringTypeKey(Class<T> cls, String name, T defaultValue) {
+  StringProperty(Class<T> cls, String name, T defaultValue) {
     this(cls, name, defaultValue, v -> v != null);
   }
 
-  StringTypeKey(Class<T> cls, String name, T defaultValue, Function<? super T, Boolean> validator) {
+  StringProperty(Class<T> cls, String name, T defaultValue, Function<? super T, Boolean> validator) {
     this.cls = cls;
     this.name = name;
     this.defaultValue = defaultValue;
@@ -81,7 +81,7 @@ class StringTypeKey<T> extends TypeKey<T> {
 //    if (o == null || getClass() != o.getClass())
 //      return false;
 //
-//    StringTypeKey<?> that = (StringTypeKey<?>) o;
+//    StringProperty<?> that = (StringProperty<?>) o;
 //    if (cls != null ? !cls.equals(that.cls) : that.cls != null) {
 //      return false;
 //    } else {

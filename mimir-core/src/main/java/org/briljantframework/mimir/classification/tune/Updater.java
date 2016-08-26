@@ -20,7 +20,6 @@
  */
 package org.briljantframework.mimir.classification.tune;
 
-import org.briljantframework.mimir.data.TypeMap;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
@@ -30,6 +29,12 @@ public interface Updater {
 
   boolean hasUpdate();
 
-  Object update(Predictor.Learner<?, ?, ?> predictor);
+  /**
+   * Modifiy the appropriate parameter of the specified learner and return the current value.
+   *
+   * @param learner the predictor to modify
+   * @return the currently set value
+   */
+  Object update(Predictor.Learner<?, ?, ?> learner);
 
 }

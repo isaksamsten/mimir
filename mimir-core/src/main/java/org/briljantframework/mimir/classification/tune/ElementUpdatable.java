@@ -20,7 +20,7 @@
  */
 package org.briljantframework.mimir.classification.tune;
 
-import org.briljantframework.mimir.data.TypeKey;
+import org.briljantframework.mimir.data.Property;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
@@ -29,16 +29,11 @@ import org.briljantframework.mimir.supervised.Predictor;
 class ElementUpdatable<T> implements Updatable {
 
   private final T[] enumeration;
-  private final TypeKey<? super T> key;
+  private final Property<? super T> key;
 
-  public ElementUpdatable(TypeKey<? super T> key, T[] enumeration) {
+  public ElementUpdatable(Property<? super T> key, T[] enumeration) {
     this.enumeration = enumeration;
     this.key = key;
-  }
-
-  @Override
-  public TypeKey<?> getKey() {
-    return key;
   }
 
   @Override
@@ -52,9 +47,9 @@ class ElementUpdatable<T> implements Updatable {
       }
 
       @Override
-      public Object update(Predictor.Learner<?, ?, ?> toUpdate) {
+      public Object update(Predictor.Learner<?, ?, ?> learner) {
         T value = enumeration[current++];
-        toUpdate.set(key, value);
+        learner.set(key, value);
         return value;
       }
     };

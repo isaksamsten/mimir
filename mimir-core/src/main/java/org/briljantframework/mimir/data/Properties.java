@@ -27,26 +27,26 @@ import java.util.*;
  * 
  * @author Isak Karlsson
  */
-public final class TypeMap {
+public final class Properties {
 
-  private final Map<TypeKey<?>, Object> map;
+  private final Map<Property<?>, Object> map;
 
-  public TypeMap() {
+  public Properties() {
     this.map = new HashMap<>();
   }
 
-  public TypeMap(TypeMap typeMap) {
-    this.map = new HashMap<>(typeMap.map);
+  public Properties(Properties properties) {
+    this.map = new HashMap<>(properties.map);
   }
 
   /**
    * Return {@code true} if the container contains the specified property.
    * 
-   * @param typeKey the property
+   * @param property the property
    * @return true if property exists
    */
-  public boolean contains(TypeKey<?> typeKey) {
-    return map.containsKey(typeKey);
+  public boolean contains(Property<?> property) {
+    return map.containsKey(property);
   }
 
   /**
@@ -55,9 +55,9 @@ public final class TypeMap {
    * @param properties the properties to check for
    * @return true if the properties exist
    */
-  public boolean containsAll(Collection<? extends TypeKey<?>> properties) {
-    for (TypeKey<?> typeKey : properties) {
-      if (!contains(typeKey)) {
+  public boolean containsAll(Collection<? extends Property<?>> properties) {
+    for (Property<?> property : properties) {
+      if (!contains(property)) {
         return false;
       }
     }
@@ -69,22 +69,22 @@ public final class TypeMap {
    * 
    * @return a set of properties
    */
-  public Set<TypeKey<?>> keySet() {
+  public Set<Property<?>> keySet() {
     return Collections.unmodifiableSet(map.keySet());
   }
 
   /**
    * Get the value of the specified property.
    * 
-   * @param typeKey the key
+   * @param property the key
    * @param <T> the type of the return value
    * @return the value of the specified key
    * @throws NoSuchElementException if the property does not exist
    */
-  public <T> T get(TypeKey<T> typeKey) {
-    Object value = map.get(typeKey);
+  public <T> T get(Property<T> property) {
+    Object value = map.get(property);
     if (value != null) {
-      return typeKey.getType().cast(value);
+      return property.getType().cast(value);
     } else {
       throw new NoSuchElementException("key not found");
     }
@@ -93,54 +93,54 @@ public final class TypeMap {
   /**
    * Get the value of the specified key or the default value.
    *
-   * @param typeKey the key
+   * @param property the key
    * @param defaultValue the default value
    * @param <T> the type of the return value
    * @return the value of the specified key or the default value
    * @throws NullPointerException if the default value is null
    */
-  public <T> T getOrDefault(TypeKey<T> typeKey, T defaultValue) {
+  public <T> T getOrDefault(Property<T> property, T defaultValue) {
     if (defaultValue == null) {
       throw new NullPointerException();
     }
-    Object value = map.getOrDefault(typeKey, defaultValue);
-    return typeKey.getType().cast(value);
+    Object value = map.getOrDefault(property, defaultValue);
+    return property.getType().cast(value);
   }
 
   /**
    * Get the value of the specified key or the default value for the key if specified.
    * 
-   * @param typeKey the key
+   * @param property the key
    * @param <T> the type of return value
    * @return the value or the default value for the key
    * @throws NullPointerException if the default value is null
    */
-  public <T> T getOrDefault(TypeKey<T> typeKey) {
-    return getOrDefault(typeKey, typeKey.defaultValue());
+  public <T> T getOrDefault(Property<T> property) {
+    return getOrDefault(property, property.defaultValue());
   }
 
   /**
    * Associate the specified key and value, validating the class and properties of the value based
    * on the specified key.
    * 
-   * @param typeKey the key
+   * @param property the key
    * @param value the value
    * @param <T> the type of the value
    * @throws NullPointerException if the value is null
    * @throws IllegalArgumentException if value is not an instance suitable for the key or the key
    *         fail to validate the key
    */
-  public <T> void set(TypeKey<T> typeKey, T value) {
+  public <T> void set(Property<T> property, T value) {
     if (value == null) {
       throw new NullPointerException("null values are not allowed");
-    } else if (!typeKey.getType().isInstance(value)) {
+    } else if (!property.getType().isInstance(value)) {
       throw new IllegalArgumentException(
           "The given value is not an instance of the class specified by the key.");
-    } else if (!typeKey.validate(value)) {
+    } else if (!property.validate(value)) {
       throw new IllegalArgumentException(
           "The given value does not conform with the validation requirements of the key");
     } else {
-      map.put(typeKey, value);
+      map.put(property, value);
     }
   }
 

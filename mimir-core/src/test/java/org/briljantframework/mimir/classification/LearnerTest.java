@@ -22,7 +22,8 @@ package org.briljantframework.mimir.classification;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.*;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -30,16 +31,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.Range;
+import org.briljantframework.data.Collectors;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.parser.CsvParser;
 import org.briljantframework.data.series.Series;
 import org.briljantframework.dataset.io.Datasets;
-import org.briljantframework.mimir.classification.tree.pattern.PatternDistance;
-import org.briljantframework.mimir.classification.tree.pattern.PatternFactory;
-import org.briljantframework.mimir.classification.tree.pattern.RandomPatternForest;
-import org.briljantframework.mimir.classification.tree.pattern.SamplingPatternFactory;
+import org.briljantframework.mimir.classification.tree.pattern.*;
 import org.briljantframework.mimir.classification.tune.Configuration;
 import org.briljantframework.mimir.classification.tune.GridSearch;
 import org.briljantframework.mimir.classification.tune.Updatables;
@@ -53,13 +52,25 @@ import org.junit.Test;
 public class LearnerTest {
 
   @Test
-  public void testPairWiseClassifier() {
-    DataFrame iris = DataFrames.permute(Datasets.loadIris());
-    DataFrame data = iris.drop("Class").apply(v -> {
+  public void testPairWiseClassifier() throws FileNotFoundException {
+    // DataFrame iris = DataFrames.permute(Datasets.loadIris());
+    // DataFrame data = iris.drop("Class").apply(v -> {
+    // v.set(v.where(Is::NA), v.mean());
+    // return v;
+    // });
+    // Series labels = iris.get("Class");
+
+    CsvParser parser = new CsvParser(new FileReader("/Users/isak/Tmp/pima-indians-diabetes.txt"));
+    parser.getSettings().setSkipRows(1);
+    DataFrame dataset = DataFrames.permute(parser.parse(DataFrame::builder));
+    String classVariable = "Class variable (0 or 1)";
+    DataFrame data = dataset.drop(classVariable).apply(v -> {
       v.set(v.where(Is::NA), v.mean());
       return v;
-    });
-    Series labels = iris.get("Class");
+    });;
+    Series labels = dataset.get(classVariable);
+
+    System.out.println(Arrays.sum(0, data.where(Is::NA).intArray()));
 
     Input<Pair<Series, Series>> trainingInput = new ArrayInput<>();
     Output<Boolean> trainingOutput = new ArrayOutput<>();
@@ -67,49 +78,26 @@ public class LearnerTest {
     Input<Pair<Series, Series>> testInput = new ArrayInput<>();
     Output<Boolean> testOutput = new ArrayOutput<>();
 
-    int trainSize = Math.round(data.size(0) * 0.7f);
+    int trainSize = Math.round(data.rows() * 0.7f);
     Range trainIdx = Range.of(trainSize);
-    Range testIdx = Range.of(trainSize, data.size(0));
+    Range testIdx = Range.of(trainSize, data.rows());
 
     createPairs(data.loc().getRow(trainIdx), labels.loc().get(trainIdx), trainingInput,
         trainingOutput);
     createPairs(data.loc().getRow(testIdx), labels.loc().get(testIdx), testInput, testOutput);
 
-
-    RandomPatternForest<Pair<Series, Series>, Boolean> forest =
-        getPairFeatureLearner(100).fit(trainingInput, trainingOutput);
-
-    DataFrame testData = data.loc().getRow(Range.of(trainSize, trainSize + 10));
-
-    Map<Boolean, List<Object>> map = new HashMap<>();
-
-    for (int i = 0; i < testData.size(0); i++) {
-      for (int j = 0; j < testData.size(0); j++) {
-        ImmutablePair<Series, Series> pair =
-            new ImmutablePair<>(testData.loc().getRow(i), testData.loc().getRow(j));
-        boolean belong = forest.predict(pair);
-        if (!map.containsKey(belong)) {
-          map.put(belong, new ArrayList<>());
-        }
-        map.get(belong).add(pair);
-      }
-    }
-
-    System.out.println(map);
+    ClassifierValidator<Pair<Series, Series>, Classifier<Pair<Series, Series>, Object>> validator =
+        ClassifierValidator.holdoutValidator(testInput, testOutput);
 
 
-    // ClassifierValidator<Pair<Series, Series>, Classifier<Pair<Series, Series>>> validator =
-    // ClassifierValidator.holdoutValidator(testInput, testOutput);
-    //
-    //
-    // System.out.println(Outputs.valueCounts(trainingOutput));
-    // System.out.println(Outputs.valueCounts(testOutput));
-    //
-    // Classifier.Learner<Pair<Series, Series>, Object, ? extends Classifier<Pair<Series, Series>>>
-    // learner =
-    // getPairFeatureLearner(250);
-    // learner.set(PatternTree.PATTERN_COUNT, 3);
-    // System.out.println(validator.test(learner, trainingInput, trainingOutput));
+    System.out.println(Outputs.valueCounts(trainingOutput));
+    System.out.println(Outputs.valueCounts(testOutput));
+    System.out.println(labels.collect(Collectors.valueCounts()));
+
+    RandomPatternForest.Learner<Pair<Series, Series>, Object, Pair<Integer, Double>> learner =
+        getPairFeatureLearner(100);
+    learner.set(PatternTree.PATTERN_COUNT, 1);
+    System.out.println(validator.test(learner, trainingInput, trainingOutput));
 
   }
 
@@ -124,18 +112,14 @@ public class LearnerTest {
           }
         };
 
-    PatternDistance<Pair<Series, Series>, Double> distance =
-        new PatternDistance<Pair<Series, Series>, Double>() {
-          @Override
-          public double computeDistance(Pair<Series, Series> a, Double b) {
-            return Math.abs(
-                EuclideanDistance.getInstance().compute(a.getLeft().loc(), a.getRight().loc()) - b);
-          }
-        };
+    PatternDistance<Pair<Series, Series>, Double> distance = (a, b) -> {
+      double dist = EuclideanDistance.getInstance().compute(a.getLeft().loc(), a.getRight().loc());
+      return Math.abs(dist - b);
+    };
     return new RandomPatternForest.Learner<>(factory, distance, size);
   }
 
-  private RandomPatternForest.Learner<Pair<Series, Series>, Boolean, Pair<Integer, Double>> getPairFeatureLearner(
+  private RandomPatternForest.Learner<Pair<Series, Series>, Object, Pair<Integer, Double>> getPairFeatureLearner(
       int size) {
     PatternFactory<Pair<Series, Series>, Pair<Integer, Double>> factory =
         new SamplingPatternFactory<Pair<Series, Series>, Pair<Integer, Double>>() {
@@ -147,15 +131,11 @@ public class LearnerTest {
           }
         };
 
-    PatternDistance<Pair<Series, Series>, Pair<Integer, Double>> distance =
-        new PatternDistance<Pair<Series, Series>, Pair<Integer, Double>>() {
-          @Override
-          public double computeDistance(Pair<Series, Series> a, Pair<Integer, Double> b) {
-            int index = b.getLeft();
-            double value = computeMeanDiff(a, index);
-            return Math.abs(value - b.getRight());
-          }
-        };
+    PatternDistance<Pair<Series, Series>, Pair<Integer, Double>> distance = (a, b) -> {
+      int index = b.getLeft();
+      double value = computeMeanDiff(a, index);
+      return Math.abs(value - b.getRight());
+    };
     return new RandomPatternForest.Learner<>(factory, distance, size);
   }
 
@@ -165,8 +145,8 @@ public class LearnerTest {
 
   private void createPairs(DataFrame data, Series labels, Input<Pair<Series, Series>> input,
       Output<Boolean> output) {
-    for (int i = 0; i < data.size(0); i++) {
-      for (int j = 0; j < data.size(0); j++) {
+    for (int i = 0; i < data.rows(); i++) {
+      for (int j = 0; j < data.rows(); j++) {
         if (i != j) {
           input.add(new ImmutablePair<>(data.loc().getRow(i), data.loc().getRow(j)));
           output.add(Is.equal(labels.loc().get(i), labels.loc().get(j)));
@@ -261,8 +241,8 @@ public class LearnerTest {
   // }
   //
   // @Override
-  // public TypeMap getProperties() {
-  // return new TypeMap();
+  // public Properties getProperties() {
+  // return new Properties();
   // }
   // };
   // Output<?> out = Outputs.copyOf(label);

@@ -35,7 +35,7 @@ import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.TypeKey;
+import org.briljantframework.mimir.data.Property;
 import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;
@@ -48,8 +48,8 @@ public class Ensemble<In, Out> extends AbstractClassifier<In, Out> {
   /**
    * The number of members in the ensemble
    */
-  public static final TypeKey<Integer> SIZE =
-      TypeKey.of("ensemble_size", Integer.class, 100, i -> i > 0);
+  public static final Property<Integer> SIZE =
+      Property.of("ensemble_size", Integer.class, 100, i -> i > 0);
 
   private final List<? extends Classifier<In, Out>> members;
   private final BooleanArray oobIndicator;

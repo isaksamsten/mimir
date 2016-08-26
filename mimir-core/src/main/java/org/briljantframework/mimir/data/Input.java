@@ -34,25 +34,25 @@ public interface Input<T> extends List<T> {
    * 
    * @return the collection of properties for the input.
    */
-  TypeMap getProperties();
+  Properties getProperties();
 
   /**
    * Return true if the input contains the specified property.
    * 
-   * @param typeKey the key
+   * @param property the key
    * @return true if key is set
    */
-  default boolean hasProperty(TypeKey<?> typeKey) {
-    return getProperties().contains(typeKey);
+  default boolean hasProperty(Property<?> property) {
+    return getProperties().contains(property);
   }
 
   /**
    * Returns the specified property.
    * 
-   * @param typeKey the property
+   * @param property the property
    * @return the value for the given property
    */
-  default <E> E getProperty(TypeKey<E> typeKey) {
-    return getProperties().get(typeKey);
+  default <E> E getProperty(Property<E> property) {
+    return getProperties().get(property);
   }
 }

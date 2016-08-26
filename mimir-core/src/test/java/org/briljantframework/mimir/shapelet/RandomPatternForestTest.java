@@ -344,7 +344,7 @@ public class RandomPatternForestTest {
   private DoubleArray computeOobAccuracy(RandomPatternForest predictor, DataFrame x, Series y) {
 
     BooleanArray oob = predictor.getOobIndicator();
-    for (int i = 0; i < x.size(0); i++) {
+    for (int i = 0; i < x.rows(); i++) {
       Series record = x.loc().getRow(i);
       // List<Classifier> oobMembers = getOobMembers(oob.getRow(i), predictor.getEnsembleMembers());
       // DoubleArray estimate = predictOob(oobMembers, record);

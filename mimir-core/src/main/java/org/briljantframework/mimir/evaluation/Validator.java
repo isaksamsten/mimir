@@ -96,7 +96,7 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
    * @param y the target to used during evaluation
    * @return a result
    */
-  public Result<Out> test(Predictor.Learner<In, Out, ? extends P> learner, Input<? extends In> x,
+  public Result<Out> test(Predictor.Learner<? super In, ? super Out, ? extends P> learner, Input<? extends In> x,
       Output<? extends Out> y) {
     Collection<Partition<In, Out>> partitions = getPartitioner().partition(x, y);
     MutableEvaluationContext<In, Out, P> ctx = new MutableEvaluationContext<>();
@@ -153,13 +153,12 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
 
   /**
    * Fit the given predictor using the supplied training data
-   *
-   * @param learner the learner for learning a predictor of the given type
+   *  @param learner the learner for learning a predictor of the given type
    * @param x the input features
    * @param y the input label
    */
-  protected abstract P fit(Predictor.Learner<In, Out, ? extends P> learner, Input<In> x,
-      Output<?extends Out> y);
+  protected abstract P fit(Predictor.Learner<? super In, ? super Out, ? extends P> learner, Input<In> x,
+                           Output<Out> y);
 
   protected abstract void predict(MutableEvaluationContext<In, Out, ? extends P> ctx);
 

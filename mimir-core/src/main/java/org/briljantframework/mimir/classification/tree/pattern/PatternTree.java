@@ -31,12 +31,12 @@ import org.briljantframework.data.series.Series;
 import org.briljantframework.data.statistics.FastStatistics;
 import org.briljantframework.mimir.classification.tree.*;
 import org.briljantframework.mimir.data.*;
+import org.briljantframework.mimir.data.Properties;
 import org.briljantframework.mimir.distance.Distance;
 import org.briljantframework.mimir.distance.EuclideanDistance;
 import org.briljantframework.mimir.shapelet.ChannelShapelet;
 import org.briljantframework.mimir.shapelet.Shapelet;
 import org.briljantframework.mimir.supervised.AbstractLearner;
-import org.briljantframework.mimir.supervised.Predictor;
 
 import com.carrotsearch.hppc.*;
 import com.carrotsearch.hppc.cursors.ObjectDoubleCursor;
@@ -49,20 +49,20 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
   /**
    * Number of patterns to inspect at each node
    */
-  public static final TypeKey<Integer> PATTERN_COUNT =
-      TypeKey.of("inspected_patterns", Integer.class, 10, i -> i > 0);
+  public static final Property<Integer> PATTERN_COUNT =
+      Property.of("inspected_patterns", Integer.class, 10, i -> i > 0);
 
   /**
    * Number of input elements required to split a node
    */
-  public static final TypeKey<Double> MIN_SPLIT_SIZE =
-      TypeKey.of("min_split_size", Double.class, 1.0, i -> i > 0);
+  public static final Property<Double> MIN_SPLIT_SIZE =
+      Property.of("min_split_size", Double.class, 1.0, i -> i > 0);
 
   /**
    * The branch assessment strategy
    */
-  public static final TypeKey<Learner.Assessment> ASSESSMENT =
-      TypeKey.of("assessment", Learner.Assessment.class, Learner.Assessment.IG);
+  public static final Property<Learner.Assessment> ASSESSMENT =
+      Property.of("assessment", Learner.Assessment.class, Learner.Assessment.IG);
 
   private final int depth;
 
@@ -97,14 +97,14 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
 
     Learner(PatternFactory<? super In, ? extends E> factory,
         PatternDistance<? super In, ? super E> patternDistance, ClassSet classSet, List<Out> classes,
-        TypeMap properties) {
+        Properties properties) {
       this(factory, patternDistance, new DefaultPatternVisitorFactory<>(), classSet, classes, properties);
     }
 
     Learner(PatternFactory<? super In, ? extends E> factory,
         PatternDistance<? super In, ? super E> patternDistance,
         PatternVisitorFactory<In, E> patternVisitorFactory, ClassSet classSet, List<Out> classes,
-        TypeMap properties) {
+        Properties properties) {
       super(properties);
       this.patternFactory = factory;
       this.patternDistance = patternDistance;

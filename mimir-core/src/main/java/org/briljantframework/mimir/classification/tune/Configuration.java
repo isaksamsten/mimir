@@ -20,7 +20,7 @@
  */
 package org.briljantframework.mimir.classification.tune;
 
-import org.briljantframework.mimir.data.TypeMap;
+import org.briljantframework.mimir.data.Properties;
 import org.briljantframework.mimir.evaluation.Result;
 
 /**
@@ -29,9 +29,9 @@ import org.briljantframework.mimir.evaluation.Result;
 public class Configuration<Out> {
 
   private final Result<Out> result;
-  private final TypeMap parameters;
+  private final Properties parameters;
 
-  public Configuration(Result<Out> result, TypeMap parameters) {
+  public Configuration(Result<Out> result, Properties parameters) {
     this.result = result;
     this.parameters = parameters;
   }
@@ -40,7 +40,7 @@ public class Configuration<Out> {
     return result;
   }
 
-  public TypeMap getParameters() {
+  public Properties getParameters() {
     return parameters;
   }
 

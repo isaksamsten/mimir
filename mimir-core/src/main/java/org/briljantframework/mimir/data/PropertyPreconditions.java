@@ -28,17 +28,17 @@ import java.util.Collection;
 public final class PropertyPreconditions {
   private PropertyPreconditions() {}
 
-  public static void checkProperties(Collection<? extends TypeKey<?>> required,
-      TypeMap properties) {
-    for (TypeKey<?> typeKey : required) {
-      if (!properties.contains(typeKey)) {
+  public static void checkProperties(Collection<? extends Property<?>> required,
+      Properties properties) {
+    for (Property<?> property : required) {
+      if (!properties.contains(property)) {
         throw new IllegalArgumentException(
-            String.format("Required property '%s' not set.", typeKey.getName()));
+            String.format("Required property '%s' not set.", property.getName()));
       }
     }
   }
 
-  public static void checkProperties(Collection<? extends TypeKey<?>> required, Input<?> input) {
+  public static void checkProperties(Collection<? extends Property<?>> required, Input<?> input) {
     checkProperties(required, input.getProperties());
   }
 }

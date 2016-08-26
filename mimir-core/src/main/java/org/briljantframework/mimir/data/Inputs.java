@@ -226,7 +226,7 @@ public final class Inputs {
     }
 
     @Override
-    public TypeMap getProperties() {
+    public Properties getProperties() {
       return c.getProperties();
     }
 
