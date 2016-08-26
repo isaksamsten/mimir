@@ -29,14 +29,14 @@ import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
+import org.briljantframework.data.Is;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class EnsembleClassifierMeasure {
+public class EnsembleClassifierMeasure<In> {
   private double oobError;
   private double strength;
   private double correlation;
@@ -45,8 +45,8 @@ public class EnsembleClassifierMeasure {
   private double mse;
   private double baseModelError;
 
-  public EnsembleClassifierMeasure(Ensemble ensemble, DataFrame trainingData, Vector trainingTarget,
-      DataFrame validationData, Vector validationTarget) {
+  public EnsembleClassifierMeasure(Ensemble<In,?> ensemble, Input<? extends In> trainingData,
+      Output<?> trainingTarget, Input<? extends In> validationData, Output<?> validationTarget) {
     initializeStrengthCorrelation(ensemble, trainingData, trainingTarget);
     initializeBiasVarianceDecomposition(ensemble, validationData, validationTarget);
   }
@@ -107,24 +107,25 @@ public class EnsembleClassifierMeasure {
     return argMax;
   }
 
-  private void initializeStrengthCorrelation(Ensemble ensemble, DataFrame x, Vector y) {
-    Vector classes = ensemble.getClasses();
+  private void initializeStrengthCorrelation(Ensemble<In,?> ensemble, Input<? extends In> x,
+      Output<?> y) {
+    List<?> classes = ensemble.getClasses();
     BooleanArray oobIndicator = ensemble.getOobIndicator();
-    List<Classifier> members = ensemble.getEnsembleMembers();
+    List<? extends Classifier<In,?>> members = ensemble.getEnsembleMembers();
 
     // Store the out-of-bag and in-bag probability estimates
-    DoubleArray oobEstimates = DoubleArray.zeros(x.rows(), classes.size());
-    DoubleArray inbEstimates = DoubleArray.zeros(x.rows(), classes.size());
+    DoubleArray oobEstimates = DoubleArray.zeros(x.size(), classes.size());
+    DoubleArray inbEstimates = DoubleArray.zeros(x.size(), classes.size());
 
     // Count the number of times each training sample have been included
-    IntArray counts = Arrays.sum(1, oobIndicator.asInt());
+    IntArray counts = Arrays.sum(1, oobIndicator.intArray());
 
     // Compute the in-bag and out-of-bag estimates for all examples
     DoubleAdder oobAccuracy = new DoubleAdder();
-    IntStream.range(0, x.rows()).parallel().forEach(i -> {
+    IntStream.range(0, x.size()).parallel().forEach(i -> {
       int inbSize = members.size() - counts.get(i);
       int oobSize = counts.get(i);
-      Vector record = x.loc().getRecord(i);
+      In record = x.get(i);
       for (int j = 0; j < members.size(); j++) {
         DoubleArray estimate = members.get(j).estimate(record);
         if (oobIndicator.get(i, j)) {
@@ -133,16 +134,17 @@ public class EnsembleClassifierMeasure {
           inbEstimates.getRow(i).combineAssign(estimate, (e, v) -> e + v / inbSize);
         }
       }
-      oobAccuracy.add(Vectors.find(classes, y, i) == Arrays.argmax(oobEstimates.getRow(i)) ? 1 : 0);
+      // Vectors.find(classes, y, i)
+      oobAccuracy.add(classes.indexOf(y.get(i)) == Arrays.argmax(oobEstimates.getRow(i)) ? 1 : 0);
     });
-    double avgOobAccuracy = oobAccuracy.sum() / x.rows();
+    double avgOobAccuracy = oobAccuracy.sum() / x.size();
     this.oobError = 1 - avgOobAccuracy;
 
     DoubleAdder strengthA = new DoubleAdder();
     DoubleAdder strengthSquareA = new DoubleAdder();
     IntStream.range(0, oobEstimates.rows()).parallel().forEach(i -> {
       DoubleArray estimation = oobEstimates.getRow(i);
-      int c = Vectors.find(classes, y, i);
+      int c = classes.indexOf(y.get(i)); // Vectors.find(classes, y, i);
       double ma = estimation.get(c) - Arrays.maxExcluding(estimation, c);
       strengthA.add(ma);
       strengthSquareA.add(ma * ma);
@@ -154,16 +156,16 @@ public class EnsembleClassifierMeasure {
     double variance = strengthSquare - s2;
     double std = 0;
     for (int j = 0; j < members.size(); j++) {
-      Classifier member = members.get(j);
+      Classifier<In,?> member = members.get(j);
       AtomicInteger oobSizeA = new AtomicInteger(0);
       DoubleAdder p1A = new DoubleAdder();
       DoubleAdder p2A = new DoubleAdder();
       final int memberIndex = j;
-      IntStream.range(0, x.rows()).parallel().forEach(i -> {
+      IntStream.range(0, x.size()).parallel().forEach(i -> {
         if (oobIndicator.get(i, memberIndex)) {
           oobSizeA.getAndIncrement();
-          int c = Vectors.find(classes, y, i);
-          DoubleArray memberEstimation = member.estimate(x.loc().getRecord(i));
+          int c = classes.indexOf(y.get(i)); // Vectors.find(classes, y, i);
+          DoubleArray memberEstimation = member.estimate(x.get(i));
           DoubleArray ibEstimation = inbEstimates.getRow(i);
           p1A.add(Arrays.argmax(memberEstimation) == c ? 1 : 0);
           p2A.add(Arrays.argmax(memberEstimation) == argmaxExcluding(ibEstimation, c) ? 1 : 0);
@@ -183,24 +185,25 @@ public class EnsembleClassifierMeasure {
 
   }
 
-  private void initializeBiasVarianceDecomposition(Ensemble ensemble, DataFrame x, Vector y) {
-    Vector classes = ensemble.getClasses();
+  private void initializeBiasVarianceDecomposition(Ensemble<In,?> ensemble, Input<? extends In> x,
+      Output<?> y) {
+    List<?> classes = ensemble.getClasses();
 
     DoubleAdder meanVariance = new DoubleAdder();
     DoubleAdder meanSquareError = new DoubleAdder();
     DoubleAdder meanBias = new DoubleAdder();
     DoubleAdder baseAccuracy = new DoubleAdder();
-    IntStream.range(0, x.rows()).parallel().forEach(i -> {
-      Vector record = x.loc().getRecord(i);
-      DoubleArray c = createTrueClassVector(y, classes, i);
+    IntStream.range(0, x.size()).parallel().forEach(i -> {
+      In record = x.get(i);
+      DoubleArray c = createTrueClassVector(classes, y.get(i));
 
 
       /* Stores the probability of the m:th member for the j:th class */
-      List<Classifier> members = ensemble.getEnsembleMembers();
+      List<? extends Classifier<In,?>> members = ensemble.getEnsembleMembers();
       int estimators = members.size();
       DoubleArray memberEstimates = DoubleArray.zeros(estimators, classes.size());
       for (int j = 0; j < estimators; j++) {
-        Classifier member = members.get(j);
+        Classifier<In,?> member = members.get(j);
         memberEstimates.setRow(j, member.estimate(record));
       }
 
@@ -220,7 +223,8 @@ public class EnsembleClassifierMeasure {
         variance += meanDiff;
         mse += trueDiff;
         bias += meanTrueDiff;
-        accuracy += Arrays.argmax(r) == Vectors.find(classes, y, i) ? 1 : 0;
+        accuracy += Arrays.argmax(r) == classes.indexOf(y.get(i)) ? 1 : 0; // Vectors.find(classes,
+                                                                           // y, i)
       }
       meanVariance.add(variance / estimators);
       meanSquareError.add(mse / estimators);
@@ -228,16 +232,16 @@ public class EnsembleClassifierMeasure {
       meanBias.add(bias / estimators);
     });
 
-    this.variance = meanVariance.doubleValue() / x.rows();
-    this.bias = meanBias.doubleValue() / x.rows();
-    this.mse = meanSquareError.doubleValue() / x.rows();
-    this.baseModelError = 1 - baseAccuracy.doubleValue() / x.rows();
+    this.variance = meanVariance.doubleValue() / x.size();
+    this.bias = meanBias.doubleValue() / x.size();
+    this.mse = meanSquareError.doubleValue() / x.size();
+    this.baseModelError = 1 - baseAccuracy.doubleValue() / x.size();
   }
 
-  private static DoubleArray createTrueClassVector(Vector y, Vector classes, int i) {
+  private static DoubleArray createTrueClassVector(List<?> classes, Object label) {
     DoubleArray c = DoubleArray.zeros(classes.size());
     for (int j = 0; j < classes.size(); j++) {
-      if (classes.loc().equals(j, y, i)) {
+      if (Is.equal(classes.get(j), label)) {
         c.set(j, 1);
       }
     }

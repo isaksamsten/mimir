@@ -23,20 +23,15 @@ package org.briljantframework.mimir.distance;
 import java.util.function.DoubleSupplier;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * @author Isak Karlsson
  */
-public class EditDistance implements Distance {
+public class EditDistance implements Distance<Series> {
 
   @Override
-  public double compute(double a, double b) {
-    return 0;
-  }
-
-  @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     if (a.size() < b.size()) {
       return compute(b, a);
     }
@@ -71,13 +66,4 @@ public class EditDistance implements Distance {
     return previousRow.get(previousRow.size() - 1);
   }
 
-  @Override
-  public double max() {
-    return 0;
-  }
-
-  @Override
-  public double min() {
-    return 0;
-  }
 }

@@ -26,14 +26,16 @@ import java.util.Iterator;
 
 import org.briljantframework.Check;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * The leave-one-out partitioner can be used to implement Leave-one-out cross-validation, a commonly
  * employed strategy for evaluating small and expensive to gather datasets.
  *
  * <p/>
- * The {@linkplain DataFrame} (with {@code m} rows) and {@linkplain Vector} (of length {@code m})
+ * The {@linkplain DataFrame} (with {@code m} rows) and {@linkplain Series} (of length {@code m})
  * are partitioned into {@code m} partitions. At each iteration {@code m-1} data points are returned
  * as the training set and {@code 1} data point as the validation set. All data points are used as
  * validation points exactly once.
@@ -41,20 +43,20 @@ import org.briljantframework.data.vector.Vector;
  * @author Isak Karlsson
  * @see FoldPartitioner
  */
-public class LeaveOneOutPartitioner implements Partitioner {
+public class LeaveOneOutPartitioner<In, Out> implements Partitioner<In, Out> {
 
   @Override
-  public Collection<Partition> partition(DataFrame x, Vector y) {
-    Check.dimension(x.rows(), y.size());
-    return new AbstractCollection<Partition>() {
+  public Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y) {
+    Check.dimension(x.size(), y.size());
+    return new AbstractCollection<Partition<In, Out>>() {
       @Override
-      public Iterator<Partition> iterator() {
-        return new FoldIterator(x, y, x.rows());
+      public Iterator<Partition<In, Out>> iterator() {
+        return new FoldIterator<>(x, y, x.size());
       }
 
       @Override
       public int size() {
-        return x.rows();
+        return x.size();
       }
     };
   }

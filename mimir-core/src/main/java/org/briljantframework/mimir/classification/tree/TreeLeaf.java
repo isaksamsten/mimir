@@ -20,34 +20,36 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
+import java.util.List;
+
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * @author Isak Karlsson
  */
-public final class TreeLeaf<T> implements TreeNode<T> {
+public final class TreeLeaf<In, T> implements TreeNode<In, T> {
 
-  private final Vector domain;
+  private final List<?> domain;
   private final DoubleArray probabilities;
   private final double weight;
 
-  public TreeLeaf(Vector domain, DoubleArray probabilities, double weight) {
+  public TreeLeaf(List<?> domain, DoubleArray probabilities, double weight) {
     this.domain = domain;
     this.probabilities = probabilities;
     this.weight = weight;
   }
 
-  public static <T> TreeLeaf<T> fromExamples(ClassSet classSet) {
+  public static <In, T> TreeLeaf<In, T> fromExamples(ClassSet classSet) {
     return fromExamples(classSet, 1);
   }
 
-  public static <T> TreeLeaf<T> fromExamples(ClassSet classSet, double weight) {
-    Vector domain = classSet.getDomain();
+  public static <In, T> TreeLeaf<In, T> fromExamples(ClassSet classSet, double weight) {
+    List<?> domain = classSet.getDomain();
     DoubleArray prob = DoubleArray.zeros(domain.size());
     double totalWeight = classSet.getTotalWeight();
     for (int i = 0; i < domain.size(); i++) {
-      Object label = domain.get(Object.class, i);
+      Object label = domain.get(i);
       ClassSet.Sample sample = classSet.get(label);
       if (sample == null) {
         prob.set(i, 0);
@@ -67,21 +69,21 @@ public final class TreeLeaf<T> implements TreeNode<T> {
     return weight;
   }
 
-  public Vector getDomain() {
+  public List<?> getDomain() {
     return domain;
   }
 
   @Override
-  public Vector getClassDistribution() {
-    Vector.Builder dist = Vector.Builder.of(double.class);
+  public Series getClassDistribution() {
+    Series.Builder dist = Series.Builder.of(double.class);
     for (int i = 0; i < probabilities.size(); i++) {
-      dist.set(getDomain().loc().get(Object.class, i), probabilities.get(i));
+      dist.set(getDomain().get(i), probabilities.get(i));
     }
     return dist.build();
   }
 
   @Override
-  public final DoubleArray visit(TreeVisitor<T> visitor, Vector example) {
+  public final DoubleArray visit(TreeVisitor<In, T> visitor, In example) {
     return visitor.visitLeaf(this, example);
   }
 

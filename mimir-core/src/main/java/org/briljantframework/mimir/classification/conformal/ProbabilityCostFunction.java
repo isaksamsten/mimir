@@ -20,11 +20,12 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
+import java.util.List;
+
 import org.briljantframework.Check;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * A classification error function
@@ -59,12 +60,12 @@ public interface ProbabilityCostFunction {
    *        find the true class column in the score matrix for the i:th example)
    * @return an array of costs
    */
-  static DoubleArray estimate(ProbabilityCostFunction pcf, DoubleArray scores, Vector y,
-      Vector classes) {
+  static DoubleArray estimate(ProbabilityCostFunction pcf, DoubleArray scores, Output<?> y,
+      List<?> classes) {
     Check.argument(classes.size() == scores.columns(), "Illegal prediction matrix");
     DoubleArray probabilities = DoubleArray.zeros(y.size());
     for (int i = 0, size = y.size(); i < size; i++) {
-      int yIndex = Vectors.find(classes, y, i);
+      int yIndex = classes.indexOf(y.get(i));// Vectors.find(classes, y, i);
       // if (yIndex < 0) {
       // Object label = y.loc().get(i);
       // throw new IllegalArgumentException(String.format("Illegal class: '%s' (not found)",

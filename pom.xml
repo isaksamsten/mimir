@@ -37,6 +37,7 @@
     <module>mimir-core</module>
     <module>mimir-plot</module>
     <module>mimir-weka</module>
+    <module>mimir-image</module>
   </modules>
 
   <properties>

@@ -20,9 +20,11 @@
  */
 package org.briljantframework.mimir.classification.conformal.evaluation;
 
+import java.util.List;
+
 import org.apache.commons.math3.util.Precision;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.Evaluator;
@@ -31,31 +33,13 @@ import org.briljantframework.mimir.evaluation.MeasureCollection;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class ConformalClassifierEvaluator implements Evaluator<ConformalClassifier> {
+public class ConformalClassifierEvaluator<In>
+    implements Evaluator<In, Object, ConformalClassifier<In, Object>> {
 
   private final double significance;
 
   public ConformalClassifierEvaluator(double significance) {
     this.significance = significance;
-  }
-
-  @Override
-  public void accept(EvaluationContext<? extends ConformalClassifier> ctx) {
-    Vector truth = ctx.getPartition().getValidationTarget();
-    Vector classes = ctx.getPredictor().getClasses();
-    DoubleArray scores = ctx.getEstimates();
-    ConformalClassifierMeasure cm =
-        new ConformalClassifierMeasure(truth, scores, significance, classes);
-
-    MeasureCollection measureCollection = ctx.getMeasureCollection();
-    measureCollection.add("significance", significance);
-    measureCollection.add("accuracy", cm.getAccuracy());
-    measureCollection.add("error", cm.getError());
-    measureCollection.add("confidence", cm.getConfidence());
-    measureCollection.add("credibility", cm.getCredibility());
-    measureCollection.add("singletons", cm.getSingletons());
-    measureCollection.add("meanPvalue", cm.getAveragePvalue());
-    measureCollection.add("noClasses", cm.getNoClasses());
   }
 
   @Override
@@ -73,5 +57,24 @@ public class ConformalClassifierEvaluator implements Evaluator<ConformalClassifi
   @Override
   public int hashCode() {
     return Double.hashCode(significance);
+  }
+
+  @Override
+  public void accept(EvaluationContext<? extends In, ?, ? extends ConformalClassifier<In, Object>> ctx) {
+    Output<?> truth = ctx.getPartition().getValidationTarget();
+    List<?> classes = ctx.getPredictor().getClasses();
+    DoubleArray scores = ctx.getEstimates();
+    ConformalClassifierMeasure cm =
+        new ConformalClassifierMeasure(truth, scores, significance, classes);
+
+    MeasureCollection measureCollection = ctx.getMeasureCollection();
+    measureCollection.add("significance", significance);
+    measureCollection.add("accuracy", cm.getAccuracy());
+    measureCollection.add("error", cm.getError());
+    measureCollection.add("confidence", cm.getConfidence());
+    measureCollection.add("credibility", cm.getCredibility());
+    measureCollection.add("singletons", cm.getSingletons());
+    measureCollection.add("meanPvalue", cm.getAveragePvalue());
+    measureCollection.add("noClasses", cm.getNoClasses());
   }
 }

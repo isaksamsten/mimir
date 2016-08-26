@@ -20,9 +20,12 @@
  */
 package org.briljantframework.mimir.classification;
 
+import java.util.List;
+
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
+import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
@@ -54,57 +57,40 @@ import org.briljantframework.mimir.supervised.Predictor;
  *
  * @author Isak Karlsson
  */
-public interface Classifier extends Predictor {
+public interface Classifier<In, Out> extends Predictor<In, Out> {
 
   /**
    * The classes this predictor is able to predict, i.e. its co-domain. Note that the i:th element
    * of the returned vector is the label of the j:th column in the probability matrix returned by
-   * {@link #estimate(DataFrame)}.
+   * {@link #estimate(Input)}.
    *
-   * @return the vector of classes.
+   * @return the list of classes.
    */
-  Vector getClasses();
+  List<Out> getClasses();
 
   /**
-   * Determine the class label of every instance in {@code x}
-   *
-   * @param x to determine class labels for
-   * @return the predictions; shape = {@code [x.rows, 1]}.
-   */
-  @Override
-  Vector predict(DataFrame x);
-
-  /**
-   * Predict the class label of a specific {@link Vector}
-   *
-   * @param record to which the class label shall be assigned
-   * @return the prediction
-   */
-  Object predict(Vector record);
-
-  /**
-   * Estimates the posterior probabilities for all records in {@code x}.
+   * Estimates the posterior probabilities for all objects in the given input
    *
    * <p>
    * Each column corresponds to the probability of a particular class (the j:th column correspond to
-   * the j:th element (using {@link Vector#loc()}) in {@linkplain #getClasses()}) and each row
+   * the j:th element (using {@link Series#loc()}) in {@linkplain #getClasses()}) and each row
    * corresponds to a particular record in the supplied data frame.
    *
    * @param x the data frame of records to estimate the posterior probabilities for
    * @return a matrix with probability estimates; shape = {@code [x.rows(), getClasses().size()]}.
    */
-  DoubleArray estimate(DataFrame x);
+  DoubleArray estimate(Input<? extends In> x);
 
   /**
-   * Estimates the posterior probability for the supplied vector.
+   * Estimates the posterior probability for the supplied input.
    *
    * <p>
    * The i:th element in the returned array correspond to the probability of the i:th class in
-   * {@linkplain #getClasses()} (using {@link Vector#loc()})
+   * {@linkplain #getClasses()}
    *
-   * @param record the vector to estimate the posterior probability for
-   * @return a matrix with probability estimates; shape = {@code [1, this.getClasses().size()]}.
+   * @param input the input to estimate the posterior probability for
+   * @return an array with probability estimates; shape = {@code [1, this.getClasses().size()]}.
    */
-  DoubleArray estimate(Vector record);
+  DoubleArray estimate(In input);
 
 }

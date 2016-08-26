@@ -21,36 +21,30 @@
 package org.briljantframework.mimir.classification;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
+import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Convert;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
-import org.briljantframework.mimir.classification.tree.ClassSet;
-import org.briljantframework.mimir.classification.tree.Splitter;
-import org.briljantframework.mimir.classification.tree.TreeBranch;
-import org.briljantframework.mimir.classification.tree.TreeClassifier;
-import org.briljantframework.mimir.classification.tree.TreeLeaf;
-import org.briljantframework.mimir.classification.tree.TreeNode;
-import org.briljantframework.mimir.classification.tree.TreeSplit;
-import org.briljantframework.mimir.classification.tree.TreeVisitor;
-import org.briljantframework.mimir.classification.tree.ValueThreshold;
+import org.briljantframework.data.series.Convert;
+import org.briljantframework.mimir.classification.tree.*;
+import org.briljantframework.mimir.data.*;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
-import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class DecisionTree extends TreeClassifier<ValueThreshold> {
+public class DecisionTree<Out> extends TreeClassifier<Instance, Out> {
 
+  public static Property<Double> MIN_LEAF_SIZE = Property.of("min_leaf_size", Double.class, 1.0);
+  public static Property<Splitter> SPLITTER = Property.of("splitter", Splitter.class);
   private final int depth;
 
-  private DecisionTree(Vector classes, TreeNode<ValueThreshold> node, int depth,
-      TreeVisitor<ValueThreshold> predictionVisitor) {
-    super(classes, node, predictionVisitor);
+  private DecisionTree(List<Out> classes, int depth,
+      TreeVisitor<Instance, ValueThreshold> predictionVisitor) {
+    super(classes, predictionVisitor);
     this.depth = depth;
   }
 
@@ -66,51 +60,48 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
   /**
    * @author Isak Karlsson
    */
-  public static class Learner implements Predictor.Learner<DecisionTree> {
-
-    protected final double mininumWeight = 1;
-    protected final Splitter splitter;
+  public static class Learner<Out> extends AbstractLearner<Instance, Out, DecisionTree<Out>> {
 
     protected ClassSet classSet;
-    protected Vector classes = null;
+    protected List<Out> classes = null;
 
-    public Learner(Splitter splitter) {
-      this(splitter, null, null);
-    }
-
-
-    protected Learner(Splitter splitter, ClassSet classSet, Vector classes) {
-      this.splitter = splitter;
+    protected Learner(Properties parameters, List<Out> classes, ClassSet classSet) {
+      super(parameters);
       this.classSet = classSet;
       this.classes = classes;
     }
 
+    public Learner(Properties parameters) {
+
+    }
+
     @Override
-    public DecisionTree fit(DataFrame x, Vector y) {
+    public DecisionTree<Out> fit(Input<? extends Instance> in, Output<? extends Out> out) {
+      Check.argument(Dataset.isDataset(in), "requires a dataset");
       ClassSet classSet = this.classSet;
-      Vector classes = this.classes != null ? this.classes : Vectors.unique(y);
+      List<Out> classes = this.classes != null ? this.classes : Outputs.unique(out);
       if (classSet == null) {
-        classSet = new ClassSet(y, classes);
+        classSet = new ClassSet(out, classes);
       }
 
       Params p = new Params();
-      TreeNode<ValueThreshold> node = build(x, y, p, classSet);
-      return new DecisionTree(classes, node, p.depth, new SimplePredictionVisitor());
+      TreeNode<Instance, ValueThreshold> node = build(in, out, p, classSet);
+      return new DecisionTree<>(classes, p.depth, new SimplePredictionVisitor(node));
     }
 
-    protected TreeNode<ValueThreshold> build(DataFrame frame, Vector target, Params p,
-        ClassSet classSet) {
+    protected TreeNode<Instance, ValueThreshold> build(Input<? extends Instance> frame,
+        Output<?> target, Params p, ClassSet classSet) {
       return build(frame, target, p, classSet, 1);
     }
 
-    protected TreeNode<ValueThreshold> build(DataFrame frame, Vector target, Params p,
-        ClassSet classSet, int depth) {
+    protected TreeNode<Instance, ValueThreshold> build(Input<? extends Instance> frame,
+        Output<?> target, Params p, ClassSet classSet, int depth) {
 
-      if (classSet.getTotalWeight() <= mininumWeight || classSet.getTargetCount() == 1) {
+      if (classSet.getTotalWeight() <= getOrDefault(MIN_LEAF_SIZE) || classSet.getTargetCount() == 1) {
         p.depth = Math.max(p.depth, depth);
         return TreeLeaf.fromExamples(classSet);
       }
-      TreeSplit<ValueThreshold> maxSplit = splitter.find(classSet, frame, target);
+      TreeSplit<ValueThreshold> maxSplit = get(SPLITTER).find(classSet, frame, target);
       if (maxSplit == null) {
         p.depth = Math.max(p.depth, depth);
         return TreeLeaf.fromExamples(classSet);
@@ -124,42 +115,48 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
           p.depth = Math.max(p.depth, depth);
           return TreeLeaf.fromExamples(left);
         } else {
-          TreeNode<ValueThreshold> leftNode = build(frame, target, p, left, depth + 1);
-          TreeNode<ValueThreshold> rightNode = build(frame, target, p, right, depth + 1);
+          TreeNode<Instance, ValueThreshold> leftNode = build(frame, target, p, left, depth + 1);
+          TreeNode<Instance, ValueThreshold> rightNode = build(frame, target, p, right, depth + 1);
           return new TreeBranch<>(leftNode, rightNode, classes, maxSplit.getThreshold(), 1);
         }
       }
     }
 
     private final class Params {
-
-      public int depth = 0;
+      int depth = 0;
     }
   }
 
-  private static final class SimplePredictionVisitor implements TreeVisitor<ValueThreshold> {
+  private static final class SimplePredictionVisitor
+      implements TreeVisitor<Instance, ValueThreshold> {
 
     private static final int MISSING = 0, LEFT = -1, RIGHT = 1;
+    private final TreeNode<Instance, ValueThreshold> root;
+
+    SimplePredictionVisitor(TreeNode<Instance, ValueThreshold> node) {
+      this.root = node;
+    }
 
     @Override
-    public DoubleArray visitLeaf(TreeLeaf<ValueThreshold> leaf, Vector example) {
+    public TreeNode<Instance, ValueThreshold> getRoot() {
+      return root;
+    }
+
+    @Override
+    public DoubleArray visitLeaf(TreeLeaf<Instance, ValueThreshold> leaf, Instance example) {
       return leaf.getProbabilities();
     }
 
     @Override
-    public DoubleArray visitBranch(TreeBranch<ValueThreshold> node, Vector example) {
+    public DoubleArray visitBranch(TreeBranch<Instance, ValueThreshold> node, Instance example) {
       Object threshold = node.getThreshold().getValue();
       int axis = node.getThreshold().getAxis();
       int direction = MISSING;
-      if (!example.loc().isNA(axis)) {
+      if (!Is.NA(example.get(axis))) {
         if (Is.nominal(threshold)) {
-          direction = example.loc().get(Object.class, axis).equals(threshold) ? LEFT : RIGHT;
+          direction = Is.equal(example.get(axis), threshold) ? LEFT : RIGHT;
         } else {
-          // note: Is.nominal return true for any non-number and Number is always comparable
-          // @SuppressWarnings("unchecked")
-          // Comparable<Object> leftComparable = example.loc().get(Comparable.class, axis);
-          // direction = leftComparable.compareTo(threshold) <= 0 ? LEFT : RIGHT;
-          double left = example.loc().getAsDouble(axis);
+          double left = example.getDouble(axis);
           double right = Convert.to(Double.class, threshold);
           direction = Double.compare(left, right) <= 0 ? LEFT : RIGHT;
         }
@@ -172,7 +169,7 @@ public class DecisionTree extends TreeClassifier<ValueThreshold> {
           return visit(node.getRight(), example);
         case MISSING:
         default:
-          return visit(node.getLeft(), example); // TODO: what to do with missing values?
+          return visit(node.getLeft(), example);
       }
     }
   }

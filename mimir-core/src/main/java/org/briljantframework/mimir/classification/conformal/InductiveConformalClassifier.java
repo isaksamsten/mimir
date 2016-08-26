@@ -21,27 +21,28 @@
 package org.briljantframework.mimir.classification.conformal;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 import org.briljantframework.Check;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.classification.ClassifierCharacteristic;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
-import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class InductiveConformalClassifier extends AbstractConformalClassifier {
+public class InductiveConformalClassifier<In, Out> extends AbstractConformalClassifier<In, Out> {
 
-  private final ClassifierNonconformity nonconformity;
-  private ClassifierCalibrator calibrator;
-  private ClassifierCalibratorScores calibration = null;
+  private final ClassifierNonconformity<In, Out> nonconformity;
+  private ClassifierCalibrator<In,Out> calibrator;
+  private ClassifierCalibratorScores<In> calibration = null;
 
-  protected InductiveConformalClassifier(ClassifierNonconformity nonconformity,
-      ClassifierCalibrator calibrator, boolean stochasticSmoothing, Vector classes) {
+  protected InductiveConformalClassifier(ClassifierNonconformity<In, Out> nonconformity,
+      ClassifierCalibrator<In,Out> calibrator, boolean stochasticSmoothing, List<Out> classes) {
     super(stochasticSmoothing, classes);
     this.calibrator = Objects.requireNonNull(calibrator, "Calibrator is required.");
     this.nonconformity = Objects.requireNonNull(nonconformity, "Requires nonconformity scorer");
@@ -53,17 +54,17 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
    * @param x the data
    * @param y the calibration target
    */
-  public void calibrate(DataFrame x, Vector y) {
+  public void calibrate(Input<? extends In> x, Output<? extends Out> y) {
     calibration = calibrator.calibrate(nonconformity, x, y);
   }
 
   @Override
-  public ClassifierNonconformity getClassifierNonconformity() {
+  public ClassifierNonconformity<In, Out> getClassifierNonconformity() {
     return nonconformity;
   }
 
   @Override
-  protected ClassifierCalibratorScores getCalibrationScores() {
+  protected ClassifierCalibratorScores<In> getCalibrationScores() {
     Check.state(calibration != null, "Classifier is not calibrated.");
     return calibration;
   }
@@ -76,37 +77,41 @@ public class InductiveConformalClassifier extends AbstractConformalClassifier {
   /**
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  public static class Learner implements Predictor.Learner<InductiveConformalClassifier> {
+  public static class Learner<In, Out>
+      extends AbstractLearner<In, Out, InductiveConformalClassifier<In, Out>> {
 
-    private final ClassifierNonconformity.Learner learner;
-    private final boolean stochasticSmoothing;
-    private final ClassifierCalibrator calibratable;
+    private final ClassifierNonconformity.Learner<In, Out, ? extends ClassifierNonconformity<In, Out>> learner;
+    private final ClassifierCalibrator<In, Out> calibratable;
 
-    public Learner(ClassifierNonconformity.Learner<? extends ClassifierNonconformity> learner,
-        ClassifierCalibrator calibrator, boolean stochasticSmoothing) {
-      this.stochasticSmoothing = stochasticSmoothing;
+    public Learner(
+        ClassifierNonconformity.Learner<In, Out, ? extends ClassifierNonconformity<In, Out>> learner,
+        ClassifierCalibrator<In,Out> calibrator, boolean stochasticSmoothing) {
+      set(STOCHASTIC_SMOOTHING, stochasticSmoothing);
       this.calibratable = Objects.requireNonNull(calibrator, "Calibrator is required.");
       this.learner = Objects.requireNonNull(learner, "Nonconformity learner is required.");
     }
 
-    public Learner(ClassifierNonconformity.Learner<? extends ClassifierNonconformity> learner,
-        ClassifierCalibrator calibrator) {
+    public Learner(
+        ClassifierNonconformity.Learner<In, Out, ? extends ClassifierNonconformity<In, Out>> learner,
+        ClassifierCalibrator<In,Out> calibrator) {
       this(learner, calibrator, true);
     }
 
-    public Learner(ClassifierNonconformity.Learner<? extends ClassifierNonconformity> learner) {
+    public Learner(
+        ClassifierNonconformity.Learner<In, Out, ? extends ClassifierNonconformity<In, Out>> learner) {
       this(learner, ClassifierCalibrator.unconditional());
     }
 
     @Override
-    public InductiveConformalClassifier fit(DataFrame x, Vector y) {
-      Objects.requireNonNull(x, "Input data is required.");
-      Objects.requireNonNull(y, "Input target is required.");
-      Check.argument(x.rows() == y.size(), "The size of input data and input target don't match.");
-      ClassifierNonconformity nc = learner.fit(x, y);
-      return new InductiveConformalClassifier(nc, calibratable, stochasticSmoothing,
-          nc.getClasses());
+    public InductiveConformalClassifier<In, Out> fit(Input<? extends In> in,
+        Output<? extends Out> out) {
+      Objects.requireNonNull(in, "Input data is required.");
+      Objects.requireNonNull(out, "Input target is required.");
+      Check.argument(in.size() == out.size(),
+          "The size of input data and input target don't match.");
+      ClassifierNonconformity<In, Out> nc = learner.fit(in, out);
+      return new InductiveConformalClassifier<>(nc, calibratable,
+          getOrDefault(STOCHASTIC_SMOOTHING), nc.getClasses());
     }
-
   }
 }

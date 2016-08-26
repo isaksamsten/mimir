@@ -20,7 +20,8 @@
  */
 package org.briljantframework.mimir.shapelet;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.DoubleSequence;
+import org.briljantframework.data.series.Series;
 
 /**
  * A z-normalized sub sequence view of another MatrixLike
@@ -32,17 +33,17 @@ public class NormalizedShapelet extends Shapelet {
   private final double sigma;
   private final double mean;
 
-  public NormalizedShapelet(int start, int length, Vector vector) {
-    super(start, length, vector);
-    if (vector instanceof NormalizedShapelet) {
-      this.sigma = ((NormalizedShapelet) vector).sigma;
-      this.mean = ((NormalizedShapelet) vector).mean;
+  public NormalizedShapelet(int start, int length, DoubleSequence timeSeries) {
+    super(start, length, timeSeries);
+    if (timeSeries instanceof NormalizedShapelet) {
+      this.sigma = ((NormalizedShapelet) timeSeries).sigma;
+      this.mean = ((NormalizedShapelet) timeSeries).mean;
     } else {
       double ex = 0;
       double ex2 = 0;
       int size = start + length;
       for (int i = start; i < size; i++) {
-        double v = vector.loc().getAsDouble(i);
+        double v = timeSeries.getDouble(i);
         ex += v;
         ex2 += v * v;
       }
@@ -55,24 +56,12 @@ public class NormalizedShapelet extends Shapelet {
     }
   }
 
-  /**
-   * Create normalized shapelet.
-   *
-   * @param start the start
-   * @param length the length
-   * @param vectorLike the vector like
-   * @return the normalized shapelet
-   */
-  public static NormalizedShapelet create(int start, int length, Vector vectorLike) {
-    return new NormalizedShapelet(start, length, vectorLike);
-  }
-
   @Override
-  public double getAsDoubleAt(int i) {
+  public double getDouble(int i) {
     if (sigma == 0) {
       return 0;
     } else {
-      return (super.getAsDoubleAt(i) - mean) / sigma;
+      return (super.getDouble(i) - mean) / sigma;
     }
   }
 }

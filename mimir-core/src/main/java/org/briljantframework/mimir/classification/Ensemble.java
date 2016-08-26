@@ -20,70 +20,81 @@
  */
 package org.briljantframework.mimir.classification;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import static org.briljantframework.array.Arrays.divAssign;
+import static org.briljantframework.array.Arrays.plusAssign;
+
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
+import org.briljantframework.Check;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.classification.tree.ClassSet;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Property;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class Ensemble extends AbstractClassifier {
+public class Ensemble<In, Out> extends AbstractClassifier<In, Out> {
 
-  private final List<? extends Classifier> members;
+  /**
+   * The number of members in the ensemble
+   */
+  public static final Property<Integer> SIZE =
+      Property.of("ensemble_size", Integer.class, 100, i -> i > 0);
+
+  private final List<? extends Classifier<In, Out>> members;
   private final BooleanArray oobIndicator;
 
-  protected Ensemble(Vector classes, List<? extends Classifier> members, BooleanArray oobIndicator) {
+  protected Ensemble(List<Out> classes, List<? extends Classifier<In, Out>> members,
+      BooleanArray oobIndicator) {
     super(classes);
     this.members = members;
     this.oobIndicator = oobIndicator;
   }
 
-  public static DoubleArray oobEstimates(Ensemble ensemble, DataFrame x) {
+  public static <In> DoubleArray estimateOutOfBagProbabilities(Ensemble<In, ?> ensemble,
+      Input<? extends In> x) {
     BooleanArray ind = ensemble.getOobIndicator();
-    List<Classifier> members = ensemble.getEnsembleMembers();
-    DoubleArray estimates = DoubleArray.zeros(x.rows(), ensemble.getClasses().size());
-    for (int i = 0; i < x.rows(); i++) {
-      Vector example = x.loc().getRecord(i);
+    Check.argument(ind.rows() == x.size(), "input and oob indicator does not match");
+
+    List<? extends Classifier<In, ?>> members = ensemble.getEnsembleMembers();
+    DoubleArray estimates = DoubleArray.zeros(x.size(), ensemble.getClasses().size());
+    for (int i = 0; i < x.size(); i++) {
+      In example = x.get(i);
       DoubleArray estimate = estimates.getRow(i);
       BooleanArray oob = ind.getRow(i);
       int size = 0;
       for (int j = 0; j < oob.size(); j++) {
         if (oob.get(j)) {
-          estimate.plusAssign(members.get(j).estimate(example));
+          plusAssign(estimate, members.get(j).estimate(example));
           size++;
         }
       }
-      estimate.divAssign(size);
+      divAssign(estimate, DoubleArray.of(size));
     }
     return estimates;
   }
 
   /**
    * Shape = {@code [no training samples, no members]}, if element e<sup>i,j</sup> is {@code true}
-   * the i:th training sample is out of the j:th members training sample.
-   *
+   * the i:th training sample is out of the j:th members training sample. Vector
+   * 
    * @return the out of bag indicator matrix
    */
   public BooleanArray getOobIndicator() {
     return oobIndicator;
   }
 
-  public List<Classifier> getEnsembleMembers() {
+  public List<Classifier<In, Out>> getEnsembleMembers() {
     return Collections.unmodifiableList(members);
   }
 
@@ -93,12 +104,12 @@ public class Ensemble extends AbstractClassifier {
   }
 
   @Override
-  public DoubleArray estimate(Vector record) {
+  public DoubleArray estimate(In record) {
     List<DoubleArray> predictions =
         members.parallelStream().map(model -> model.estimate(record)).collect(Collectors.toList());
 
     int estimators = getEnsembleMembers().size();
-    Vector classes = getClasses();
+    List<?> classes = getClasses();
     DoubleArray m = DoubleArray.zeros(classes.size());
     for (DoubleArray prediction : predictions) {
       m.combineAssign(prediction, (t, o) -> t + o / estimators);
@@ -106,14 +117,15 @@ public class Ensemble extends AbstractClassifier {
     return m;
   }
 
-  public interface BaseLearner<T extends Classifier> {
-    Predictor.Learner<? extends T> getLearner(ClassSet set, Vector classes);
+  public interface BaseLearner<In, Out, T extends Classifier<In, Out>> {
+    Predictor.Learner<In, Out, ? extends T> getLearner(ClassSet set, List<Out> classes);
   }
 
   /**
    * @author Isak Karlsson
    */
-  public abstract static class Learner<P extends Ensemble> implements Predictor.Learner<P> {
+  public abstract static class Learner<In, Out, P extends Ensemble<In, Out>>
+      extends AbstractLearner<In, Out, P> {
 
     private final static ThreadPoolExecutor THREAD_POOL;
     private final static int CORES;
@@ -131,10 +143,9 @@ public class Ensemble extends AbstractClassifier {
       }
     }
 
-    protected final int size;
 
     protected Learner(int size) {
-      this.size = size;
+      set(SIZE, size);
     }
 
     /**
@@ -146,7 +157,7 @@ public class Ensemble extends AbstractClassifier {
      * @return a list of produced models
      * @throws Exception if something goes wrong
      */
-    protected static <T extends Classifier> List<T> execute(
+    protected static <In, T extends Classifier<In, ?>> List<T> execute(
         Collection<? extends Callable<T>> callables) throws Exception {
       List<T> models = new ArrayList<>();
       if (THREAD_POOL != null && THREAD_POOL.getActiveCount() < CORES) {
@@ -166,8 +177,9 @@ public class Ensemble extends AbstractClassifier {
      *
      * @return the size of the ensemble
      */
+    @Deprecated
     public int size() {
-      return size;
+      return get(SIZE);
     }
   }
 }

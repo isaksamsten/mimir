@@ -21,12 +21,11 @@
 package org.briljantframework.mimir.classification.conformal;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface ClassifierCalibratorScores {
+public interface ClassifierCalibratorScores<In> {
 
   /**
    * Return a double array of [no-calibration, 1] double array of nonconformity scores for the
@@ -37,6 +36,5 @@ public interface ClassifierCalibratorScores {
    * @param label the label
    * @return the calibration scores
    */
-  DoubleArray get(Vector example, Object label);
-
+  DoubleArray get(In example, Object label);
 }

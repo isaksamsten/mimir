@@ -20,8 +20,9 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
+import java.util.List;
+
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.classification.AbstractClassifier;
 
 /**
@@ -29,28 +30,17 @@ import org.briljantframework.mimir.classification.AbstractClassifier;
  * 
  * @author Isak Karlsson
  */
-public class TreeClassifier<T> extends AbstractClassifier {
+public class TreeClassifier<In, Out> extends AbstractClassifier<In, Out> {
 
-  private final TreeVisitor<T> predictionVisitor;
-  private final TreeNode<T> node;
+  private final TreeVisitor<In, ?> predictionVisitor;
 
-  protected TreeClassifier(Vector classes, TreeNode<T> node, TreeVisitor<T> predictionVisitor) {
+  protected TreeClassifier(List<Out> classes, TreeVisitor<In, ?> predictionVisitor) {
     super(classes);
-    this.node = node;
     this.predictionVisitor = predictionVisitor;
   }
 
-  /**
-   * Get the root-node of this tree
-   *
-   * @return the node
-   */
-  public TreeNode<T> getTree() {
-    return node;
-  }
-
   @Override
-  public DoubleArray estimate(Vector record) {
-    return predictionVisitor.visit(getTree(), record);
+  public DoubleArray estimate(In record) {
+    return predictionVisitor.visit(record);
   }
 }

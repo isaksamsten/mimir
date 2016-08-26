@@ -26,7 +26,7 @@ import org.briljantframework.array.Array;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.XYPlot;
@@ -43,14 +43,14 @@ class TestIt {
   }
 
   public static Plot testVectorBarChart() {
-    return Plots.bar(Vector.of(10, 20, 30));
+    return Plots.bar(Series.of(10, 20, 30));
   }
 
   public static Plot testStatisticalDataFrameChart() {
     RealDistribution distribution = new UniformRealDistribution(0, 200);
     DataFrame df =
-        DataFrame.of("A", Vector.fromSupplier(distribution::sample, 100), "B",
-            Vector.fromSupplier(distribution::sample, 100));
+        DataFrame.of("A", Series.generate(distribution::sample, 100), "B",
+            Series.generate(distribution::sample, 100));
 
     return Plots.statisticalBar(df);
   }
@@ -67,7 +67,7 @@ class TestIt {
     // JFreeChart chart = testStatisticalDataFrameChart();
     Array<Integer> x = Array.of(1, 2, 3, 4, 5, 6).reshape(3, 2);
     Array<Integer> y = Array.of(1, 2, 3, 4, 5, 6).reshape(3, 2);
-    XYDataset ds = new ArrayXYDataset(x, y, Array.of("A", "B").toList());
+    XYDataset ds = new ArrayXYDataset(x, y, java.util.Arrays.asList("A", "B"));
 
     XYPlot chart =
         new XYPlot(ds, new NumberAxis(), new NumberAxis(), new XYLineAndShapeRenderer(true, true));

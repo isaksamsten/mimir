@@ -20,10 +20,12 @@
  */
 package org.briljantframework.mimir.classification.conformal.evaluation;
 
+import java.util.List;
+
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -33,8 +35,8 @@ public class ConformalClassifierMeasure {
   private final double accuracy, error, averagePvalue, confidence, credibility, singletons,
       noClasses;
 
-  public ConformalClassifierMeasure(Vector truth, DoubleArray score, double significance,
-                                    Vector classes) {
+  public ConformalClassifierMeasure(Output<?> truth, DoubleArray score, double significance,
+      List<?> classes) {
     // Compute confidence and credibility
     double correct = 0;
     double avgConfidence = 0;
@@ -47,7 +49,7 @@ public class ConformalClassifierMeasure {
       BooleanArray predictions = estimate.where(p -> p > significance);
       double noPredictions = Arrays.sum(predictions);
 
-      int trueClassIndex = classes.loc().indexOf(truth.loc().get(i));
+      int trueClassIndex = classes.indexOf(truth.get(i));
       // if the true class wasn't included during training, it can't be correct
       if (trueClassIndex < 0) {
         correct++;

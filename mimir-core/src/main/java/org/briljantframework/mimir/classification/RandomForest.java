@@ -25,22 +25,21 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
+import org.briljantframework.Check;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.classification.tree.Example;
 import org.briljantframework.mimir.classification.tree.RandomSplitter;
-import org.briljantframework.mimir.classification.tree.Splitter;
+import org.briljantframework.mimir.data.*;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public final class RandomForest extends Ensemble {
+public final class RandomForest<Out> extends Ensemble<Instance, Out> {
 
-  private RandomForest(Vector classes, List<? extends Classifier> members, BooleanArray oobIndicator) {
+  private RandomForest(List<Out> classes, List<? extends Classifier<Instance, Out>> members,
+      BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
   }
 
@@ -52,36 +51,31 @@ public final class RandomForest extends Ensemble {
   /**
    * @author Isak Karlsson
    */
-  public static class Learner extends Ensemble.Learner<RandomForest> {
-
-    private final BaseLearner<? extends Classifier> learnStrategy;
+  public static class Learner<Out> extends Ensemble.Learner<Instance, Out, RandomForest<Out>> {
 
     public Learner(int size) {
-      this(RandomSplitter.withMaximumFeatures(-1).create(), size);
-    }
-
-    private Learner(BaseLearner<? extends Classifier> baseLearner, int size) {
       super(size);
-      this.learnStrategy = baseLearner;
-    }
-
-    private Learner(Splitter splitter, int size) {
-      super(size);
-      learnStrategy = (set, classes) -> new DecisionTree.Learner(splitter, set, classes);
+      set(DecisionTree.SPLITTER, RandomSplitter.withMaximumFeatures(-1).create());
     }
 
     @Override
-    public RandomForest fit(DataFrame x, Vector y) {
-      Vector classes = Vectors.unique(y);
+    public RandomForest<Out> fit(Input<? extends Instance> x, Output<? extends Out> y) {
+      Check.argument(Dataset.isDataset(x), "requires a dataset");
+      Check.argument(x.size() == y.size());
+
+      List<Out> classes = Outputs.unique(y);
+      Check.argument(classes.size() > 1, "require more than 1 output.");
+
       ClassSet classSet = new ClassSet(y, classes);
-      List<FitTask> fitTasks = new ArrayList<>();
-      BooleanArray oobIndicator = Arrays.booleanArray(x.rows(), size());
-      for (int i = 0; i < size(); i++) {
-        fitTasks
-            .add(new FitTask(classSet, x, y, learnStrategy, classes, oobIndicator.getColumn(i)));
+      int size = get(SIZE);
+      BooleanArray oobIndicator = Arrays.booleanArray(x.size(), size);
+      List<FitTask<Out>> fitTasks = new ArrayList<>(size);
+      for (int i = 0; i < size; i++) {
+        fitTasks.add(new FitTask<>(classSet, new DecisionTree.Learner<>(getParameters()), x, y,
+            classes, oobIndicator.getColumn(i)));
       }
       try {
-        return new RandomForest(classes, execute(fitTasks), oobIndicator);
+        return new RandomForest<>(classes, execute(fitTasks), oobIndicator);
       } catch (Exception e) {
         e.printStackTrace();
         return null;
@@ -93,30 +87,34 @@ public final class RandomForest extends Ensemble {
       return "Random Classification Forest";
     }
 
-    private static final class FitTask implements Callable<Classifier> {
+    private static final class FitTask<Out> implements Callable<Classifier<Instance, Out>> {
 
       private final ClassSet classSet;
-      private final DataFrame x;
-      private final Vector y;
-      private final Vector classes;
+      private final Input<? extends Instance> x;
+      private final Output<? extends Out> y;
+      private final List<Out> classes;
       private final BooleanArray oobIndicator;
-      private final BaseLearner<? extends Classifier> baseLearner;
+      private final DecisionTree.Learner<? extends Out> learner;
+      // private final BaseLearner<Instance, ? extends Out, ? extends Classifier<Instance, Out>>
+      // baseLearner;
 
-      private FitTask(ClassSet classSet, DataFrame x, Vector y,
-          BaseLearner<? extends Classifier> baseLearner, Vector classes, BooleanArray oobIndicator) {
+      private FitTask(ClassSet classSet, DecisionTree.Learner<? extends Out> learner,
+          Input<? extends Instance> x, Output<? extends Out> y, List<Out> classes,
+          BooleanArray oobIndicator) {
         this.classSet = classSet;
         this.x = x;
         this.y = y;
-        this.baseLearner = baseLearner;
+        this.learner = learner;
         this.classes = classes;
         this.oobIndicator = oobIndicator;
       }
 
       @Override
-      public Classifier call() throws Exception {
+      public Classifier<Instance, Out> call() throws Exception {
         Random random = new Random(Thread.currentThread().getId() * System.currentTimeMillis());
         ClassSet bootstrap = sample(classSet, random);
-        return baseLearner.getLearner(bootstrap, classes).fit(x, y);
+//        return learner.fit(bootstrap, classes).fit(x, y);
+        throw new UnsupportedOperationException();
       }
 
       public ClassSet sample(ClassSet classSet, Random random) {
@@ -151,38 +149,4 @@ public final class RandomForest extends Ensemble {
     }
   }
 
-  public static class Configurator implements Classifier.Configurator<Learner> {
-
-    private RandomSplitter.Builder splitter = RandomSplitter.withMaximumFeatures(-1);
-    private int size = 100;
-    private BaseLearner<? extends Classifier> learner = null;
-
-    public Configurator(int size) {
-      this.size = size;
-    }
-
-    public Configurator setSize(int size) {
-      this.size = size;
-      return this;
-    }
-
-    public Configurator setMaximumFeatures(int size) {
-      splitter.setMaximumFeatures(size);
-      return this;
-    }
-
-    public Configurator setBaseLearner(BaseLearner<? extends Classifier> learner) {
-      this.learner = learner;
-      return this;
-    }
-
-    @Override
-    public Learner configure() {
-      if (learner == null) {
-        return new Learner(splitter.create(), size);
-      } else {
-        return new Learner(learner, size);
-      }
-    }
-  }
 }

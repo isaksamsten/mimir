@@ -20,35 +20,31 @@
  */
 package org.briljantframework.mimir.distance;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.DoubleSequence;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.shapelet.Shapelet;
 
 /**
  * @author Isak Karlsson
  */
-public class SlidingDistance implements Distance {
+public class SlidingDistance implements Distance<Series> {
 
-  private final Distance distanceMeasure;
+  private final Distance<? super DoubleSequence> distanceMeasure;
 
-  public SlidingDistance(Distance instance) {
+  public SlidingDistance(Distance<? super DoubleSequence> instance) {
     this.distanceMeasure = instance;
   }
 
   @Override
-  public double compute(double a, double b) {
-    return 0;
-  }
-
-  @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     double minDistance = Double.POSITIVE_INFINITY;
 
     // Assumed to be normalized!
-    Vector candidate = a.size() < b.size() ? a : b;
-    Vector vector = a.size() >= b.size() ? a : b;
+    Series candidate = a.size() < b.size() ? a : b;
+    Series vector = a.size() >= b.size() ? a : b;
     for (int i = 0; i <= vector.size() - candidate.size(); i++) {
-      Shapelet subShapelet = new Shapelet(i, candidate.size(), vector);
-      double sumDistance = distanceMeasure.compute(candidate, subShapelet);
+      Shapelet subShapelet = new Shapelet(i, candidate.size(), vector.loc());
+      double sumDistance = distanceMeasure.compute(candidate.loc(), subShapelet);
       if (sumDistance < minDistance) {
         minDistance = sumDistance;
       }
@@ -56,13 +52,4 @@ public class SlidingDistance implements Distance {
     return Math.sqrt(minDistance / candidate.size());
   }
 
-  @Override
-  public double max() {
-    return 0;
-  }
-
-  @Override
-  public double min() {
-    return 0;
-  }
 }

@@ -22,8 +22,8 @@ package org.briljantframework.mimir.evaluation.partition;
 
 import java.util.Collection;
 
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * The partitioner represents a strategy of how to partition a {@code DataFrame} and {@code Vector}
@@ -35,7 +35,7 @@ import org.briljantframework.data.vector.Vector;
  *
  * @author Isak Karlsson
  */
-public interface Partitioner {
+public interface Partitioner<In, Out> {
 
   /**
    * Partitions {@code x} and {@code y} into training and validation partitions
@@ -44,5 +44,5 @@ public interface Partitioner {
    * @param y the target
    * @return an iterable representing over the partitions
    */
-  Collection<Partition> partition(DataFrame x, Vector y);
+  Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y);
 }

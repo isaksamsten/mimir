@@ -22,40 +22,15 @@ package org.briljantframework.mimir.distance;
 
 import java.util.Objects;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.DoubleSequence;
+import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.shapelet.IndexSortedNormalizedShapelet;
 import org.briljantframework.mimir.shapelet.NormalizedShapelet;
 
 /**
  * Created by Isak Karlsson on 23/09/14.
  */
-public class EarlyAbandonSlidingDistance implements Distance {
-
-  protected final Distance distance;
-
-  /**
-   * Instantiates a new Early abandon sliding distance.
-   *
-   * @param distance the distance
-   */
-  public EarlyAbandonSlidingDistance(Distance distance) {
-    this.distance = Objects.requireNonNull(distance, "Requires a distance measure");
-  }
-
-  /**
-   * Create early abandon sliding distance.
-   *
-   * @param distance the distance
-   * @return the early abandon sliding distance
-   */
-  public static EarlyAbandonSlidingDistance create(Distance distance) {
-    return new EarlyAbandonSlidingDistance(distance);
-  }
-
-  @Override
-  public double compute(double a, double b) {
-    return distance.compute(a, b);
-  }
+public class EarlyAbandonSlidingDistance implements Distance<DoubleSequence> {
 
   /**
    * If {@code a} is shorter than {@code b}, then {@code a} is considered a shapelet and slid
@@ -69,20 +44,18 @@ public class EarlyAbandonSlidingDistance implements Distance {
    * @return the shortest possible distance of a (or b) as it is slid against b (or a)
    */
   @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(DoubleSequence a, DoubleSequence b) {
     double minDistance = Double.POSITIVE_INFINITY;
-    Vector candidate = a.size() < b.size() ? a : b;
-    Vector vector = a.size() >= b.size() ? a : b;
+    DoubleSequence candidate = a.size() < b.size() ? a : b;
+    DoubleSequence vector = a.size() >= b.size() ? a : b;
     if (!(candidate instanceof NormalizedShapelet)) {
       if (!(vector instanceof NormalizedShapelet)) {
         vector = new NormalizedShapelet(0, vector.size(), vector);
       }
-      return new SlidingDistance(EuclideanDistance.getInstance()).compute(vector, new NormalizedShapelet(0,
-                                                                                                 candidate
-                                                                                                     .size(),
-                                                                                                 candidate));
-      // candidate = new NormalizedShapelet(0, candidate.size(), candidate);
-      // throw new IllegalArgumentException("Candidate shapelet must be z-normalized");
+      // return new SlidingDistance(EuclideanDistance.getInstance()).compute(vector,
+      // new NormalizedShapelet(0, candidate.size(), candidate));
+       candidate = new NormalizedShapelet(0, candidate.size(), candidate);
+//      throw new IllegalArgumentException("Candidate shapelet must be z-normalized");
     }
 
     int[] order = null;
@@ -98,7 +71,7 @@ public class EarlyAbandonSlidingDistance implements Distance {
     double ex = 0;
     double ex2 = 0;
     for (int i = 0; i < seriesSize; i++) {
-      double d = vector.loc().getAsDouble(i);
+      double d = vector.getDouble(i);
       ex += d;
       ex2 += d * d;
       t[i % m] = d;
@@ -120,24 +93,14 @@ public class EarlyAbandonSlidingDistance implements Distance {
     return Math.sqrt(minDistance / candidate.size());
   }
 
-  @Override
-  public double max() {
-    return distance.max();
-  }
-
-  @Override
-  public double min() {
-    return distance.min();
-  }
-
-  double distance(Vector c, double[] t, int j, int m, int[] order, double mean, double std,
+  double distance(DoubleSequence c, double[] t, int j, int m, int[] order, double mean, double std,
       double bsf) {
     double sum = 0;
     for (int i = 0; i < m && sum < bsf; i++) {
       if (order != null) {
         i = order[i];
       }
-      double x = normalize(t[i + j], mean, std) - c.loc().getAsDouble(i);
+      double x = normalize(t[i + j], mean, std) - c.getDouble(i);
       // double x = ((t[i + j] - mean) / std) - c.loc().getAsDouble(i);
       sum += x * x;
     }

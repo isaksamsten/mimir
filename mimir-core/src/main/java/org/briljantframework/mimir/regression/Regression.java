@@ -20,41 +20,11 @@
  */
 package org.briljantframework.mimir.regression;
 
-import org.briljantframework.Check;
-import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.Is;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.dataframe.DataFrames;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson
  */
-public interface Regression extends Predictor {
+public interface Regression<In> extends Predictor<In, Double> {
 
-  /**
-   * Predict the value for the given input vector
-   * 
-   * @param y the input vector
-   * @return the predicted value
-   */
-  double predict(Vector y);
-
-  /**
-   * @author Isak Karlsson <isak-kar@dsv.su.se>
-   */
-  interface Learner<P extends Regression> extends Predictor.Learner<P> {
-
-    default P fit(DataFrame x, Vector y) {
-      Check.argument(x.rows() == y.size(), "Size of input data and input target don't match");
-      Check.argument(x.getColumns().stream().allMatch(Is::numeric),
-          "Only supports numerical data.");
-      Check.argument(Is.numeric(y), "Only support numerical target");
-      return fit(DataFrames.toDoubleArray(x), Vectors.toDoubleArray(y));
-    }
-
-    P fit(DoubleArray x, DoubleArray y);
-  }
 }

@@ -20,8 +20,6 @@
  */
 package org.briljantframework.mimir.distance;
 
-import org.briljantframework.data.vector.Vector;
-
 /**
  * In mathematics, a metric or distance function is a function that defines a distance between
  * elements of a set. A set with a metric is called a metric space. A metric induces a topology on a
@@ -48,37 +46,14 @@ import org.briljantframework.data.vector.Vector;
  * 
  * @author Isak Karlsson
  */
-public interface Distance {
+public interface Distance<T> {
 
   /**
-   * Calculate the distance between two scalar
-   *
-   * @param a scalar
-   * @param b scalar
-   * @return distance double
-   */
-  double compute(double a, double b);
-
-  /**
-   * Compute the distance between two vectors
+   * Compute the distance between two points
    *
    * @param a a vector
    * @param b a vector
    * @return the distance
    */
-  double compute(Vector a, Vector b);
-
-  /**
-   * Max double.
-   *
-   * @return the maximum possible distance
-   */
-  double max();
-
-  /**
-   * Min double.
-   *
-   * @return the minimum possible distance
-   */
-  double min();
+  double compute(T a, T b);
 }

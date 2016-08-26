@@ -25,25 +25,26 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.primitive.DoubleList;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
+import org.briljantframework.util.primitive.DoubleList;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface ClassifierCalibrator {
+public interface ClassifierCalibrator<In, Out> {
 
   /**
    * Returns an unconditional classifier calibrator
    * 
    * @return an unconditional classifier calibrator
    */
-  static ClassifierCalibrator unconditional() {
+  static <In, Out> ClassifierCalibrator<In, Out> unconditional() {
     return (nc, x, y) -> {
       DoubleArray calibration = nc.estimate(x, y);
       return (example, label) -> calibration;
     };
+
   }
 
   /**
@@ -51,12 +52,12 @@ public interface ClassifierCalibrator {
    * 
    * @return a class conditional classifier calibrator
    */
-  static ClassifierCalibrator classConditional() {
+  static <In, Out> ClassifierCalibrator<In, Out> classConditional() {
     return (nc, x, y) -> {
       Map<Object, DoubleList> tmpClassNc = new HashMap<>();
-      for (int i = 0; i < x.rows(); i++) {
-        Vector e = x.loc().getRecord(i);
-        Object c = y.loc().get(i);
+      for (int i = 0; i < x.size(); i++) {
+        In e = x.get(i);
+        Out c = y.get(i);
         DoubleList l = tmpClassNc.get(c);
         if (l == null) {
           l = new DoubleList();
@@ -64,9 +65,8 @@ public interface ClassifierCalibrator {
         }
         l.add(nc.estimate(e, c));
       }
-      Map<Object, DoubleArray> classNc =
-          tmpClassNc.entrySet().stream()
-              .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toDoubleArray()));
+      Map<Object, DoubleArray> classNc = tmpClassNc.entrySet().stream()
+          .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toDoubleArray()));
       return (example, label) -> classNc.get(label);
 
     };
@@ -77,5 +77,6 @@ public interface ClassifierCalibrator {
    * @param x the calibration data
    * @param y the calibration target
    */
-  ClassifierCalibratorScores calibrate(ClassifierNonconformity nc, DataFrame x, Vector y);
+  ClassifierCalibratorScores<In> calibrate(ClassifierNonconformity<In, Out> nc,
+      Input<? extends In> x, Output<? extends Out> y);
 }

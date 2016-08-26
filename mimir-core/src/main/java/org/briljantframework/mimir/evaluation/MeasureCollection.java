@@ -25,15 +25,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.DoubleVector;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.dataframe.DataFrames;
+import org.briljantframework.data.series.DoubleSeries;
+import org.briljantframework.data.series.Series;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public final class MeasureCollection {
 
-  private final Map<Key, Vector.Builder> measures;
+  private final Map<Key, Series.Builder> measures;
 
   public MeasureCollection(MeasureCollection collection) {
     this.measures = new HashMap<>(collection.measures);
@@ -48,22 +49,22 @@ public final class MeasureCollection {
   }
 
   public synchronized void add(String measure, MeasureSample sample, double value) {
-    measures.computeIfAbsent(new Key(measure, sample), (a) -> new DoubleVector.Builder())
+    measures.computeIfAbsent(new Key(measure, sample), (a) -> new DoubleSeries.Builder())
         .add(value);
   }
 
   public synchronized DataFrame toDataFrame() {
     DataFrame.Builder df = DataFrame.builder();
-    for (Map.Entry<Key, Vector.Builder> entry : measures.entrySet()) {
+    for (Map.Entry<Key, Series.Builder> entry : measures.entrySet()) {
       if (entry.getKey().sample == MeasureSample.IN_SAMPLE) {
         continue;
       }
       // TODO: don't ignore in sample measures
       // TODO: ensure that all measures are of the same length
       // TODO: measures with both in-sample and out-sample will be overwritten
-      df.set(entry.getKey().measure, entry.getValue());
+      df.setColumn(entry.getKey().measure, entry.getValue());
     }
-    return df.build().sortColumns(Comparator.comparing(Object::toString));
+    return DataFrames.sortColumns(df.build(), Comparator.comparing(Object::toString));
   }
 
   private final static class Key {

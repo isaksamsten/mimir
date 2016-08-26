@@ -22,13 +22,23 @@ package org.briljantframework.mimir.supervised;
 
 import java.util.Set;
 
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.data.Properties;
+import org.briljantframework.mimir.data.Property;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface Predictor {
+public interface Predictor<In, Out> {
+
+  /**
+   * Predict the output given the input.
+   *
+   * @param in the input
+   * @return the predicted output
+   */
+  Out predict(In in);
 
   /**
    * Return a vector of predictions for the rows in the given data frame.
@@ -36,7 +46,7 @@ public interface Predictor {
    * @param x the data frame
    * @return a vector of predictions
    */
-  Vector predict(DataFrame x);
+  Output<Out> predict(Input<? extends In> x);
 
   /**
    * Get a set of characteristics for this particular predictor
@@ -45,11 +55,48 @@ public interface Predictor {
    */
   Set<Characteristic> getCharacteristics();
 
-  interface Learner<P extends Predictor> {
-    P fit(DataFrame x, Vector y);
+  /**
+   * Generates a predictor based on some underlying algorithm and properties.
+   */
+  interface Learner<In, Out, P extends Predictor<In, Out>> {
+
+    /**
+     * Fit a predictor to the given input data.
+     * 
+     * @param in the input data
+     * @param out the output target
+     * @return a predictor for predicting the output value of an input
+     */
+    P fit(Input<? extends In> in, Output<? extends Out> out);
+
+    /**
+     * Set the specified parameter to the specified value.
+     *
+     * @param key the parameter key
+     * @param value the parameter value
+     * @param <T> the type of parameter value
+     */
+    <T> void set(Property<T> key, T value);
+
+    /**
+     * Get the parameter value for the specified key.
+     *
+     * @param key the parameter key
+     * @param <T> the type of parameter value
+     * @return the parameter value
+     */
+    <T> T get(Property<T> key);
+
+    /**
+     * Get a typed map of parameter values.
+     *
+     * @return the parameters
+     */
+    Properties getParameters();
   }
 
-  interface Configurator<C extends Learner<? extends Predictor>> {
+  @Deprecated
+  interface Configurator<In, Out, C extends Learner<In, Out, ? extends Predictor<In, Out>>> {
     C configure();
   }
 }

@@ -22,20 +22,15 @@ package org.briljantframework.mimir.distance;
 
 import java.util.Objects;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class HammingDistance implements Distance {
+public class HammingDistance implements Distance<Series> {
 
   @Override
-  public double compute(double a, double b) {
-    return a == b ? 0 : 1;
-  }
-
-  @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     int size = Math.min(a.size(), b.size());
     double distance = 0;
     for (int i = 0; i < size; i++) {
@@ -47,13 +42,4 @@ public class HammingDistance implements Distance {
     return distance / size;
   }
 
-  @Override
-  public double max() {
-    return Double.POSITIVE_INFINITY;
-  }
-
-  @Override
-  public double min() {
-    return Double.NEGATIVE_INFINITY;
-  }
 }

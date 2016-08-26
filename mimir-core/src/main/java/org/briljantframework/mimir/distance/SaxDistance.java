@@ -25,13 +25,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.briljantframework.Check;
-import org.briljantframework.data.dataseries.SymbolicAggregator;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
+import org.briljantframework.mimir.data.timeseries.SymbolicAggregator;
 
 /**
  * @author Isak Karlsson
  */
-public class SaxDistance implements Distance {
+public class SaxDistance implements Distance<Series> {
 
   private final Map<String, Map<String, Double>> lookup;
   private final double n;
@@ -50,12 +50,7 @@ public class SaxDistance implements Distance {
   }
 
   @Override
-  public double compute(double a, double b) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     Check.dimension(a.size(), b.size());
 
     double w = a.size();
@@ -70,13 +65,4 @@ public class SaxDistance implements Distance {
     return Math.sqrt(n / w) * Math.sqrt(sum);
   }
 
-  @Override
-  public double max() {
-    return Double.POSITIVE_INFINITY;
-  }
-
-  @Override
-  public double min() {
-    return Double.NEGATIVE_INFINITY;
-  }
 }

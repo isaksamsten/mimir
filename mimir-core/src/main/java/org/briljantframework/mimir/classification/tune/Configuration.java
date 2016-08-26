@@ -20,45 +20,27 @@
  */
 package org.briljantframework.mimir.classification.tune;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.data.Properties;
 import org.briljantframework.mimir.evaluation.Result;
-import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson
  */
-public class Configuration<P extends Predictor> {
+public class Configuration<Out> {
 
-  private final Predictor.Learner<? extends P> classifier;
-  private final Result result;
-  private final Vector parameters;
+  private final Result<Out> result;
+  private final Properties parameters;
 
-  public Configuration(Predictor.Learner<? extends P> classifier, Result result,
-                       Vector parameters) {
-    this.classifier = classifier;
+  public Configuration(Result<Out> result, Properties parameters) {
     this.result = result;
     this.parameters = parameters;
   }
 
-  /**
-   * Get the classifier configured according to the parameters
-   *
-   * @return the classifier
-   */
-  public Predictor.Learner<? extends P> getClassifier() {
-    return classifier;
-  }
-
-  /**
-   * Get the result of this configuration
-   *
-   * @return the result
-   */
-  public Result getResult() {
+  public Result<Out> getResult() {
     return result;
   }
 
-  public Vector getParameters() {
+  public Properties getParameters() {
     return parameters;
   }
 

@@ -28,14 +28,15 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson
  */
-public interface Evaluator<P extends Predictor> {
+public interface Evaluator<In, Out, P extends Predictor<In, Out>> {
 
-  static Evaluator<Predictor> foldOutput(IntConsumer consumer) {
-    return new Evaluator<Predictor>() {
+  static <In, Out> Evaluator<In, Out, Predictor<In, Out>> foldOutput(IntConsumer consumer) {
+    return new Evaluator<In, Out, Predictor<In, Out>>() {
       private int fold = 0;
 
       @Override
-      public void accept(EvaluationContext<? extends Predictor> ctx) {
+      public void accept(
+          EvaluationContext<? extends In, ? extends Out, ? extends Predictor<In, Out>> ctx) {
         consumer.accept(fold++);
       }
     };
@@ -46,5 +47,5 @@ public interface Evaluator<P extends Predictor> {
    *
    * @param ctx the evaluation context
    */
-  void accept(EvaluationContext<? extends P> ctx);
+  void accept(EvaluationContext<? extends In, ? extends Out, ? extends P> ctx);
 }

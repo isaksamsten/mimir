@@ -20,12 +20,7 @@
  */
 package org.briljantframework.mimir.shapelet;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.briljantframework.data.index.Index;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.VectorView;
+import org.briljantframework.DoubleSequence;
 
 /**
  * A Shapelet is a (short) view of a larger data series (i.e. a vector). The underlying vector
@@ -43,33 +38,15 @@ import org.briljantframework.data.vector.VectorView;
  * @author Isak Karlsson
  */
 // TODO: override getAs... to support the changed indexing
-public class Shapelet extends VectorView {
+public class Shapelet implements DoubleSequence {
 
+  private final DoubleSequence timeSeries;
   private final int start, length;
 
-  /**
-   * Instantiates a new Shapelet.
-   *
-   * @param start the start
-   * @param length the length
-   * @param vector the vector
-   */
-  public Shapelet(int start, int length, Vector vector) {
-    super(vector);
+  public Shapelet(int start, int length, DoubleSequence timeSeries) {
     this.start = start;
-    this.length = length; // inclusive
-  }
-
-  /**
-   * From vector.
-   *
-   * @param start the start
-   * @param length the length
-   * @param vector the vector
-   * @return the shapelet
-   */
-  public static Shapelet create(int start, int length, Vector vector) {
-    return new Shapelet(start, length, vector);
+    this.length = length;
+    this.timeSeries = timeSeries;
   }
 
   /**
@@ -82,33 +59,33 @@ public class Shapelet extends VectorView {
   }
 
   @Override
-  protected String toStringAt(int index) {
-    return parent.loc().toString(index);
-  }
-
-  @Override
-  protected Vector shallowCopy(Index index) {
-    Vector n = parent.copy();
-    n.setIndex(index);
-    return new Shapelet(start, length, n);
-  }
-
-  @Override
-  protected double getAsDoubleAt(int i) {
-    return parent.loc().getAsDouble(start + i);
-  }
-
-  @Override
   public int size() {
     return length;
   }
 
   @Override
-  public String toString() {
-    List<String> r = new ArrayList<>();
-    for (int i = 0; i < size(); i++) {
-      r.add(toStringAt(i));
-    }
-    return String.format("Shapelet(%s, shape=(%d, 1))", r, size());
+  public double getDouble(int index) {
+    return timeSeries.getDouble(start + index);
   }
+
+  // @Override
+  // public Series reindex(Index index) {
+  // Series n = parent.copy();
+  // n.setIndex(index);
+  // return new Shapelet(start, length, n);
+  // }
+
+  // @Override
+  // protected double getDoubleElement(int i) {
+  // return parent.loc().getDouble(start + i);
+  // }
+
+  // @Override
+  // public String toString() {
+  // List<String> r = new ArrayList<>();
+  // for (int i = 0; i < size(); i++) {
+  // r.add(getStringElement(i));
+  // }
+  // return String.format("Shapelet(%s, shape=(%d, 1))", r, size());
+  // }
 }

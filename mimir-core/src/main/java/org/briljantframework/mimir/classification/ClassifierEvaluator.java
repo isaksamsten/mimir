@@ -20,23 +20,21 @@
  */
 package org.briljantframework.mimir.classification;
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.Evaluator;
 
 /**
  * @author Isak Karlsson
  */
-public enum ClassifierEvaluator implements Evaluator<Classifier> {
-  INSTANCE;
+public class ClassifierEvaluator<In> implements Evaluator<In, Object, Classifier<In, Object>> {
 
   @Override
-  public void accept(EvaluationContext<? extends Classifier> ctx) {
-    Vector predictions = ctx.getPredictions();
-    Vector truth = ctx.getPartition().getValidationTarget();
-    ClassifierMeasure cm =
-        new ClassifierMeasure(predictions, truth, ctx.getEstimates(), ctx.getPredictor()
-            .getClasses());
+  public void accept(EvaluationContext<? extends In, ?, ? extends Classifier<In, Object>> ctx) {
+    Output<?> predictions = ctx.getPredictions();
+    Output<?> truth = ctx.getPartition().getValidationTarget();
+    ClassifierMeasure cm = new ClassifierMeasure(predictions, truth, ctx.getEstimates(),
+        ctx.getPredictor().getClasses());
 
     ctx.getMeasureCollection().add("accuracy", cm.getAccuracy());
     ctx.getMeasureCollection().add("error", cm.getError());

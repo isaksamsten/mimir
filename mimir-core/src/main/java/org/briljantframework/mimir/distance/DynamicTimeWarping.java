@@ -21,7 +21,7 @@
 package org.briljantframework.mimir.distance;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 
 /**
  * In time series analysis, dynamic time warping (DTW) is an algorithm for measuring similarity
@@ -36,27 +36,12 @@ import org.briljantframework.data.vector.Vector;
  * <p>
  * Created by Isak Karlsson on 01/09/14.
  */
-public class DynamicTimeWarping implements Distance {
+public class DynamicTimeWarping implements Distance<Series> {
 
-  /**
-   * The Distance.
-   */
-  protected final Distance distance;
   private final int constraint;
 
-  /**
-   * Instantiates a new Dynamic time warping.
-   *
-   * @param distance the local distance function
-   * @param constraint the local constraint (i.e. width of the band)
-   */
-  public DynamicTimeWarping(Distance distance, int constraint) {
-    this.distance = distance;
-    this.constraint = constraint;
-  }
-
   public DynamicTimeWarping(int constraint) {
-    this(EuclideanDistance.getInstance(), constraint);
+    this.constraint = constraint;
   }
 
   /**
@@ -66,13 +51,13 @@ public class DynamicTimeWarping implements Distance {
    * @param b scalar
    * @return the distance between a and b
    */
-  @Override
   public final double compute(double a, double b) {
-    return distance.compute(a, b);
+    double r = a - b;
+    return r * r;
   }
 
   @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(Series a, Series b) {
     int n = a.size(), m = b.size();
     DoubleArray dtw = DoubleArray.zeros(n, m);
     dtw.assign(Double.POSITIVE_INFINITY);
@@ -83,23 +68,13 @@ public class DynamicTimeWarping implements Distance {
       int end = constraint <= -1 ? m : Math.min(m, i + width);
       int start = constraint <= -1 ? 1 : Math.max(1, i - width);
       for (int j = start; j < end; j++) {
-        double cost = distance.compute(a.loc().getAsDouble(i), b.loc().getAsDouble(j));
+        double cost = compute(a.loc().getDouble(i), b.loc().getDouble(j));
         dtw.set(i, j,
             cost + Math.min(dtw.get(i - 1, j), Math.min(dtw.get(i, j - 1), dtw.get(i - 1, j - 1))));
       }
     }
 
     return dtw.get(n - 1, m - 1);
-  }
-
-  @Override
-  public double max() {
-    return distance.max();
-  }
-
-  @Override
-  public double min() {
-    return distance.min();
   }
 
   @Override

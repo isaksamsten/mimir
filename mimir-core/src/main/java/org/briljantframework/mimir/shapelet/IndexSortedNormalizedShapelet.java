@@ -20,8 +20,10 @@
  */
 package org.briljantframework.mimir.shapelet;
 
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
+import java.util.function.IntBinaryOperator;
+
+import org.briljantframework.DoubleSequence;
+import org.briljantframework.util.sort.QuickSort;
 
 /**
  * @author Isak Karlsson
@@ -29,14 +31,28 @@ import org.briljantframework.data.vector.Vectors;
 public class IndexSortedNormalizedShapelet extends NormalizedShapelet {
   protected final int[] order;
 
-  public IndexSortedNormalizedShapelet(int start, int length, Vector vector) {
+  public IndexSortedNormalizedShapelet(int start, int length, DoubleSequence vector) {
     super(start, length, vector);
     if (vector instanceof IndexSortedNormalizedShapelet) {
       this.order = ((IndexSortedNormalizedShapelet) vector).getSortOrder();
     } else {
-      this.order = Vectors.indexSort(this,
-          (i, j) -> Double.compare(Math.abs(loc().getAsDouble(j)), Math.abs(loc().getAsDouble(i))));
+      this.order = indexSort(size(),
+          (i, j) -> Double.compare(Math.abs(getDouble(j)), Math.abs(getDouble(i))));
     }
+  }
+
+  private int[] indexSort(int size, IntBinaryOperator operator) {
+    int[] indicies = new int[size];
+    for (int i = 0; i < indicies.length; i++) {
+      indicies[i] = i;
+    }
+    QuickSort.quickSort(0, indicies.length, (a, b) -> operator.applyAsInt(indicies[a], indicies[b]),
+        (a, b) -> {
+          int tmp = indicies[a];
+          indicies[a] = indicies[b];
+          indicies[b] = tmp;
+        });
+    return indicies;
   }
 
   public int[] getSortOrder() {

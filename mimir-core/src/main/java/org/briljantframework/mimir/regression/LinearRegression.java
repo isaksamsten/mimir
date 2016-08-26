@@ -23,17 +23,21 @@ package org.briljantframework.mimir.regression;
 import java.util.Collections;
 import java.util.Set;
 
+import org.briljantframework.Check;
+import org.briljantframework.DoubleSequence;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.data.*;
+import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public final class LinearRegression implements Regression {
+public final class LinearRegression implements Regression<DoubleSequence> {
 
+  public static final Property<Double> REGULARIZATION =
+      Property.of("regularization", Double.class, 0.1);
   private final DoubleArray theta;
 
   private LinearRegression(DoubleArray theta) {
@@ -45,12 +49,12 @@ public final class LinearRegression implements Regression {
   }
 
   @Override
-  public double predict(Vector y) {
-    return 0;
+  public Double predict(DoubleSequence y) {
+    return 0.0;
   }
 
   @Override
-  public Vector predict(DataFrame x) {
+  public Output<Double> predict(Input<? extends DoubleSequence> x) {
     throw new UnsupportedOperationException();
   }
 
@@ -62,15 +66,21 @@ public final class LinearRegression implements Regression {
   /**
    * @author Isak Karlsson
    */
-  public static class Learner implements Regression.Learner<LinearRegression> {
+  public static class Learner extends AbstractLearner<DoubleSequence, Double, LinearRegression> {
 
     public Learner() {}
 
     @Override
-    public LinearRegression fit(DoubleArray x, DoubleArray y) {
-      x = Arrays.vstack(Arrays.ones(x.rows()), x);
+    public LinearRegression fit(Input<? extends DoubleSequence> in, Output<? extends Double> out) {
+      Check.argument(Dataset.isDataset(in) && Dataset.isAllNumeric(in),
+          "all features must be numeric");
+
+      DoubleArray x = Arrays.vstack(Arrays.ones(in.size()), Inputs.toDoubleArray(in));
+      DoubleArray y = DoubleArray.copyOf(out);
+
+      double scalar = getOrDefault(REGULARIZATION);
       DoubleArray inner =
-          Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.eye(x.columns()).times(1));
+          Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.times(Arrays.eye(x.columns()), scalar));
       DoubleArray v = Arrays.dot(Arrays.linalg.pinv(inner), x.transpose());
       DoubleArray theta = Arrays.dot(v, y);
 

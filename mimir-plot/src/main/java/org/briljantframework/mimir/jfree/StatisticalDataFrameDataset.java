@@ -25,7 +25,7 @@ import java.util.List;
 
 import org.apache.commons.math3.stat.descriptive.StatisticalSummary;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 import org.jfree.data.general.AbstractDataset;
 import org.jfree.data.statistics.StatisticalCategoryDataset;
 
@@ -35,10 +35,10 @@ import org.jfree.data.statistics.StatisticalCategoryDataset;
 public class StatisticalDataFrameDataset extends AbstractDataset implements
     StatisticalCategoryDataset {
 
-  private final Vector stats;
+  private final Series stats;
 
   public StatisticalDataFrameDataset(DataFrame dataFrame) {
-    this.stats = dataFrame.reduce(Vector::statisticalSummary);
+    this.stats = dataFrame.reduce(Series::statisticalSummary);
   }
 
   @Override

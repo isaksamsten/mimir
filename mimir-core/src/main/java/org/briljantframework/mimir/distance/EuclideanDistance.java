@@ -21,14 +21,14 @@
 package org.briljantframework.mimir.distance;
 
 
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.DoubleSequence;
 
 /**
  * EuclideanDistance between two Points (either Vectors or scalars)
  * <p>
  * Created by Isak Karlsson on 01/09/14.
  */
-public class EuclideanDistance implements Distance {
+public class EuclideanDistance implements Distance<DoubleSequence> {
 
   private static final EuclideanDistance instance = new EuclideanDistance();
 
@@ -43,32 +43,21 @@ public class EuclideanDistance implements Distance {
     return instance;
   }
 
-  @Override
-  public double compute(double a, double b) {
+  private double compute(double a, double b) {
     double r = a - b;
     return r * r;
   }
 
   @Override
-  public double compute(Vector a, Vector b) {
+  public double compute(DoubleSequence a, DoubleSequence b) {
     int size = Math.min(a.size(), b.size());
 
     double residual = 0.0;
     for (int i = 0; i < size; i++) {
-      residual += compute(a.loc().getAsDouble(i), b.loc().getAsDouble(i));
+      residual += compute(a.getDouble(i), b.getDouble(i));
     }
 
     return Math.sqrt(residual);
-  }
-
-  @Override
-  public double max() {
-    return Double.POSITIVE_INFINITY;
-  }
-
-  @Override
-  public double min() {
-    return 0;
   }
 
   @Override

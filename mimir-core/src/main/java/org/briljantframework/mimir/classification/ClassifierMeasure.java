@@ -20,29 +20,36 @@
  */
 package org.briljantframework.mimir.classification;
 
-import static org.briljantframework.data.vector.Vectors.find;
+import static org.briljantframework.array.Arrays.doubleVector;
+import static org.briljantframework.array.Arrays.mean;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.Na;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.dataframe.DataFrames;
-import org.briljantframework.data.vector.DoubleVector;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.Vectors;
+import org.briljantframework.data.series.DoubleSeries;
+import org.briljantframework.data.series.Series;
+import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.data.Outputs;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public class ClassifierMeasure {
 
-  public static final String PREDICTED_ACTUAL_SIZE =
+  private static final String PREDICTED_ACTUAL_SIZE =
       "Size of predicted and actual values does not match";
-  public static final String ILLEGAL_SCORE_MATRIX = "Illegal score matrix";
-  private final double accuracy, areaUnderRocCurve, brierScore, precision, recall;
+  private static final String ILLEGAL_SCORE_MATRIX = "Illegal score matrix";
+
+  private final double accuracy;
+  private final double areaUnderRocCurve;
+  private final double brierScore;
+  private final double precision;
+  private final double recall;
   private final double fMeasure;
 
   /**
@@ -51,8 +58,8 @@ public class ClassifierMeasure {
    * @param predicted the predicated values
    * @param truth the true values
    */
-  public ClassifierMeasure(Vector predicted, Vector truth) {
-    this(predicted, truth, null, null);
+  public ClassifierMeasure(Output<?> predicted, Output<?> truth) {
+    this(predicted, truth, null, Outputs.unique(Arrays.asList(predicted, truth)));
   }
 
   /**
@@ -63,32 +70,20 @@ public class ClassifierMeasure {
    * @param scores an array of scores (one column per class; one row per instance)
    * @param classes a set of classes
    */
-  public ClassifierMeasure(Vector predicted, Vector truth, DoubleArray scores, Vector classes) {
+  public ClassifierMeasure(Output<?> predicted, Output<?> truth, DoubleArray scores,
+      List<?> classes) {
     Check.argument(predicted.size() == truth.size(),
         "The predicted and actual values must have the same size.");
+    Check.argument(classes != null, "If score matrix is given, classes are required");
+
     if (scores != null) {
-      Check.argument(classes != null, "If score matrix is given, classes are required");
       Check.argument(scores.rows() == predicted.size(), "Illegal score matrix (illegal rows)");
     }
-    if (classes == null) {
-      classes = Vectors.unique(truth);
-    }
-
-    Vector weight = truth.valueCounts().div((double) truth.size());
-    Vector precision =
-        precision(predicted, truth, classes).mapWithIndex(Double.class,
-            (key, value) -> weight.getIndex().contains(key) ? weight.getAsDouble(key) * value : 0);
-    Vector recall =
-        recall(predicted, truth, classes).mapWithIndex(Double.class,
-            (key, value) -> weight.getIndex().contains(key) ? weight.getAsDouble(key) * value : 0);
-    Vector fMeasure =
-        fMeasure(predicted, truth, classes).mapWithIndex(Double.class,
-            (key, value) -> weight.getIndex().contains(key) ? weight.getAsDouble(key) * value : 0);
 
     this.accuracy = accuracy(predicted, truth);
-    this.precision = precision.sum();
-    this.recall = recall.sum();
-    this.fMeasure = fMeasure.sum();
+    this.precision = averagePrecision(predicted, truth, classes);
+    this.recall = averageRecall(predicted, truth, classes);
+    this.fMeasure = 2 * precision * recall / (precision + recall);
 
     if (scores != null) {
       areaUnderRocCurve = averageAreaUnderRocCurve(predicted, truth, scores, classes);
@@ -99,75 +94,58 @@ public class ClassifierMeasure {
     }
   }
 
+  private double averageRecall(Output<?> prediction, Output<?> truth, List<?> classes) {
+    Check.argument(prediction.size() == truth.size(), "illegal size");
+    double[] recall = new double[classes.size()];
+    for (int i = 0; i < classes.size(); i++) {
+      Object cls = classes.get(i);
+      int predicted = 0, truePositive = 0;
+      for (int j = 0; j < prediction.size(); j++) {
+        if (Is.equal(truth.get(j), cls)) {
+          predicted++;
+          if (Is.equal(prediction.get(j), cls)) {
+            truePositive++;
+          }
+        }
+      }
+      recall[i] = predicted > 0 ? (double) truePositive / predicted : 0;
+    }
+    return mean(doubleVector(recall));
+  }
+
+  public double averagePrecision(Output<?> prediction, Output<?> truth, List<?> classes) {
+    Check.argument(prediction.size() == truth.size(), "illegal size");
+    double[] precision = new double[classes.size()];
+    for (int i = 0; i < classes.size(); i++) {
+      int predicted = 0, truePositive = 0;
+      Object cls = classes.get(i);
+      for (int j = 0; j < prediction.size(); j++) {
+        if (Is.equal(prediction.get(j), cls)) {
+          predicted++;
+          if (Is.equal(truth.get(j), cls)) {
+            truePositive++;
+          }
+        }
+      }
+      precision[i] = predicted > 0 ? (double) truePositive / predicted : 0;
+    }
+    return mean(doubleVector(precision));
+  }
+
   /**
-   * Compute the precision of each class
+   * Returns the prediction accuracy, i.e., the fraction of correctly classified examples. Object
    * 
-   * @param predicted the predicted values
-   * @param truth the true values
-   * @param classes the classes
-   * @return a vector of precision values
-   */
-  public static Vector precision(Vector predicted, Vector truth, Vector classes) {
-    Check.argument(predicted.size() == truth.size(), PREDICTED_ACTUAL_SIZE);
-    DataFrame table = DataFrames.table(predicted, truth);
-    Vector.Builder precision = new DoubleVector.Builder();
-    for (Object key : classes.toList()) {
-      if (table.getIndex().contains(key) && table.getColumnIndex().contains(key)) {
-        precision.set(key, table.getAsDouble(key, key) / table.getRecord(key).sum());
-      } else {
-        precision.set(key, 0);
-      }
-    }
-    return precision.build();
-  }
-
-  /**
-   * Compute the recall of each class
-   *
-   * @param predicted the predicted values
-   * @param truth the true values
-   * @param classes the classes
-   * @return a vector of recall values
-   */
-  public static Vector recall(Vector predicted, Vector truth, Vector classes) {
-    Check.argument(predicted.size() == truth.size(), PREDICTED_ACTUAL_SIZE);
-    DataFrame table = DataFrames.table(predicted, truth);
-    Vector.Builder precision = new DoubleVector.Builder();
-    for (Object key : classes.toList()) {
-      if (table.getIndex().contains(key) && table.getColumnIndex().contains(key)) {
-        precision.set(key, table.getAsDouble(key, key) / table.get(key).sum());
-      } else {
-        precision.set(key, 0);
-      }
-    }
-    return precision.build();
-  }
-
-  public static Vector fMeasure(Vector predicted, Vector truth, Vector classes) {
-    Vector precision = precision(predicted, truth, classes);
-    Vector recall = recall(predicted, truth, classes);
-    Vector.Builder fMeasure = new DoubleVector.Builder();
-    for (Object key : classes.toList()) {
-      double p = precision.getAsDouble(key);
-      double r = recall.getAsDouble(key);
-      fMeasure.set(key, (2 * p * r) / (p + r));
-    }
-    return fMeasure.build();
-  }
-
-  /**
-   * Returns the prediction accuracy, i.e., the fraction of correctly classified examples.
-   *
    * @param p the predicted values; shape {@code [no sample]}
    * @param t the actual values; shape {@code [no samples]}
    * @return the accuracy
    */
-  public static double accuracy(Vector p, Vector t) {
+  public static double accuracy(Output<?> p, Output<?> t) {
     Check.argument(p.size() == t.size(), PREDICTED_ACTUAL_SIZE);
     double accuracy = 0;
+
     int n = p.size();
     for (int i = 0; i < n; i++) {
-      if (Is.equal(p.loc().get(i), t.loc().get(i))) {
+      if (Is.equal(p.get(i), t.get(i))) {
         accuracy += 1;
       }
     }
@@ -185,21 +163,23 @@ public class ClassifierMeasure {
    *        {@code scores}
    * @return the brier score
    */
-  public static double brierScore(Vector p, Vector t, DoubleArray scores, Vector c) {
+  public static double brierScore(Output<?> p, Output<?> t, DoubleArray scores, List<?> c) {
     Check.argument(scores.isMatrix() && scores.columns() == c.size() && scores.rows() == p.size(),
         ILLEGAL_SCORE_MATRIX);
+
     Check.argument(p.size() == t.size(), PREDICTED_ACTUAL_SIZE);
 
     int n = p.size();
     double brier = 0;
     for (int i = 0; i < n; i++) {
-      int classIndex = find(c, p, i);
+      // int classIndex = find(c, p, i);
+      int classIndex = c.indexOf(p.get(i));
       if (classIndex < 0 || classIndex > c.size()) {
-        throw new IllegalStateException("Missing class " + p.loc().get(i));
+        throw new IllegalStateException("Missing class " + p.get(i));
       }
 
       double prob = scores.get(i, classIndex);
-      if (Is.equal(p.loc().get(i), t.loc().get(i))) {
+      if (Is.equal(p.get(i), t.get(i))) {
         brier += Math.pow(1 - prob, 2);
       } else {
         brier += prob * prob;
@@ -217,14 +197,15 @@ public class ClassifierMeasure {
    * @param c the classes
    * @return the weighted area under ROC curve
    */
-  public static double averageAreaUnderRocCurve(Vector p, Vector a, DoubleArray score, Vector c) {
-    Vector auc = areaUnderRocCurve(p, a, score, c);
-    Vector dist = a.valueCounts();
+  public static double averageAreaUnderRocCurve(Output<?> p, Output<?> a, DoubleArray score,
+      List<?> c) {
+    Series auc = areaUnderRocCurve(p, a, score, c);
+    Map<Object, Integer> dist = Outputs.valueCounts(a);
     double averageAuc = 0;
     for (Object classKey : auc.getIndex()) {
-      if (dist.getIndex().contains(classKey)) {
-        double classCount = dist.getAsDouble(classKey);
-        averageAuc += auc.getAsDouble(classKey) * (classCount / a.size());
+      if (dist.containsKey(classKey)) {
+        double classCount = dist.get(classKey);
+        averageAuc += auc.getDouble(classKey) * (classCount / a.size());
       }
     }
     return averageAuc;
@@ -239,24 +220,24 @@ public class ClassifierMeasure {
    *        the j:th column of the score matrix
    * @return a vector of labels (from {@code c}) and its associated area under roc-curve
    */
-  public static Vector areaUnderRocCurve(Vector p, Vector t, DoubleArray score, Vector c) {
+  public static Series areaUnderRocCurve(Output<?> p, Output<?> t, DoubleArray score, List<?> c) {
     Check.argument(score.isMatrix() && score.columns() == c.size() && score.rows() == p.size(),
         ILLEGAL_SCORE_MATRIX);
     Check.argument(p.size() == t.size(), PREDICTED_ACTUAL_SIZE);
-    Vector.Builder builder = new DoubleVector.Builder();
+    Series.Builder builder = new DoubleSeries.Builder();
     for (int i = 0; i < c.size(); i++) {
-      Object value = c.loc().get(i);
+      Object value = c.get(i);
       DoubleArray s = score.getColumn(i);
       builder.set(value, computeAuc(p, t, s, value));
     }
     return builder.build();
   }
 
-  private static double computeAuc(Vector p, Vector t, DoubleArray score, Object label) {
+  private static double computeAuc(Output<?> p, Output<?> t, DoubleArray score, Object label) {
     double truePositives = 0, falsePositives = 0, positives = 0;
     PredictionProbability[] pairs = new PredictionProbability[p.size()];
     for (int i = 0; i < t.size(); i++) {
-      boolean positiveness = Is.equal(t.loc().get(i), label);
+      boolean positiveness = Is.equal(t.get(i), label);
       if (positiveness) {
         positives++;
       }
@@ -310,7 +291,7 @@ public class ClassifierMeasure {
    * @param t the actual values; shape {@code [no samples]}
    * @return the error rate
    */
-  public static double error(Vector p, Vector t) {
+  public static double error(Output<Object> p, Output<Object> t) {
     return 1 - accuracy(p, t);
   }
 

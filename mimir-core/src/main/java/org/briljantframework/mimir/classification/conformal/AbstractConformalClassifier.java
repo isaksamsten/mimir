@@ -20,11 +20,11 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.math3.util.Precision;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
 import org.briljantframework.mimir.classification.AbstractClassifier;
 
 /**
@@ -32,8 +32,8 @@ import org.briljantframework.mimir.classification.AbstractClassifier;
  * 
  * @author Isak Karlsson
  */
-public abstract class AbstractConformalClassifier extends AbstractClassifier implements
-    ConformalClassifier {
+public abstract class AbstractConformalClassifier<In,Out> extends AbstractClassifier<In,Out>
+    implements ConformalClassifier<In,Out> {
 
   private final boolean stochasticSmoothing;
 
@@ -43,7 +43,7 @@ public abstract class AbstractConformalClassifier extends AbstractClassifier imp
    * @param stochasticSmoothing enable stochastic smoothing
    * @param classes the classes
    */
-  protected AbstractConformalClassifier(boolean stochasticSmoothing, Vector classes) {
+  protected AbstractConformalClassifier(boolean stochasticSmoothing, List<Out> classes) {
     super(classes);
     this.stochasticSmoothing = stochasticSmoothing;
   }
@@ -53,7 +53,7 @@ public abstract class AbstractConformalClassifier extends AbstractClassifier imp
    * 
    * @param classes the classes
    */
-  protected AbstractConformalClassifier(Vector classes) {
+  protected AbstractConformalClassifier(List<Out> classes) {
     this(true, classes);
   }
 
@@ -62,21 +62,21 @@ public abstract class AbstractConformalClassifier extends AbstractClassifier imp
    * 
    * @return a classifier nonconformity
    */
-  protected abstract ClassifierNonconformity getClassifierNonconformity();
+  protected abstract ClassifierNonconformity<In,Out> getClassifierNonconformity();
 
   /**
    * Get the calibration
    * 
    * @return a classifier calibration
    */
-  protected abstract ClassifierCalibratorScores getCalibrationScores();
+  protected abstract ClassifierCalibratorScores<In> getCalibrationScores();
 
   @Override
-  public DoubleArray estimate(Vector example) {
+  public DoubleArray estimate(In example) {
     DoubleArray significance = DoubleArray.zeros(getClasses().size());
     double tau = stochasticSmoothing ? ThreadLocalRandom.current().nextDouble() : 1;
     for (int i = 0; i < significance.size(); i++) {
-      Object label = getClasses().loc().get(i);
+      Out label = getClasses().get(i);
       DoubleArray calibration = getCalibrationScores().get(example, label);
       double n = calibration.size() + 1;
       double nc = getClassifierNonconformity().estimate(example, label);

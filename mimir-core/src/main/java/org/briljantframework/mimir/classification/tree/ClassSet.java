@@ -28,32 +28,29 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * @author Isak Karlsson
  */
 public final class ClassSet implements Iterable<Example> {
-
-  private static final Random RANDOM = new Random();
-
   private final Map<Object, Sample> samples;
 
   private final List<Object> targets;
-  private final Vector domain;
+  private final List<?> domain;
 
-  public ClassSet(Vector column, Vector domain) {
+  public ClassSet(Output<?> column, List<?> domain) {
     this(domain);
     for (int i = 0; i < column.size(); i++) {
-      add(column.loc().get(Object.class, i), i, 1);
+      add(column.get(i), i, 1);
     }
   }
 
-  public ClassSet(Vector domain) {
+  public ClassSet(List<?> domain) {
     samples = new HashMap<>();
     targets = new ArrayList<>();
     this.domain = domain;
@@ -102,7 +99,7 @@ public final class ClassSet implements Iterable<Example> {
     return target;
   }
 
-  public Vector getDomain() {
+  public List<?> getDomain() {
     return domain;
   }
 
@@ -111,7 +108,7 @@ public final class ClassSet implements Iterable<Example> {
   }
 
   public Sample getRandomSample() {
-    return samples.get(targets.get(RANDOM.nextInt(targets.size())));
+    return samples.get(targets.get(ThreadLocalRandom.current().nextInt(targets.size())));
   }
 
   public boolean isEmpty() {
@@ -220,7 +217,7 @@ public final class ClassSet implements Iterable<Example> {
     }
 
     public Example getRandomExample() {
-      return examples.get(RANDOM.nextInt(examples.size()));
+      return examples.get(ThreadLocalRandom.current().nextInt(examples.size()));
     }
 
     @Override

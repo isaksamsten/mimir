@@ -30,7 +30,7 @@ import javax.swing.*;
 import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Vector;
+import org.briljantframework.data.series.Series;
 import org.jfree.chart.ChartFrame;
 import org.jfree.chart.ChartTheme;
 import org.jfree.chart.JFreeChart;
@@ -107,9 +107,9 @@ public class Plots {
       setRegularFont(new Font(font, Font.PLAIN, 9));
       setSmallFont(new Font(font, Font.PLAIN, 7));
       setShadowVisible(false);
-      setDrawingSupplier(new DefaultDrawingSupplier(COLORS, COLORS, new Stroke[] {new BasicStroke(
-          1.0f)}, new Stroke[] {new BasicStroke(0.5f)},
-          DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
+      setDrawingSupplier(
+          new DefaultDrawingSupplier(COLORS, COLORS, new Stroke[] {new BasicStroke(1.0f)},
+              new Stroke[] {new BasicStroke(0.5f)}, DefaultDrawingSupplier.DEFAULT_SHAPE_SEQUENCE));
     }
   }
 
@@ -184,8 +184,8 @@ public class Plots {
     return postProcessPlot(plot);
   }
 
-  public static CategoryPlot bar(Vector data) {
-    return createBarPlot(new VectorCategoryDataset(data));
+  public static CategoryPlot bar(Series data) {
+    return createBarPlot(new SeriesCategoryDataset(data));
   }
 
   private static CategoryPlot createStatistaicalBarPlot(StatisticalCategoryDataset dataset) {

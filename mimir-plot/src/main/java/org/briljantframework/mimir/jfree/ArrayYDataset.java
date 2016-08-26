@@ -62,7 +62,7 @@ public class ArrayYDataset extends AbstractXYDataset {
   }
 
   public ArrayYDataset(BooleanArray y) {
-    this(y.asInt().boxed());
+    this(y.intArray().boxed());
   }
 
   @Override

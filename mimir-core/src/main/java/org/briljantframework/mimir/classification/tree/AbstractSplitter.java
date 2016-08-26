@@ -23,10 +23,9 @@ package org.briljantframework.mimir.classification.tree;
 import java.util.Random;
 
 import org.briljantframework.data.Is;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.vector.Convert;
-import org.briljantframework.data.vector.Vector;
-import org.briljantframework.data.vector.VectorType;
+import org.briljantframework.data.series.Convert;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Instance;
 
 /**
  * Created by Isak Karlsson on 10/09/14.
@@ -44,17 +43,18 @@ public abstract class AbstractSplitter implements Splitter {
   /**
    * Basic implementation of the splitting procedure
    *
+   *
+   * @param in
    * @param classSet the examples
    * @param axis the axis
    * @param threshold the threshold
    * @return the examples . split
    */
-  protected TreeSplit<ValueThreshold> split(DataFrame dataset, ClassSet classSet, int axis,
+  protected TreeSplit<ValueThreshold> split(Input<? extends Instance> in, ClassSet classSet,
+      int axis,
       Object threshold) {
     ClassSet left = new ClassSet(classSet.getDomain());
     ClassSet right = new ClassSet(classSet.getDomain());
-    Vector axisVector = dataset.loc().get(axis);
-    VectorType axisType = axisVector.getType();
 
     /*
      * Partition every class separately
@@ -72,12 +72,13 @@ public abstract class AbstractSplitter implements Splitter {
       boolean nominal = Is.nominal(threshold);
       for (Example example : sample) {
         int direction = MISSING;
-        int index = example.getIndex();
-        if (!axisVector.loc().isNA(index)) {
+        Instance record = in.get(example.getIndex());
+        if (!Is.NA(record.get(axis))) {
           if (nominal) {
-            direction = axisVector.loc().get(Object.class, index).equals(threshold) ? LEFT : RIGHT;
+            direction = Is.equal(threshold, record.get(axis)) ? LEFT : RIGHT;
+//                axisVector.loc().get(Object.class, index).equals(threshold) ? LEFT : RIGHT;
           } else {
-            double leftValue = axisVector.loc().getAsDouble(index);
+            double leftValue = record.getDouble(axis);
             direction = Double.compare(leftValue, Convert.to(Double.class, threshold)) <= 0 ? LEFT : RIGHT;
           }
         }
