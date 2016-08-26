@@ -37,7 +37,7 @@ public class DataFrameXYDataset extends AbstractXYDataset {
 
   @Override
   public int getSeriesCount() {
-    return dataFrame.size(1);
+    return dataFrame.rows();
   }
 
   @Override
@@ -47,7 +47,7 @@ public class DataFrameXYDataset extends AbstractXYDataset {
 
   @Override
   public int getItemCount(int series) {
-    return dataFrame.size(0);
+    return dataFrame.columns();
   }
 
   @Override

@@ -79,12 +79,12 @@ public class DataFrameCategoryDataset extends AbstractDataset implements Categor
 
   @Override
   public int getRowCount() {
-    return dataFrame.size(0);
+    return dataFrame.rows();
   }
 
   @Override
   public int getColumnCount() {
-    return dataFrame.size(1);
+    return dataFrame.columns();
   }
 
   @Override

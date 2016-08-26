@@ -51,7 +51,6 @@ import org.junit.Test;
  */
 public class LearnerTest {
 
-  @Test
   public void testPairWiseClassifier() throws FileNotFoundException {
     // DataFrame iris = DataFrames.permute(Datasets.loadIris());
     // DataFrame data = iris.drop("Class").apply(v -> {
@@ -155,7 +154,6 @@ public class LearnerTest {
     }
   }
 
-  @Test
   public void testGridSearch() throws Exception {
     GridSearch<Instance, Object, LogisticRegression<Object>> gridSearch =
         new GridSearch<>(ClassifierValidator.crossValidator(10));
@@ -183,15 +181,6 @@ public class LearnerTest {
 
   }
 
-  @Test
-  public void sampleRegion() throws Exception {
-    DoubleArray x = Arrays.range(10 * 10).doubleArray().reshape(10, 10);
-    System.out.println(x);
-    System.out.println(x.getView(Range.of(1, 3), Range.of(3, 8)));
-
-
-  }
-
   private Pair<Input<Instance>, Output<?>> loadDataset() {
     // DataFrame data = DataFrames.permuteRecords(Datasets.loadIris());
     // Input<Instance> x = Inputs.newInput(data.drop("Class"));
@@ -208,18 +197,6 @@ public class LearnerTest {
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  @Test
-  public void Generate() throws Exception {
-    // GridSearch<Instance, Object, RandomForest, RandomForest.Configurator> gridSearch =
-    // new GridSearch<>(ClassifierValidator.crossValidator(10));
-    // Pair<Input<Instance>, Output<?>> data = loadDataset();
-    // Input<Instance> x = data.getLeft();
-    // Output<?> y = data.getRight();
-    //
-    // System.out.println(gridSearch.tune(new RandomForest.Configurator(100), x, y));
-
   }
 
   // @Test
