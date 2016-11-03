@@ -20,32 +20,53 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
-import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 import org.apache.commons.math3.util.Precision;
+import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.AbstractClassifier;
+import org.briljantframework.mimir.data.ArrayOutput;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Output;
 
 /**
  * Implements the basic p-value computation for (inductive) conformal predictors given the
  * 
  * @author Isak Karlsson
  */
-public abstract class AbstractConformalClassifier<In,Out> extends AbstractClassifier<In,Out>
-    implements ConformalClassifier<In,Out> {
+public abstract class AbstractConformalClassifier<In, Out> extends AbstractClassifier<In, Out>
+    implements ConformalClassifier<In, Out> {
 
   private final boolean stochasticSmoothing;
 
   /**
    * Create a new conformal classifier.
-   * 
-   * @param stochasticSmoothing enable stochastic smoothing
+   *
    * @param classes the classes
+   * @param stochasticSmoothing enable stochastic smoothing
    */
-  protected AbstractConformalClassifier(boolean stochasticSmoothing, List<Out> classes) {
+  protected AbstractConformalClassifier(Array<Out> classes, boolean stochasticSmoothing) {
     super(classes);
     this.stochasticSmoothing = stochasticSmoothing;
+  }
+
+  /**
+   * Returns the prediction of the given example or {@code NA}.
+   *
+   * @param record to which the class label shall be assigned
+   * @return a class-label or {@code NA}
+   */
+  @Override
+  public Out predict(In record) {
+    throw new UnsupportedOperationException("can't do point predictions.");
+  }
+
+  @Override
+  public Output<Out> predict(Input<? extends In> x) {
+    throw new UnsupportedOperationException("can't do point predictions");
   }
 
   /**
@@ -53,8 +74,8 @@ public abstract class AbstractConformalClassifier<In,Out> extends AbstractClassi
    * 
    * @param classes the classes
    */
-  protected AbstractConformalClassifier(List<Out> classes) {
-    this(true, classes);
+  protected AbstractConformalClassifier(Array<Out> classes) {
+    this(classes, true);
   }
 
   /**
@@ -62,14 +83,20 @@ public abstract class AbstractConformalClassifier<In,Out> extends AbstractClassi
    * 
    * @return a classifier nonconformity
    */
-  protected abstract ClassifierNonconformity<In,Out> getClassifierNonconformity();
+  protected abstract Nonconformity<In, Out> getClassifierNonconformity();
 
   /**
    * Get the calibration
    * 
    * @return a classifier calibration
    */
-  protected abstract ClassifierCalibratorScores<In> getCalibrationScores();
+  protected abstract CalibratorScores<In, Out> getCalibrationScores();
+
+  @Override
+  public Output<Set<Out>> predict(Input<? extends In> x, double significance) {
+    return x.stream().map(v -> predict(v, significance))
+        .collect(Collectors.toCollection(ArrayOutput::new));
+  }
 
   @Override
   public DoubleArray estimate(In example) {

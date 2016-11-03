@@ -39,9 +39,9 @@ public class ShapeletDistance implements PatternDistance<Series, Shapelet> {
     @Override
     public double compute(Series a, Series b) {
       if (a instanceof Shapelet) {
-        return b.loc().indexOf(a.loc().get(0)) < 0 ? 1 : 0;
+        return b.values().indexOf(a.values().get(0)) < 0 ? 1 : 0;
       }
-      return a.loc().indexOf(b.loc().get(0)) < 0 ? 1 : 0;
+      return a.values().indexOf(b.values().get(0)) < 0 ? 1 : 0;
     }
   }
 
@@ -51,7 +51,7 @@ public class ShapeletDistance implements PatternDistance<Series, Shapelet> {
     double distance;
     // if (shapelet instanceof ChannelShapelet) {
     // int channelIndex = ((ChannelShapelet) shapelet).getChannel();
-    // Series channel = record.loc().get(Series.class, channelIndex);
+    // Series channel = record.values().get(Series.class, channelIndex);
     // if (shapelet.getDelegate() instanceof CategoricShapelet) {
     // if (Is.NA(channel)) {
     // distance = Na.DOUBLE;

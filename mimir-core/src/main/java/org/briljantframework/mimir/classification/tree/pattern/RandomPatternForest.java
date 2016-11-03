@@ -26,8 +26,10 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.briljantframework.array.Array;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
+import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.classification.Ensemble;
 import org.briljantframework.mimir.classification.tree.ClassSet;
@@ -48,7 +50,7 @@ import org.briljantframework.mimir.evaluation.EvaluationContext;
  */
 public class RandomPatternForest<In, Out> extends Ensemble<In, Out> {
 
-  private RandomPatternForest(List<Out> classes, List<? extends Classifier<In, Out>> members,
+  private RandomPatternForest(Array<Out> classes, List<? extends PatternTree<In, Out>> members,
       BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
   }
@@ -62,6 +64,11 @@ public class RandomPatternForest<In, Out> extends Ensemble<In, Out> {
       }
     }
     return depth / getEnsembleMembers().size();
+  }
+
+  @Override
+  public DoubleArray estimate(In input) {
+    return averageProbabilities(input);
   }
 
   public static class DepthEvaluator<In> implements
@@ -100,7 +107,7 @@ public class RandomPatternForest<In, Out> extends Ensemble<In, Out> {
 
     @Override
     public RandomPatternForest<In, Out> fit(Input<? extends In> x, Output<? extends Out> y) {
-      List<Out> classes = Outputs.unique(y);
+      Array<Out> classes = Outputs.unique(y);
 
       ClassSet classSet = new ClassSet(y, classes);
       List<FitTask<In, Out>> tasks = new ArrayList<>();
@@ -109,8 +116,8 @@ public class RandomPatternForest<In, Out> extends Ensemble<In, Out> {
       for (int i = 0; i < members; i++) {
         BooleanArray oobI = oobIndicator.getColumn(i);
         ClassSet sample = sample(classSet, ThreadLocalRandom.current(), oobI);
-        PatternTree.Learner<In, Out, ?> patternTree = new PatternTree.Learner<>(patternFactory,
-            patternDistance, patternVisitorFactory, sample, classes, getParameters());
+        PatternTree.Learner<In, Out, ?> patternTree = new PatternTree.Learner<>(classes,
+            patternFactory, patternDistance, patternVisitorFactory, sample, getParameters());
         tasks.add(new FitTask<>(x, y, patternTree));
       }
 

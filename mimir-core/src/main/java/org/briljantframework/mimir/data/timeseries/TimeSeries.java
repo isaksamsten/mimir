@@ -55,7 +55,7 @@ public class TimeSeries implements DoubleSequence {
   public static TimeSeries copyOf(Series data) {
     double[] buffer = new double[data.size()];
     for (int i = 0; i < data.size(); i++) {
-      buffer[i] = data.loc().getDouble(i);
+      buffer[i] = data.values().getDouble(i);
     }
     return new TimeSeries(buffer);
   }
@@ -68,7 +68,7 @@ public class TimeSeries implements DoubleSequence {
     StatisticalSummary summary = data.collect(Double.class, Collectors.statisticalSummary());
     double[] buffer = new double[data.size()];
     for (int i = 0; i < data.size(); i++) {
-      buffer[i] = (data.loc().getDouble(i) - summary.getMean()) / summary.getStandardDeviation();
+      buffer[i] = (data.values().getDouble(i) - summary.getMean()) / summary.getStandardDeviation();
     }
     return new TimeSeries(buffer);
   }

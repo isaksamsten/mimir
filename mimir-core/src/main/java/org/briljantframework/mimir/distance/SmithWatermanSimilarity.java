@@ -42,7 +42,7 @@ public class SmithWatermanSimilarity implements Similarity {
     double maxScore = Double.NEGATIVE_INFINITY;
     for (int i = 1; i < h.rows(); i++) {
       for (int j = 1; j < h.columns(); j++) {
-        double sim = h.get(i - 1, j - 1) + (a.loc().equals(i - 1, b, j - 1) ? match : miss);
+        double sim = h.get(i - 1, j - 1) + (a.values().equals(i - 1, b.values(), j - 1) ? match : miss);
         double left = h.get(i, j - 1) + gap;
         double up = h.get(i - 1, j) + gap;
         double score = Math.max(0, Math.max(sim, Math.max(up, left)));

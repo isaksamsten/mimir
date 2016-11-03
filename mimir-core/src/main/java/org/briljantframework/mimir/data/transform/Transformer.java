@@ -20,35 +20,18 @@
  */
 package org.briljantframework.mimir.data.transform;
 
-
-import java.util.stream.Collectors;
-
-import org.briljantframework.mimir.data.ArrayInput;
-import org.briljantframework.mimir.data.Input;
-
 /**
  * A transformer takes a dataset D and applies a transformation, resulting in an new dataset D'
  *
  * @author Isak Karlsson
  */
-public interface Transformer<T, E> {
+public interface Transformer<T, R> {
 
   /**
-   * Transform an input
+   * Perform the transformation.
    *
-   * @param x data frame to transform
-   * @return transformation of input
+   * @param t
+   * @return
    */
-  default Input<E> transform(Input<? extends T> x) {
-    return x.stream().map(this::transform)
-        .collect(Collectors.toCollection(() -> new ArrayInput<E>(x.getProperties())));
-  }
-
-  /**
-   * Transform the given input element
-   * 
-   * @param x the given input element
-   * @return the given input element
-   */
-  E transform(T x);
+  R transform(T t);
 }

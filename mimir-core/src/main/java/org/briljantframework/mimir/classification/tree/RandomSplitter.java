@@ -20,61 +20,94 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
+import org.briljantframework.Check;
 import org.briljantframework.data.Is;
 import org.briljantframework.mimir.data.Dataset;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Instance;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.util.primitive.ArrayAllocations;
 
 /**
  * NOTE: This cannot be reused among trees (it is stateful for performance reasons)
  * <p>
  * Created by Isak Karlsson on 09/09/14.
  */
-public class RandomSplitter extends AbstractSplitter {
+public abstract class RandomSplitter extends AbstractSplitter {
 
-  private final int maxFeatures;
+  public static Splitter log() {
+    return new RandomSplitter(Gain.INFO) {
+      @Override
+      protected int getFeatureInspection(int featureSize) {
+        return (int) Math.round(Math.log(featureSize) / Math.log(2)) + 1;
+      }
+    };
+  }
+
+  public static Splitter sqrt() {
+    return new RandomSplitter(Gain.INFO) {
+      @Override
+      protected int getFeatureInspection(int featureSize) {
+        return (int) Math.round(Math.sqrt(featureSize)) + 1;
+      }
+    };
+  }
+
+  public static Splitter all() {
+    return new RandomSplitter(Gain.INFO) {
+      @Override
+      protected int getFeatureInspection(int featureSize) {
+        return featureSize;
+      }
+    };
+  }
+
+  public static Splitter newInstance(int size) {
+    Check.argument(size > 0, "illegal feature size");
+    return new RandomSplitter(Gain.INFO) {
+      @Override
+      protected int getFeatureInspection(int featureSize) {
+        if (size > featureSize) {
+          throw new IllegalStateException("illegal feature size");
+        }
+        return size;
+      }
+    };
+  }
 
   private final Gain criterion;
-  private int[] features = null;
 
-  public RandomSplitter(int maxFeatures) {
-    this(maxFeatures, Gain.INFO);
+  private RandomSplitter(Gain criterion) {
+    this.criterion = Objects.requireNonNull(criterion);
   }
 
-  public RandomSplitter(int maxFeatures, Gain criterion) {
-    this.maxFeatures = maxFeatures;
-    this.criterion = criterion;
-  }
-
-  public static Builder withMaximumFeatures(int maxFeatures) {
-    return new Builder(maxFeatures);
-  }
+  protected abstract int getFeatureInspection(int featureSize);
 
   @Override
   public TreeSplit<ValueThreshold> find(ClassSet classSet, Input<? extends Instance> x,
       Output<?> y) {
-    int[] features = initialize(x);
-    int maxFeatures =
-        this.maxFeatures > 0 ? this.maxFeatures : (int) Math.round(Math.sqrt(x.get(0).size())) + 1;
+
+    int featureSize = x.getProperty(Dataset.FEATURE_SIZE);
+    int noInspected = getFeatureInspection(featureSize);
     TreeSplit<ValueThreshold> bestSplit = null;
     double bestImpurity = Double.POSITIVE_INFINITY;
-    for (int i = 0; i < features.length && i < maxFeatures; i++) {
-      int axis = features[i];
-
-      Object threshold = search(x, axis, classSet);
-      if (Is.NA(threshold)) {
-        continue;
-      }
-
-      TreeSplit<ValueThreshold> split = split(x, classSet, axis, threshold);
-      double impurity = criterion.compute(split);
-      if (impurity < bestImpurity) {
-        bestSplit = split;
-        bestImpurity = impurity;
+    PermuteIndexIterable iterator = new PermuteIndexIterable(featureSize, noInspected);
+    for (Integer axis : iterator) {
+      Collection<Object> thresholds = findThresholds(x, axis, classSet);
+      for (Object threshold : thresholds) {
+        if (Is.NA(threshold)) {
+          continue;
+        }
+        TreeSplit<ValueThreshold> split = split(x, classSet, axis, threshold);
+        double impurity = criterion.compute(split);
+        if (impurity < bestImpurity) {
+          bestSplit = split;
+          bestImpurity = impurity;
+        }
       }
     }
 
@@ -84,44 +117,18 @@ public class RandomSplitter extends AbstractSplitter {
     return bestSplit;
   }
 
-  private int[] initialize(Input<? extends Instance> dataFrame) {
-    int[] features = new int[dataFrame.get(0).size()];
-    for (int i = 0; i < features.length; i++) {
-      features[i] = i;
-    }
-    ArrayAllocations.shuffle(features);
-    return features;
-  }
-
-  /**
-   * Search value.
-   *
-   * @param axis the dataset
-   * @param classSet the examples
-   * @return the value
-   */
-  protected Object search(Input<? extends Instance> input, int axis, ClassSet classSet) {
-    List<Class<?>> types = input.getProperties().get(Dataset.FEATURE_TYPES);
-    boolean i = isNumeric(types.get(axis));
-    if (i) {
+  protected Collection<Object> findThresholds(Input<? extends Instance> input, int axis,
+      ClassSet classSet) {
+    List<Class<?>> types = input.getProperty(Dataset.FEATURE_TYPES);
+    if (Is.numeric(types.get(axis))) {
       return sampleNumericValue(input, axis, classSet);
     } else {
       return sampleCategoricValue(input, axis, classSet);
     }
   }
 
-
-  private boolean isNumeric(Class<?> cls) {
-    return cls != null && Number.class.isAssignableFrom(cls);
-  }
-
-  /**
-   * Sample numeric value.
-   *
-   * @param classSet the examples
-   * @return the value
-   */
-  protected double sampleNumericValue(Input<? extends Instance> in, int axis, ClassSet classSet) {
+  protected Collection<Object> sampleNumericValue(Input<? extends Instance> in, int axis,
+      ClassSet classSet) {
     Example a = classSet.getRandomSample().getRandomExample();
     Example b = classSet.getRandomSample().getRandomExample();
     Instance exa = in.get(a.getIndex());
@@ -132,13 +139,12 @@ public class RandomSplitter extends AbstractSplitter {
 
     // TODO - what if both A and B are missing?
     if (Is.NA(valueA)) {
-      return valueB;
+      return Collections.singleton(valueB);
     } else if (Is.NA(valueB)) {
-      return valueB;
+      return Collections.singleton(valueB);
     } else {
-      return (valueA + valueB) / 2;
+      return Collections.singleton((valueA + valueB) / 2);
     }
-
   }
 
   /**
@@ -147,53 +153,9 @@ public class RandomSplitter extends AbstractSplitter {
    * @param classSet the examples
    * @return the value
    */
-  protected Object sampleCategoricValue(Input<? extends Instance> in, int axis, ClassSet classSet) {
+  protected Collection<Object> sampleCategoricValue(Input<? extends Instance> in, int axis,
+      ClassSet classSet) {
     Example example = classSet.getRandomSample().getRandomExample();
-    return in.get(example.getIndex()).get(axis);
-  }
-
-  /**
-   * The type Builder.
-   */
-  public static class Builder {
-
-    private int maxFeatures;
-    private Gain criterion = Gain.INFO;
-
-    private Builder(int maxFeatures) {
-      this.maxFeatures = maxFeatures;
-    }
-
-    /**
-     * Sets max features.
-     *
-     * @param maxFeatures the max features
-     * @return the max features
-     */
-    public Builder setMaximumFeatures(int maxFeatures) {
-      this.maxFeatures = maxFeatures;
-      return this;
-    }
-
-    /**
-     * Sets withCriterion.
-     *
-     * @param criterion the withCriterion
-     * @return the withCriterion
-     */
-    public Builder withCriterion(Gain criterion) {
-      this.criterion = criterion;
-      return this;
-    }
-
-    /**
-     * Create random splitter.
-     *
-     * @return the random splitter
-     */
-    public RandomSplitter create() {
-      return new RandomSplitter(maxFeatures, criterion);
-    }
-
+    return Collections.singleton(in.get(example.getIndex()).get(axis));
   }
 }

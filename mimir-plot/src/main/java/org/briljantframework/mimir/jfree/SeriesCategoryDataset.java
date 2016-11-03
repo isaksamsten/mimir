@@ -41,17 +41,17 @@ public class SeriesCategoryDataset extends AbstractDataset implements CategoryDa
 
   @Override
   public Comparable getRowKey(int row) {
-    return (Comparable) vector.getIndex().get(row);
+    return (Comparable) vector.index().get(row);
   }
 
   @Override
   public int getRowIndex(Comparable key) {
-    return vector.getIndex().getLocation(key);
+    return vector.index().getLocation(key);
   }
 
   @Override
   public List getRowKeys() {
-    return vector.getIndex();
+    return vector.index();
   }
 
   @Override
@@ -86,7 +86,7 @@ public class SeriesCategoryDataset extends AbstractDataset implements CategoryDa
 
   @Override
   public Number getValue(int row, int column) {
-    Number value = vector.get(Number.class, vector.getIndex().get(row));
+    Number value = vector.get(Number.class, vector.index().get(row));
     if (Is.NA(value)) {
       return null;
     }

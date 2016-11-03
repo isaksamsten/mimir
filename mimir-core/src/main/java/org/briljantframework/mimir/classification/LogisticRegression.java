@@ -23,10 +23,13 @@ package org.briljantframework.mimir.classification;
 import static org.briljantframework.mimir.classification.optimization.OptimizationUtils.logistic;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.briljantframework.Check;
+import org.briljantframework.DoubleSequence;
+import org.briljantframework.array.Array;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
@@ -46,7 +49,8 @@ import org.briljantframework.optimize.NonlinearOptimizer;
 /**
  * @author Isak Karlsson
  */
-public class LogisticRegression<Out> extends AbstractClassifier<Instance, Out> {
+public class LogisticRegression<Out> extends AbstractClassifier<DoubleSequence, Out>
+    implements ProbabilityEstimator<DoubleSequence, Out> {
 
   /**
    * Maximum number of iterations before convergence.
@@ -68,8 +72,8 @@ public class LogisticRegression<Out> extends AbstractClassifier<Instance, Out> {
   private final Series names;
   private final double logLoss;
 
-  private LogisticRegression(Series names, DoubleArray coefficients, double logLoss,
-      List<Out> classes) {
+  private LogisticRegression(Array<Out> classes, Series names, DoubleArray coefficients,
+      double logLoss) {
     super(classes);
     this.names = names;
     this.coefficients = coefficients;
@@ -77,14 +81,27 @@ public class LogisticRegression<Out> extends AbstractClassifier<Instance, Out> {
   }
 
   @Override
-  public DoubleArray estimate(Instance record) {
+  public DoubleArray estimate(DoubleSequence record) {
+    assertSize(record.size());
+    return estimateProbability(record);
+  }
+
+  private void assertSize(int size) {
+    String error = "Illegal input size";
+    if (getClasses().size() <= 2) {
+      Check.argument(coefficients.size() - 1 == size, error);
+    } else {
+      Check.argument(coefficients.rows() - 1 == size, error);
+    }
+  }
+
+  private DoubleArray estimateProbability(DoubleSequence record) {
     DoubleArray x = DoubleArray.zeros(record.size() + 1);
     x.set(0, 1); // set the intercept
     for (int i = 0; i < record.size(); i++) {
       x.set(i + 1, record.getDouble(i));
     }
-
-    List<?> classes = getClasses();
+    Array<?> classes = getClasses();
     int k = classes.size();
     if (k > 2) {
       DoubleArray probs = DoubleArray.zeros(k);
@@ -122,7 +139,7 @@ public class LogisticRegression<Out> extends AbstractClassifier<Instance, Out> {
   }
 
   public double getOddsRatio(Object coefficient) {
-    int i = names.loc().indexOf(coefficient);
+    int i = names.values().indexOf(coefficient);
     if (i < 0) {
       throw new IllegalArgumentException("Label not found");
     }
@@ -146,11 +163,11 @@ public class LogisticRegression<Out> extends AbstractClassifier<Instance, Out> {
   }
 
   public static class Evaluator implements
-      org.briljantframework.mimir.evaluation.Evaluator<Instance, Object, LogisticRegression<Object>> {
+      org.briljantframework.mimir.evaluation.Evaluator<DoubleSequence, Object, LogisticRegression<Object>> {
 
     @Override
     public void accept(
-        EvaluationContext<? extends Instance, ?, ? extends LogisticRegression<Object>> ctx) {
+        EvaluationContext<? extends DoubleSequence, ?, ? extends LogisticRegression<Object>> ctx) {
       ctx.getMeasureCollection().add("logLoss", MeasureSample.IN_SAMPLE,
           ctx.getPredictor().getLogLoss());
     }
@@ -168,7 +185,8 @@ public class LogisticRegression<Out> extends AbstractClassifier<Instance, Out> {
    *
    * @author Isak Karlsson
    */
-  public static class Learner<Out> extends AbstractLearner<Instance, Out, LogisticRegression<Out>> {
+  public static class Learner<Out>
+      extends AbstractLearner<DoubleSequence, Out, LogisticRegression<Out>> {
 
     static final double GRADIENT_TOLERANCE = 1E-5;
     static final int MEMORY = 20;
@@ -177,54 +195,75 @@ public class LogisticRegression<Out> extends AbstractClassifier<Instance, Out> {
       set(REGULARIZATION, regularization);
     }
 
+    public Learner() {
+      this(0.01);
+    }
+
     @Override
-    public LogisticRegression<Out> fit(Input<? extends Instance> in, Output<? extends Out> out) {
+    public LogisticRegression<Out> fit(Input<? extends DoubleSequence> in,
+        Output<? extends Out> out) {
       Check.argument(Dataset.isDataset(in) && Dataset.isAllNumeric(in),
           "All features must be numeric.");
 
-      int n = in.size();
-      int m = in.getProperty(Dataset.FEATURE_SIZE);
-      Check.argument(n == out.size(),
+      Check.argument(in.size() == out.size(),
           "The number of training instances must equal the number of targets");
-      List<Out> classes = Outputs.unique(out);
-      DoubleArray x = constructInputMatrix(in, n, m);
+      Array<Out> classes = Outputs.unique(out);
+      DoubleArray x = constructInputMatrix(in, in.size(), in.getProperty(Dataset.FEATURE_SIZE));
       IntArray y = Arrays.intArray(out.size());
       for (int i = 0; i < y.size(); i++) {
         y.set(i, classes.indexOf(out.get(i)));
       }
+      return train(getParameters(), x, y, classes,
+          in.hasProperty(Dataset.FEATURE_NAMES) ? in.getProperty(Dataset.FEATURE_NAMES) : null);
+    }
+
+    public LogisticRegression<Integer> fit(DoubleArray x, IntArray y) {
+      Check.argument(x.isMatrix(), "Require 2d-array");
+      Check.argument(x.rows() == y.size(),
+          "The number of training instance must equal the number of targets");
+      Array<Integer> classes = Array.copyOf(new HashSet<>(y));
+      x = Arrays.vstack(DoubleArray.ones(x.rows()), x);
+      return train(getParameters(), x, y, classes, null);
+    }
+
+    private static <Out> LogisticRegression<Out> train(Properties props, DoubleArray x, IntArray y,
+        Array<Out> classes, List<String> featureNames) {
       DoubleArray theta;
       DifferentialMultivariateFunction objective;
       int k = classes.size();
+      Double lambda = props.get(REGULARIZATION);
       if (k == 2) {
-        objective = new BinaryLogisticFunction(x, y, get(REGULARIZATION));
+        objective = new BinaryLogisticFunction(x, y, lambda);
         theta = DoubleArray.zeros(x.columns());
       } else if (k > 2) {
-        objective = new MultiClassLogisticFunction(x, y, get(REGULARIZATION), k);
+        objective = new MultiClassLogisticFunction(x, y, lambda, k);
         theta = DoubleArray.zeros(x.columns(), k);
       } else {
         throw new IllegalArgumentException(String.format("Illegal classes. k >= 2 (%d >= 2)", k));
       }
 
+      Integer maxIterations = props.getOrDefault(MAX_ITERATIONS);
       NonlinearOptimizer optimizer =
-          new LimitedMemoryBfgsOptimizer(MEMORY, getOrDefault(MAX_ITERATIONS), GRADIENT_TOLERANCE);
+          new LimitedMemoryBfgsOptimizer(MEMORY, maxIterations, GRADIENT_TOLERANCE);
       double logLoss = optimizer.optimize(objective, theta);
 
       Series.Builder names = Series.Builder.of(String.class).add("(Intercept)");
-      if (in.getProperties().contains(Dataset.FEATURE_NAMES)) {
-        in.getProperty(Dataset.FEATURE_NAMES).forEach(names::add);
+      int independentVariables = x.columns() - 1;
+      if (featureNames != null && featureNames.size() == independentVariables) {
+        featureNames.forEach(names::add);
       } else {
-        for (int i = 0; i < m; i++) {
+        for (int i = 0; i < independentVariables; i++) {
           names.add(String.valueOf(i));
         }
       }
-      return new LogisticRegression<>(names.build(), theta, logLoss, classes);
+      return new LogisticRegression<>(classes, names.build(), theta, logLoss);
     }
 
-    DoubleArray constructInputMatrix(Input<? extends Instance> input, int n, int m) {
+    DoubleArray constructInputMatrix(Input<? extends DoubleSequence> input, int n, int m) {
       DoubleArray x = DoubleArray.zeros(n, m + 1);
       for (int i = 0; i < n; i++) {
         x.set(i, 0, 1);
-        Instance record = input.get(i);
+        DoubleSequence record = input.get(i);
         for (int j = 0; j < m; j++) {
           double v = record.getDouble(j);
           if (Is.NA(v) || Double.isNaN(v)) {

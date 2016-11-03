@@ -20,11 +20,12 @@
  */
 package org.briljantframework.mimir.classification;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.IntStream;
 
-import org.briljantframework.array.Arrays;
-import org.briljantframework.array.DoubleArray;
+import org.briljantframework.array.Array;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.data.Outputs;
@@ -32,52 +33,34 @@ import org.briljantframework.mimir.supervised.Characteristic;
 
 /**
  * Provides sane defaults for a predictor. Sub-classes only have to implement the
- * {@link #estimate(In)} method to have a sensible default predictor.
+ * {@link #predict(Object)} method to have a sensible default predictor.
  * 
  * <p/>
- * For a classifier unable to output probability estimates the {@linkplain #estimate(In)} should
- * return an array where the predicted class has probability {@code 1} and all other classes
- * probability {@code 0}. To improve performance, implementors of such predictors should consider
- * overriding the default {@linkplain #predict(In)} method.
- * 
- * <p/>
- * Predictors that produces probability estimates should make sure to include the
- * {@link ClassifierCharacteristic#ESTIMATOR ESTIMATOR} characteristics in the {@link EnumSet}
- * returned by {@link #getCharacteristics()}
+ * Predictors that produces probability estimates should make sure implement
+ * {@link ProbabilityEstimator}.
  *
  * @author Isak Karlsson
  */
 public abstract class AbstractClassifier<In, Out> implements Classifier<In, Out> {
 
-  private final List<Out> classes;
+  private final Array<Out> classes;
 
-  protected AbstractClassifier(List<Out> classes) {
+  protected AbstractClassifier(Array<Out> classes) {
     this.classes = Objects.requireNonNull(classes);
   }
 
   @Override
-  public final List<Out> getClasses() {
+  public final Array<Out> getClasses() {
     return classes;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Output<Out> predict(Input<? extends In> x) {
+    // This guarantees that the order of predictions is the same as the input
     Object[] labels = new Object[x.size()];
     IntStream.range(0, x.size()).parallel().forEach(i -> labels[i] = predict(x.get(i)));
-    return Outputs.asOutput((Out[])labels);
-  }
-
-  @Override
-  public Out predict(In input) {
-    return getClasses().get(Arrays.argmax(estimate(input)));
-  }
-
-  @Override
-  public DoubleArray estimate(Input<? extends In> x) {
-    DoubleArray estimations = DoubleArray.zeros(x.size(), getClasses().size());
-    IntStream.range(0, x.size()).parallel().forEach(i -> estimations.setRow(i, estimate(x.get(i))));
-    return estimations;
+    return Outputs.asOutput((Out[]) labels);
   }
 
   @Override

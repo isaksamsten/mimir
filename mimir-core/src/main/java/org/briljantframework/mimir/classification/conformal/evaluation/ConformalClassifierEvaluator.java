@@ -20,12 +20,11 @@
  */
 package org.briljantframework.mimir.classification.conformal.evaluation;
 
-import java.util.List;
-
 import org.apache.commons.math3.util.Precision;
+import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
+import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.Evaluator;
 import org.briljantframework.mimir.evaluation.MeasureCollection;
@@ -33,8 +32,8 @@ import org.briljantframework.mimir.evaluation.MeasureCollection;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class ConformalClassifierEvaluator<In>
-    implements Evaluator<In, Object, ConformalClassifier<In, Object>> {
+public class ConformalClassifierEvaluator<In, Out>
+    implements Evaluator<In, Out, ConformalClassifier<In, Out>> {
 
   private final double significance;
 
@@ -60,9 +59,10 @@ public class ConformalClassifierEvaluator<In>
   }
 
   @Override
-  public void accept(EvaluationContext<? extends In, ?, ? extends ConformalClassifier<In, Object>> ctx) {
+  public void accept(
+      EvaluationContext<? extends In, ? extends Out, ? extends ConformalClassifier<In, Out>> ctx) {
     Output<?> truth = ctx.getPartition().getValidationTarget();
-    List<?> classes = ctx.getPredictor().getClasses();
+    Array<?> classes = ctx.getPredictor().getClasses();
     DoubleArray scores = ctx.getEstimates();
     ConformalClassifierMeasure cm =
         new ConformalClassifierMeasure(truth, scores, significance, classes);

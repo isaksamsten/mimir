@@ -23,18 +23,18 @@ package org.briljantframework.mimir.data.timeseries;
 import org.briljantframework.ComplexSequence;
 import org.briljantframework.DoubleSequence;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.transform.InvertibleTransformer;
+import org.briljantframework.mimir.data.transform.InvertibleInputTransformer;
 
 /**
  * Performs a discrete fourier transformation.
  * 
  * @author Isak Karlsson
  */
-public class DiscreteFourierTransformer<T extends DoubleSequence, E extends ComplexSequence>
-    implements InvertibleTransformer<T, E> {
+public class DiscreteFourierInputTransformer<T extends DoubleSequence, E extends ComplexSequence>
+    implements InvertibleInputTransformer<T, E> {
 
   @Override
-  public Input<E> transform(Input<? extends T> x) {
+  public Input<E> transform(Input< T> x) {
     // DataSeriesCollection.Builder builder = new DataSeriesCollection.Builder(Complex.class);
     // for (Vector row : x.getRecords()) {
     // DoubleArray timeDomain = Vectors.toDoubleArray(row);
@@ -50,12 +50,12 @@ public class DiscreteFourierTransformer<T extends DoubleSequence, E extends Comp
   }
 
   @Override
-  public E transform(T x) {
+  public E transformElement(T x) {
     return null;
   }
 
   @Override
-  public Input<T> inverseTransform(Input<? extends E> x) {
+  public Input<T> inverseTransform(Input< E> x) {
     // DataSeriesCollection.Builder builder = new DataSeriesCollection.Builder(Double.class);
     // for (Vector row : x.getRecords()) {
     // ComplexArray timeDomain = Vectors.toComplexArray(row);

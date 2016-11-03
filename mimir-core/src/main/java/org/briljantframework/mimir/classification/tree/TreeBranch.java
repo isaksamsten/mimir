@@ -20,8 +20,7 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
-import java.util.List;
-
+import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.series.Series;
 
@@ -33,24 +32,24 @@ public final class TreeBranch<In, T> implements TreeNode<In, T> {
   private final TreeNode<In, T> left;
   private final TreeNode<In, T> right;
   private final TreeNode<In, T> missing;
-  private final List<?> domain;
+  private final Array<?> domain;
   private final Series classDistribution;
   private final T threshold;
   private final double weight;
 
 
-  public TreeBranch(TreeNode<In, T> left, TreeNode<In, T> right, List<?> domain, T threshold,
+  public TreeBranch(TreeNode<In, T> left, TreeNode<In, T> right, Array<?> domain, T threshold,
       double weight) {
     this(left, right, null, domain, null, threshold, weight);
   }
 
   public TreeBranch(TreeNode<In, T> left, TreeNode<In, T> right, TreeNode<In, T> missing,
-      List<?> domain, T threshold, double weight) {
+      Array<?> domain, T threshold, double weight) {
     this(left, right, missing, domain, null, threshold, weight);
   }
 
   public TreeBranch(TreeNode<In, T> left, TreeNode<In, T> right, TreeNode<In, T> missing,
-      List<?> domain, Series classDistribution, T threshold, double weight) {
+      Array<?> domain, Series classDistribution, T threshold, double weight) {
     this.left = left;
     this.right = right;
     this.domain = domain;
@@ -85,7 +84,7 @@ public final class TreeBranch<In, T> implements TreeNode<In, T> {
   }
 
   @Override
-  public List<?> getDomain() {
+  public Array<?> getDomain() {
     return domain;
   }
 

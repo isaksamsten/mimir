@@ -20,7 +20,9 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
-import java.util.Random;
+import static org.briljantframework.mimir.classification.tree.AbstractSplitter.Direction.*;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.briljantframework.data.Is;
 import org.briljantframework.data.series.Convert;
@@ -32,27 +34,12 @@ import org.briljantframework.mimir.data.Instance;
  */
 public abstract class AbstractSplitter implements Splitter {
 
-  public static final int MISSING = 0;
-  public static final int LEFT = -1;
-  public static final int RIGHT = 1;
-  /**
-   * The Random.
-   */
-  protected final Random random = new Random();
+  protected enum Direction {
+    MISSING, LEFT, RIGHT
+  }
 
-  /**
-   * Basic implementation of the splitting procedure
-   *
-   *
-   * @param in
-   * @param classSet the examples
-   * @param axis the axis
-   * @param threshold the threshold
-   * @return the examples . split
-   */
   protected TreeSplit<ValueThreshold> split(Input<? extends Instance> in, ClassSet classSet,
-      int axis,
-      Object threshold) {
+      int axis, Object threshold) {
     ClassSet left = new ClassSet(classSet.getDomain());
     ClassSet right = new ClassSet(classSet.getDomain());
 
@@ -70,16 +57,21 @@ public abstract class AbstractSplitter implements Splitter {
        * STEP 1: Partition the examples according to threshold
        */
       boolean nominal = Is.nominal(threshold);
+      double numericThreshold = Double.NaN;
+      if (!nominal) {
+        numericThreshold = Convert.to(Double.class, threshold);
+      }
       for (Example example : sample) {
-        int direction = MISSING;
+        Direction direction = MISSING;
         Instance record = in.get(example.getIndex());
-        if (!Is.NA(record.get(axis))) {
+        Object axisValue = record.get(axis);
+        if (!Is.NA(axisValue)) {
           if (nominal) {
-            direction = Is.equal(threshold, record.get(axis)) ? LEFT : RIGHT;
-//                axisVector.loc().get(Object.class, index).equals(threshold) ? LEFT : RIGHT;
+            direction = Is.equal(threshold, axisValue) ? LEFT : RIGHT;
           } else {
-            double leftValue = record.getDouble(axis);
-            direction = Double.compare(leftValue, Convert.to(Double.class, threshold)) <= 0 ? LEFT : RIGHT;
+            // getDouble(axis) can be optimized in some cases
+            direction =
+                Double.compare(record.getDouble(axis), numericThreshold) <= 0 ? LEFT : RIGHT;
           }
         }
         switch (direction) {
@@ -90,7 +82,6 @@ public abstract class AbstractSplitter implements Splitter {
             rightSample.add(example);
             break;
           case MISSING:
-          default:
             missingSample.add(example);
         }
       }
@@ -124,7 +115,7 @@ public abstract class AbstractSplitter implements Splitter {
   protected void distributeMissing(ClassSet.Sample left, ClassSet.Sample right,
       ClassSet.Sample missing) {
     for (Example example : missing) {
-      if (random.nextDouble() > 0.5) {
+      if (ThreadLocalRandom.current().nextDouble() > 0.5) {
         left.add(example);
       } else {
         right.add(example);

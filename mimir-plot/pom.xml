@@ -19,13 +19,23 @@
   <dependencies>
     <dependency>
       <groupId>org.briljantframework</groupId>
-      <artifactId>briljant-core</artifactId>
-      <version>0.3-SNAPSHOT</version>
+      <artifactId>mimir-core</artifactId>
+      <version>0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.briljantframework</groupId>
+      <artifactId>briljant-dataset</artifactId>
+      <version>0.4-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.jfree</groupId>
       <artifactId>jfreechart</artifactId>
       <version>1.0.19</version>
+    </dependency>
+    <dependency>
+      <groupId>de.erichseifert.gral</groupId>
+      <artifactId>gral-core</artifactId>
+      <version>0.11</version>
     </dependency>
   </dependencies>
 </project>

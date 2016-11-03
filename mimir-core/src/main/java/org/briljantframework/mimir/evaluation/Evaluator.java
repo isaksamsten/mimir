@@ -30,18 +30,6 @@ import org.briljantframework.mimir.supervised.Predictor;
  */
 public interface Evaluator<In, Out, P extends Predictor<In, Out>> {
 
-  static <In, Out> Evaluator<In, Out, Predictor<In, Out>> foldOutput(IntConsumer consumer) {
-    return new Evaluator<In, Out, Predictor<In, Out>>() {
-      private int fold = 0;
-
-      @Override
-      public void accept(
-          EvaluationContext<? extends In, ? extends Out, ? extends Predictor<In, Out>> ctx) {
-        consumer.accept(fold++);
-      }
-    };
-  }
-
   /**
    * Performs a modification to the evaluation context. For example, adding a measure.
    *

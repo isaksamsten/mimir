@@ -20,6 +20,7 @@
  */
 package org.briljantframework.mimir.data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.briljantframework.DoubleSequence;
@@ -44,12 +45,16 @@ public interface Instance extends DoubleSequence {
     return new ImmutableArrayInstance(value);
   }
 
-  static Instance copyOf(Series vector) {
-    return new SeriesInstance(vector);
+  static Instance copyOf(Series series) {
+    return new SeriesInstance(series);
   }
 
   static Instance copyOf(List<?> values) {
     return of(values.toArray());
+  }
+
+  static Instance wrap(double[] array) {
+    return new DoubleInstance(array);
   }
 
   /**

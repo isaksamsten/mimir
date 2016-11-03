@@ -30,7 +30,7 @@ import java.util.function.Function;
 public abstract class Property<T> {
 
   /**
-   * Returns a key with the specified name and type
+   * Returns a property with the specified name and type
    *
    * @param name the name
    * @param cls the type
@@ -42,7 +42,7 @@ public abstract class Property<T> {
   }
 
   /**
-   * Returns a key with the specified name, type and default value
+   * Returns a property with the specified name, type and default value
    *
    * @param name the name
    * @param cls the type
@@ -65,7 +65,7 @@ public abstract class Property<T> {
    * @return a new key
    */
   public static <T> Property<T> of(String name, Class<T> cls, T defaultValue,
-                                   Function<? super T, Boolean> validator) {
+      Function<? super T, Boolean> validator) {
     return new StringProperty<T>(cls, name, defaultValue, validator);
   }
 
@@ -117,5 +117,86 @@ public abstract class Property<T> {
   @Override
   public final int hashCode() {
     return System.identityHashCode(this);
+  }
+
+  /**
+   * The default typed key based on string values. Two keys are the same if the have the same name
+   * and type.
+   *
+   * @author Isak Karlsson
+   */
+  private static class StringProperty<T> extends Property<T> {
+    private final Class<T> cls;
+    private final String name;
+    private final T defaultValue;
+    private final Function<? super T, Boolean> validator;
+
+    StringProperty(Class<T> cls, String name) {
+      this(cls, name, null);
+    }
+
+    StringProperty(Class<T> cls, String name, T defaultValue) {
+      this(cls, name, defaultValue, v -> v != null);
+    }
+
+    StringProperty(Class<T> cls, String name, T defaultValue,
+        Function<? super T, Boolean> validator) {
+      this.cls = cls;
+      this.name = name;
+      this.defaultValue = defaultValue;
+      this.validator = validator;
+    }
+
+    @Override
+    public Class<T> getType() {
+      return cls;
+    }
+
+    @Override
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public String getDescription() {
+      return name;
+    }
+
+    @Override
+    public T defaultValue() {
+      return defaultValue;
+    }
+
+    @Override
+    public boolean validate(T value) {
+      return validator.apply(value);
+    }
+
+    // @Override
+    // public boolean equals(Object o) {
+    // if (this == o)
+    // return true;
+    // if (o == null || getClass() != o.getClass())
+    // return false;
+    //
+    // StringProperty<?> that = (StringProperty<?>) o;
+    // if (cls != null ? !cls.equals(that.cls) : that.cls != null) {
+    // return false;
+    // } else {
+    // return name != null ? name.equals(that.name) : that.name == null;
+    // }
+    // }
+    //
+    // @Override
+    // public int hashCode() {
+    // int result = cls != null ? cls.hashCode() : 0;
+    // result = 31 * result + (name != null ? name.hashCode() : 0);
+    // return result;
+    // }
+
+    @Override
+    public String toString() {
+      return getName();
+    }
   }
 }

@@ -20,10 +20,8 @@
  */
 package org.briljantframework.mimir.data.transform;
 
-import org.briljantframework.mimir.data.Input;
-
 /**
- * Fit a Transformation to a dataset and return a transformation which can be used to transform
+ * Fit a InputTransformation to a dataset and return a transformation which can be used to transform
  * other datasets using the parameters of the fitted dataset. This can be particularly useful when a
  * transformation must be fitted on a dataset and applied on another. For example, in the case of
  * normalizing training and testing data.
@@ -33,24 +31,27 @@ import org.briljantframework.mimir.data.Input;
  *
  * @author Isak Karlsson
  */
-@FunctionalInterface
-public interface Transformation<T, E> {
+public interface Transformation<T, R> {
 
-  /**
-   * Fit and transform the data frame in a single operation
-   *
-   * @param x the data frame
-   * @return the transformed data frame
-   */
-  default Input<E> fitTransform(Input<? extends T> x) {
-    return fit(x).transform(x);
+  default <V> Transformation<T, V> followedBy(Transformer<? super R, ? extends V> after) {
+    return stageOneInput -> {
+      Transformer<T, R> stageOne = Transformation.this.fit(stageOneInput);
+      return (Transformer<T, V>) stageTwoInput -> after.transform(stageOne.transform(stageTwoInput));
+    };
   }
 
-  /**
-   * Fit a transformer to data frame
-   *
-   * @param x the dataset to use in the fit procedure
-   * @return the transformation
-   */
-  Transformer<T, E> fit(Input<? extends T> x);
+  default <V> Transformation<T, V> followedBy(Transformation<? super R, ? extends V> after) {
+    return stageOneInput -> {
+      Transformer<T, R> stageOne = Transformation.this.fit(stageOneInput);
+      Transformer<? super R, ? extends V> stageTwo = after.fit(stageOne.transform(stageOneInput));
+      return (Transformer<T, V>) stageTwoInput -> stageTwo.transform(stageOne.transform(stageTwoInput));
+    };
+  }
+
+  default R fitTransform(T t) {
+    return fit(t).transform(t);
+  }
+
+  Transformer<T, R> fit(T t);
+
 }

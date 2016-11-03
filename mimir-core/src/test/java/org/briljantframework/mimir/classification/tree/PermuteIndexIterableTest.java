@@ -18,23 +18,29 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.classification.conformal;
+package org.briljantframework.mimir.classification.tree;
 
-import org.briljantframework.array.DoubleArray;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.junit.Test;
 
 /**
- * @author Isak Karlsson <isak-kar@dsv.su.se>
+ * Created by isak on 2016-10-24.
  */
-public interface ClassifierCalibratorScores<In> {
+public class PermuteIndexIterableTest {
 
-  /**
-   * Return a double array of [no-calibration, 1] double array of nonconformity scores for the
-   * calibration set used to estimate the p-values when performing a conformal prediction. The
-   * calibration set might be different for different for different examples or lables.
-   *
-   * @param example the example
-   * @param label the label
-   * @return the calibration scores
-   */
-  DoubleArray get(In example, Object label);
+  @Test
+  public void tesTTest() throws Exception {
+    PermuteIndexIterable iterator = new PermuteIndexIterable(1000000, 10);
+    Set<Integer> s = new HashSet<>();
+    for (Integer next : iterator) {
+      if (s.contains(next)) {
+        throw new RuntimeException();
+      }
+      s.add(next);
+      System.out.println((int) next);
+    }
+
+  }
 }

@@ -51,6 +51,6 @@ public class TransformationTest {
   }
 
   private DataFrame.Builder getBuilder() {
-    return DataFrame.builder();
+    return DataFrame.newBuilder();
   }
 }

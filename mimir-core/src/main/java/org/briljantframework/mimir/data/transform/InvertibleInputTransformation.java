@@ -20,38 +20,21 @@
  */
 package org.briljantframework.mimir.data.transform;
 
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import org.briljantframework.mimir.data.ArrayInput;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Inputs;
 
 /**
- * Some transformations are (semi) invertible, e.g. PCA. Given the transformation {@code f(x)} and
- * the inverse {@code f'(x)}, {@code f'(f(x)) ~= x}.
- * 
- * <pre>
- * InvertibleTransformer<String, Integer> t = new StrIntTransformer();
- * Integer i = t.transform("1");
- * assert "1".equals(t.inverseTransform(i));
- * </pre>
+ * Fit an invertible transformation, e.g. PCA.
  * 
  * @author Isak Karlsson
  */
-public interface InvertibleTransformer<T, E> extends Transformer<T, E> {
+public interface InvertibleInputTransformation<T, E> extends InputTransformation<T, E> {
 
   /**
-   * Inverse the transformation
+   * Perform an invertible transformation on {@code x}
    *
-   * @param x an input
-   * @return the inverse
+   * @param x data frame to transform
+   * @return the invertible transformation
    */
-  default Input<T> inverseTransform(Input<? extends E> x) {
-    Input<T> inverse = x.stream().map((Function<E, T>) this::inverseTransform)
-        .collect(Collectors.toCollection(ArrayInput::new));
-    return Inputs.unmodifiableInput(inverse);
-  }
-
-  T inverseTransform(E x);
+  @Override
+  InvertibleInputTransformer<T, E> fit(Input<T> x);
 }

@@ -23,6 +23,7 @@ package org.briljantframework.mimir.classification.tree.pattern;
 import java.util.*;
 
 import org.briljantframework.DoubleSequence;
+import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.Na;
@@ -66,7 +67,7 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
 
   private final int depth;
 
-  private PatternTree(List<Out> classes, TreeVisitor<In, ?> predictionVisitor, int depth) {
+  private PatternTree(Array<Out> classes, TreeVisitor<In, ?> predictionVisitor, int depth) {
     super(classes, predictionVisitor);
     this.depth = depth;
   }
@@ -93,17 +94,18 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
 
     private final ClassSet classSet;
     // private final Assessment assessment;
-    private List<Out> classes;
+    private Array<Out> classes;
 
-    Learner(PatternFactory<? super In, ? extends E> factory,
-        PatternDistance<? super In, ? super E> patternDistance, ClassSet classSet, List<Out> classes,
+    Learner(Array<Out> classes, PatternFactory<? super In, ? extends E> factory,
+        PatternDistance<? super In, ? super E> patternDistance, ClassSet classSet,
         Properties properties) {
-      this(factory, patternDistance, new DefaultPatternVisitorFactory<>(), classSet, classes, properties);
+      this(classes, factory, patternDistance, new DefaultPatternVisitorFactory<>(), classSet,
+          properties);
     }
 
-    Learner(PatternFactory<? super In, ? extends E> factory,
+    Learner(Array<Out> classes, PatternFactory<? super In, ? extends E> factory,
         PatternDistance<? super In, ? super E> patternDistance,
-        PatternVisitorFactory<In, E> patternVisitorFactory, ClassSet classSet, List<Out> classes,
+        PatternVisitorFactory<In, E> patternVisitorFactory, ClassSet classSet,
         Properties properties) {
       super(properties);
       this.patternFactory = factory;
@@ -120,7 +122,7 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
     @Override
     public PatternTree<In, Out> fit(Input<? extends In> x, Output<? extends Out> y) {
       ClassSet classSet = this.classSet;
-      List<Out> classes = this.classes != null ? this.classes : Outputs.unique(y);
+      Array<Out> classes = this.classes != null ? this.classes : Outputs.unique(y);
       if (classSet == null) {
         classSet = new ClassSet(y, classes);
       }
@@ -221,7 +223,8 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
             split(bestDistanceMap, classSet, bestThreshold.threshold, bestShapelet);
         bestSplit.setImpurity(bestThreshold.impurity);
         // PatternTree.Threshold threshold = bestSplit.getThreshold();
-        bestSplit.getThreshold().setClassDistances(computeMeanDistance(bestDistanceMap, classSet, y));
+        bestSplit.getThreshold()
+            .setClassDistances(computeMeanDistance(bestDistanceMap, classSet, y));
         return bestSplit;
       } else {
         return null;
@@ -585,14 +588,14 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
         Series useExample = example;
         if (shapelet instanceof ChannelShapelet) {
           int channelIndex = ((ChannelShapelet) shapelet).getChannel();
-          useExample = example.loc().get(Series.class, channelIndex);
+          useExample = example.values().get(Series.class, channelIndex);
         }
 
 
         double threshold = node.getThreshold().getDistance();
         if (shapelet.size() > useExample.size()) {
           Series mcd = node.getThreshold().getClassDistances();
-          double d = distanceMeasure.compute(useExample.loc(), shapelet);
+          double d = distanceMeasure.compute(useExample.values(), shapelet);
           double sqrt = Math.sqrt((d * d * useExample.size()) / shapelet.size());
           // if (sqrt < threshold) {
           // return visit(node.getLeft(), example);
@@ -602,7 +605,7 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
           //
           double min = Double.POSITIVE_INFINITY;
           Object minKey = null;
-          for (Object key : mcd.getIndex()) {
+          for (Object key : mcd.index()) {
             double dist = Math.abs(sqrt - mcd.getDouble(key));
             if (dist < min) {
               min = dist;
@@ -634,7 +637,7 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
           // Series exampleChannel = example.loc().get(Series.class, shapeletChannel);
           // computedDistance = distanceMeasure.compute(exampleChannel, shapelet);
           // } else {
-          computedDistance = distanceMeasure.compute(useExample.loc(), shapelet);
+          computedDistance = distanceMeasure.compute(useExample.values(), shapelet);
           // }
           if (computedDistance < threshold) {
             return visit(node.getLeft(), example);
@@ -684,10 +687,11 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
           double minDistance = Double.POSITIVE_INFINITY;
           Object cls = null;
           for (Example ex : included) {
-            double distance = EUCLIDEAN.compute(example.loc(), x.loc().getRow(ex.getIndex()).loc());
+            double distance =
+                EUCLIDEAN.compute(example.values(), x.loc().getRow(ex.getIndex()).values());
             if (distance < minDistance) {
               minDistance = distance;
-              cls = y.loc().get(Object.class, ex.getIndex());
+              cls = y.values().get(Object.class, ex.getIndex());
             }
           }
           double left = node.getLeft().getClassDistribution().getDouble(cls);
@@ -711,10 +715,10 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
           double computedDistance;
           if (shapelet instanceof ChannelShapelet) {
             int shapeletChannel = ((ChannelShapelet) shapelet).getChannel();
-            Series exampleChannel = example.loc().get(Series.class, shapeletChannel);
-            computedDistance = distanceMeasure.compute(exampleChannel.loc(), shapelet);
+            Series exampleChannel = example.values().get(Series.class, shapeletChannel);
+            computedDistance = distanceMeasure.compute(exampleChannel.values(), shapelet);
           } else {
-            computedDistance = distanceMeasure.compute(example.loc(), shapelet);
+            computedDistance = distanceMeasure.compute(example.values(), shapelet);
           }
           if (computedDistance < threshold) {
             return visit(node.getLeft(), example);

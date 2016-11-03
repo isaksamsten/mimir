@@ -60,14 +60,14 @@ public class RandomClassiciationExample {
     Vector.Builder yBuilder = new IntVector.Builder();
     for (int i = 0; i < xPos.rows(); i++) {
       yBuilder.add(1);
-      xBuilder.addRecord(Vectors.transferableBuilder(xPos.loc().getRecord(i)));
+      xBuilder.addRecord(Vectors.transferableBuilder(xPos.values().getRecord(i)));
     }
     Random random = new Random();
     for (int i = 0; i < xPos.rows(); i++) {
       yBuilder.add(0);
       Vector.Builder r = new DoubleVector.Builder();
       for (int j = 0; j < xPos.columns(); j++) {
-        r.loc().set(j, xPos.loc().get(random.nextInt(xPos.rows()), j));
+        r.values().set(j, xPos.values().get(random.nextInt(xPos.rows()), j));
       }
       xBuilder.addRecord(r);
     }

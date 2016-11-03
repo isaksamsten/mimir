@@ -43,7 +43,7 @@ public class StatisticalDataFrameDataset extends AbstractDataset implements
 
   @Override
   public Number getMeanValue(int row, int column) {
-    return stats.get(StatisticalSummary.class, stats.getIndex().get(column)).getMean();
+    return stats.get(StatisticalSummary.class, stats.index().get(column)).getMean();
   }
 
   @Override
@@ -53,7 +53,7 @@ public class StatisticalDataFrameDataset extends AbstractDataset implements
 
   @Override
   public Number getStdDevValue(int row, int column) {
-    return stats.get(StatisticalSummary.class, stats.getIndex().get(column)).getStandardDeviation();
+    return stats.get(StatisticalSummary.class, stats.index().get(column)).getStandardDeviation();
   }
 
   @Override
@@ -78,17 +78,17 @@ public class StatisticalDataFrameDataset extends AbstractDataset implements
 
   @Override
   public Comparable getColumnKey(int column) {
-    return (Comparable) stats.getIndex().get(column);
+    return (Comparable) stats.index().get(column);
   }
 
   @Override
   public int getColumnIndex(Comparable key) {
-    return stats.getIndex().getLocation(key);
+    return stats.index().getLocation(key);
   }
 
   @Override
   public List getColumnKeys() {
-    return stats.getIndex();
+    return stats.index();
   }
 
   @Override

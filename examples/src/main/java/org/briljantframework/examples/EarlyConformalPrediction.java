@@ -88,7 +88,7 @@ public class EarlyConformalPrediction {
       Map<Integer, DoubleArray> lengthNc = new HashMap<>();
       int start = 5;
       for (int i = 0; i < d.columns() - start; i++) {
-        DataFrame x1 = d.loc().get(Range.of(0, i + start + 1));
+        DataFrame x1 = d.values().get(Range.of(0, i + start + 1));
         System.out.println(x1.columns() + " => " + (i + start + 1));
         lengthNc.put(i + start + 1, nc.estimate(x1, v));
       }
@@ -133,7 +133,7 @@ public class EarlyConformalPrediction {
         DataFrame.builder(Integer.class, Double.class, Double.class, Double.class);
     result.setColumnIndex(Index.of("size", "significance", "error", "noClasses"));
     for (int i = 0; i < x.columns() - start; i++) {
-      DataFrame prex = x.loc().get(Arrays.range(0, i + start + 1));
+      DataFrame prex = x.values().get(Arrays.range(0, i + start + 1));
       DoubleArray estimate = cc.estimate(prex);
       System.out.printf("Processing %d/%d\n", i, x.columns() - start);
 

@@ -18,44 +18,33 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.data;
+package org.briljantframework.mimir.data.transform;
 
-import java.util.Objects;
 
-import org.briljantframework.data.series.Series;
+import java.util.stream.Collectors;
 
-/**
- * @author Isak Karlsson
- */
-class SeriesInstance implements Instance {
-  private final Series record;
+import org.briljantframework.mimir.data.ArrayInput;
+import org.briljantframework.mimir.data.Input;
 
-  public SeriesInstance(Series record) {
-    this.record = Objects.requireNonNull(record);
+
+public interface InputTransformer<T, E> extends Transformer<Input<T>, Input<E>> {
+
+  /**
+   * Transform an input
+   *
+   * @param x data frame to transform
+   * @return transformation of input
+   */
+  default Input<E> transform(Input<T> x) {
+    return x.stream().map(this::transformElement)
+        .collect(Collectors.toCollection(() -> new ArrayInput<>(x.getProperties())));
   }
 
-  @Override
-  public int size() {
-    return record.size();
-  }
-
-  @Override
-  public int getInt(int index) {
-    return record.values().getInt(index);
-  }
-
-  @Override
-  public double getDouble(int index) {
-    return record.values().getDouble(index);
-  }
-
-  @Override
-  public <T> T get(Class<T> cls, int index) {
-    return record.values().get(cls, index);
-  }
-
-  @Override
-  public Object get(int index) {
-    return record.values().get(index);
-  }
+  /**
+   * Transform the given input element
+   * 
+   * @param x the given input element
+   * @return the given input element
+   */
+  E transformElement(T x);
 }

@@ -20,44 +20,38 @@
  */
 package org.briljantframework.mimir.data.transform;
 
-
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.briljantframework.data.Is;
 import org.briljantframework.mimir.data.ArrayInput;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Inputs;
-import org.briljantframework.mimir.data.Instance;
 
 /**
- * Removes incomplete cases, i.e. rows with missing values.
- *
+ * Some transformations are (semi) invertible, e.g. PCA. Given the transformation {@code f(x)} and
+ * the inverse {@code f'(x)}, {@code f'(f(x)) ~= x}.
+ * 
+ * <pre>
+ * InvertibleInputTransformer<String, Integer> t = new StrIntTransformer();
+ * Integer i = t.transform("1");
+ * assert "1".equals(t.inverseTransform(i));
+ * </pre>
+ * 
  * @author Isak Karlsson
  */
-public class RemoveIncompleteCases<T extends Instance> implements Transformer<T, T> {
+public interface InvertibleInputTransformer<T, E> extends InputTransformer<T, E> {
 
-  @Override
-  public Input<T> transform(Input<? extends T> x) {
-    Input<T> o = x.stream().filter(instance -> !hasNA(instance))
-        .collect(Collectors.toCollection(() -> new ArrayInput<>(x.getProperties())));
-    return Inputs.unmodifiableInput(o);
+  /**
+   * Inverse the transformation
+   *
+   * @param x an input
+   * @return the inverse
+   */
+  default Input<T> inverseTransform(Input<E> x) {
+    Input<T> inverse = x.stream().map(this::inverseTransform)
+        .collect(Collectors.toCollection(ArrayInput::new));
+    return Inputs.unmodifiableInput(inverse);
   }
 
-  private boolean hasNA(T instance) {
-    for (int i = 0; i < instance.size(); i++) {
-      if (Is.NA(instance.get(i))) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  @Override
-  public T transform(T x) {
-    if (!hasNA(x))
-      return x;
-    else {
-      throw new IllegalStateException("no instance returned");
-    }
-  }
+  T inverseTransform(E x);
 }

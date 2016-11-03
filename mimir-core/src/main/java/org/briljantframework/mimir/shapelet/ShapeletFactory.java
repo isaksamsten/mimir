@@ -36,7 +36,7 @@ public class ShapeletFactory extends SamplingPatternFactory<Series, Shapelet> {
   private static IntList nonNaIndicies(Series vector) {
     IntList nonNas = new IntList();
     for (int i = 0; i < vector.size(); i++) {
-      if (!Is.NA(vector.loc().get(i))) {
+      if (!Is.NA(vector.values().get(i))) {
         nonNas.add(i);
       }
     }
@@ -53,7 +53,7 @@ public class ShapeletFactory extends SamplingPatternFactory<Series, Shapelet> {
     }
     if (isCategorical(timeSeries)) {
       int rnd = ThreadLocalRandom.current().nextInt(timeSeries.size());
-      return new CategoricShapelet(timeSeries.loc().get(String.class, rnd));
+      return new CategoricShapelet(timeSeries.values().get(String.class, rnd));
     }
 
     int timeSeriesLength = timeSeries.size();
@@ -82,7 +82,7 @@ public class ShapeletFactory extends SamplingPatternFactory<Series, Shapelet> {
     } else {
       // TODO: normalization should be a param
       // TODO: normalized
-      shapelet = new IndexSortedNormalizedShapelet(start, length, timeSeries.loc());
+      shapelet = new IndexSortedNormalizedShapelet(start, length, timeSeries.values());
     }
     return shapelet;
   }
@@ -95,7 +95,7 @@ public class ShapeletFactory extends SamplingPatternFactory<Series, Shapelet> {
       IntList nonNas = nonNaIndicies(timeSeries);
       if (!nonNas.isEmpty()) {
         int channelIndex = nonNas.get(ThreadLocalRandom.current().nextInt(nonNas.size()));
-        Series channel = timeSeries.loc().get(Series.class, channelIndex);
+        Series channel = timeSeries.values().get(Series.class, channelIndex);
         Shapelet univariateShapelet = getUnivariateShapelet(channel);
         if (univariateShapelet == null) {
           shapelet = null;

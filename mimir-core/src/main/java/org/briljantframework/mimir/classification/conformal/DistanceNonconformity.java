@@ -20,8 +20,7 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
-import java.util.List;
-
+import org.briljantframework.array.Array;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.IntArray;
@@ -34,7 +33,7 @@ import org.briljantframework.mimir.distance.Distance;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class DistanceNonconformity<In, Out> implements ClassifierNonconformity<In, Out> {
+public class DistanceNonconformity<In, Out> implements Nonconformity<In, Out> {
 
   private final NearestNeighbours<? super In, Out> nnSearch;
   private final int k;
@@ -74,7 +73,7 @@ public class DistanceNonconformity<In, Out> implements ClassifierNonconformity<I
   }
 
   @Override
-  public List<Out> getClasses() {
+  public Array<Out> getUniqueOutputs() {
     return nnSearch.getClasses();
   }
 
@@ -95,8 +94,7 @@ public class DistanceNonconformity<In, Out> implements ClassifierNonconformity<I
    *
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  public static class Learner<In, Out>
-      implements ClassifierNonconformity.Learner<In, Out, DistanceNonconformity<In, Out>> {
+  public static class Learner<In, Out> implements Nonconformity.Learner<In, Out> {
 
     private final NearestNeighbours.Learner<? super In, Out> nearestNeighbors;
     private final int k;

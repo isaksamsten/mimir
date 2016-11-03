@@ -18,44 +18,28 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.data;
+package org.briljantframework.mimir.data.transform;
 
-import java.util.Objects;
+import org.briljantframework.mimir.data.Input;
 
-import org.briljantframework.data.series.Series;
+@FunctionalInterface
+public interface InputTransformation<T, E> extends Transformation<Input<T>, Input<E>> {
 
-/**
- * @author Isak Karlsson
- */
-class SeriesInstance implements Instance {
-  private final Series record;
-
-  public SeriesInstance(Series record) {
-    this.record = Objects.requireNonNull(record);
+  /**
+   * Fit and transform the data frame in a single operation
+   *
+   * @param x the data frame
+   * @return the transformed data frame
+   */
+  default Input<E> fitTransform(Input<T> x) {
+    return fit(x).transform(x);
   }
 
-  @Override
-  public int size() {
-    return record.size();
-  }
-
-  @Override
-  public int getInt(int index) {
-    return record.values().getInt(index);
-  }
-
-  @Override
-  public double getDouble(int index) {
-    return record.values().getDouble(index);
-  }
-
-  @Override
-  public <T> T get(Class<T> cls, int index) {
-    return record.values().get(cls, index);
-  }
-
-  @Override
-  public Object get(int index) {
-    return record.values().get(index);
-  }
+  /**
+   * Fit a transformer to data frame
+   *
+   * @param x the dataset to use in the fit procedure
+   * @return the transformation
+   */
+  InputTransformer<T, E> fit(Input<T> x);
 }

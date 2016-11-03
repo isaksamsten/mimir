@@ -32,14 +32,14 @@ import org.briljantframework.util.primitive.DoubleList;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public interface ClassifierCalibrator<In, Out> {
+public interface Calibrator<In, Out> {
 
   /**
    * Returns an unconditional classifier calibrator
    * 
    * @return an unconditional classifier calibrator
    */
-  static <In, Out> ClassifierCalibrator<In, Out> unconditional() {
+  static <In, Out> Calibrator<In, Out> unconditional() {
     return (nc, x, y) -> {
       DoubleArray calibration = nc.estimate(x, y);
       return (example, label) -> calibration;
@@ -52,9 +52,9 @@ public interface ClassifierCalibrator<In, Out> {
    * 
    * @return a class conditional classifier calibrator
    */
-  static <In, Out> ClassifierCalibrator<In, Out> classConditional() {
+  static <In, Out> Calibrator<In, Out> classConditional() {
     return (nc, x, y) -> {
-      Map<Object, DoubleList> tmpClassNc = new HashMap<>();
+      Map<Out, DoubleList> tmpClassNc = new HashMap<>();
       for (int i = 0; i < x.size(); i++) {
         In e = x.get(i);
         Out c = y.get(i);
@@ -65,7 +65,7 @@ public interface ClassifierCalibrator<In, Out> {
         }
         l.add(nc.estimate(e, c));
       }
-      Map<Object, DoubleArray> classNc = tmpClassNc.entrySet().stream()
+      Map<Out, DoubleArray> classNc = tmpClassNc.entrySet().stream()
           .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toDoubleArray()));
       return (example, label) -> classNc.get(label);
 
@@ -77,6 +77,6 @@ public interface ClassifierCalibrator<In, Out> {
    * @param x the calibration data
    * @param y the calibration target
    */
-  ClassifierCalibratorScores<In> calibrate(ClassifierNonconformity<In, Out> nc,
-      Input<? extends In> x, Output<? extends Out> y);
+  CalibratorScores<In, Out> calibrate(Nonconformity<? super In, ? super Out> nc, Input<? extends In> x,
+      Output<? extends Out> y);
 }

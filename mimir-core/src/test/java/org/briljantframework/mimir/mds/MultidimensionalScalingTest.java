@@ -18,44 +18,31 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.data;
+package org.briljantframework.mimir.mds;
 
-import java.util.Objects;
-
-import org.briljantframework.data.series.Series;
+import org.briljantframework.array.DoubleArray;
+import org.briljantframework.mimir.data.ArrayInput;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.transform.Transformers;
+import org.briljantframework.mimir.distance.EuclideanDistance;
+import org.junit.Test;
 
 /**
- * @author Isak Karlsson
+ * Created by isak on 2016-09-28.
  */
-class SeriesInstance implements Instance {
-  private final Series record;
+public class MultidimensionalScalingTest {
 
-  public SeriesInstance(Series record) {
-    this.record = Objects.requireNonNull(record);
-  }
 
-  @Override
-  public int size() {
-    return record.size();
-  }
+  @Test
+  public void testTransformy() throws Exception {
+    Input<DoubleArray> thing = new ArrayInput<>();
+    thing.add(DoubleArray.of(1, 2, 3));
+    thing.add(DoubleArray.of(1, 2, 3));
+    thing.add(DoubleArray.of(1, 2, 3));
 
-  @Override
-  public int getInt(int index) {
-    return record.values().getInt(index);
-  }
 
-  @Override
-  public double getDouble(int index) {
-    return record.values().getDouble(index);
-  }
+    MultidimensionalScaling t2 = new MultidimensionalScaling(2);
 
-  @Override
-  public <T> T get(Class<T> cls, int index) {
-    return record.values().get(cls, index);
-  }
 
-  @Override
-  public Object get(int index) {
-    return record.values().get(index);
   }
 }

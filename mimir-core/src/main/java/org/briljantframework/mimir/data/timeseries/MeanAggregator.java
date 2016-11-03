@@ -53,7 +53,7 @@ public class MeanAggregator implements Aggregator {
     if (in.size() == targetSize) {
       return in.newCopyBuilder();
     }
-    Series.Builder out = Series.Builder.withCapacity(Double.class, targetSize);
+    Series.Builder out = Series.Builder.of(Double.class);
     int bin = in.size() / targetSize;
     int pad = in.size() % targetSize;
 
@@ -67,7 +67,7 @@ public class MeanAggregator implements Aggregator {
       double sum = 0;
       int binInc = bin + inc;
       for (int j = 0; j < binInc; j++) {
-        sum += in.loc().getDouble(currentIndex++);
+        sum += in.values().getDouble(currentIndex++);
       }
       out.add(sum / binInc);
     }

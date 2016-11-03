@@ -68,12 +68,12 @@ public class ClassifierExample {
     IntArray testIdx = idx.get(Range.of(100, 150));
 
     // Get the training data (replacing missing values with the column mean)
-    DataFrame xTrain = x.loc().getRecord(trainIdx).apply(v -> v.set(v.where(Is::NA), v.mean()));
-    Vector yTrain = y.loc().get(trainIdx);
+    DataFrame xTrain = x.values().getRecord(trainIdx).apply(v -> v.set(v.where(Is::NA), v.mean()));
+    Vector yTrain = y.values().get(trainIdx);
 
     // Get the testing data
-    DataFrame xTest = x.loc().getRecord(testIdx).apply(v -> v.set(v.where(Is::NA), v.mean()));
-    Vector yTest = y.loc().get(testIdx);
+    DataFrame xTest = x.values().getRecord(testIdx).apply(v -> v.set(v.where(Is::NA), v.mean()));
+    Vector yTest = y.values().get(testIdx);
 
     // Fit the logistic regression model
     LogisticRegression lr = lrl.fit(xTrain, yTrain);

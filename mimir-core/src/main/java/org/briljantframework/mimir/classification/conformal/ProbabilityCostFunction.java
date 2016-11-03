@@ -20,10 +20,8 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
-import java.util.List;
-
 import org.briljantframework.Check;
-import org.briljantframework.array.Arrays;
+import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.data.Output;
 
@@ -40,7 +38,17 @@ public interface ProbabilityCostFunction {
       if (y < 0) {
         return 1;
       } else {
-        return 0.5 - (score.get(y) - Arrays.maxExcluding(score, y)) / 2;
+        Double max = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < score.size(); i++) {
+          if (i == y) {
+            continue;
+          }
+          double m = score.get(i);
+          if (m > max) {
+            max = m;
+          }
+        }
+        return 0.5 - (score.get(y) - max) / 2;
       }
     };
   }
@@ -61,17 +69,16 @@ public interface ProbabilityCostFunction {
    * @return an array of costs
    */
   static DoubleArray estimate(ProbabilityCostFunction pcf, DoubleArray scores, Output<?> y,
-      List<?> classes) {
+      Array<?> classes) {
     Check.argument(classes.size() == scores.columns(), "Illegal prediction matrix");
     DoubleArray probabilities = DoubleArray.zeros(y.size());
     for (int i = 0, size = y.size(); i < size; i++) {
-      int yIndex = classes.indexOf(y.get(i));// Vectors.find(classes, y, i);
-      // if (yIndex < 0) {
-      // Object label = y.loc().get(i);
-      // throw new IllegalArgumentException(String.format("Illegal class: '%s' (not found)",
-      // label));
-      // }
-      double value = pcf.apply(scores.getRow(i), yIndex);
+      int yIndex = classes.indexOf(y.get(i));
+      double value = 0;
+      if (yIndex >= 0) {
+        value = pcf.apply(scores.getRow(i), yIndex);
+
+      }
       probabilities.set(i, value);
     }
 

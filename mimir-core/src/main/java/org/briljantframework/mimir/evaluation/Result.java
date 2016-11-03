@@ -49,16 +49,26 @@ public class Result<T> {
     this.predictions = p;
   }
 
+  /**
+   * Returns the size of the training set.
+   *
+   * @return the size of the training set
+   */
   public double getTrainingSize() {
     return trainingSize;
   }
 
+  /**
+   * Returns the size of the validation set.
+   * 
+   * @return the size of the validation set
+   */
   public double getValidationSize() {
     return validationSize;
   }
 
   /**
-   * Return the time it took to fit the model (in m/s)
+   * Return the time it took to fit the model (in milliseconds)
    * 
    * @return the time it took to fit the model
    */
@@ -67,7 +77,7 @@ public class Result<T> {
   }
 
   /**
-   * Return the time it took to use the model for prediction (in m/s)
+   * Return the time it took to use the model for prediction (in milliseconds)
    * 
    * @return the time it took to use the model for prediction
    */

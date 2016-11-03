@@ -27,14 +27,24 @@ import org.briljantframework.mimir.evaluation.Evaluator;
 /**
  * @author Isak Karlsson
  */
-public class ClassifierEvaluator<In> implements Evaluator<In, Object, Classifier<In, Object>> {
+public class ClassifierEvaluator<In, Out> implements Evaluator<In, Out, Classifier<In, Out>> {
+
+  private ClassifierEvaluator() {}
+
+  private static ClassifierEvaluator<?, ?> evaluator = new ClassifierEvaluator<>();
+
+  @SuppressWarnings("unchecked")
+  public static <In, Out> ClassifierEvaluator<In, Out> getInstance() {
+    return (ClassifierEvaluator<In, Out>) evaluator;
+  }
 
   @Override
-  public void accept(EvaluationContext<? extends In, ?, ? extends Classifier<In, Object>> ctx) {
+  public void accept(
+      EvaluationContext<? extends In, ? extends Out, ? extends Classifier<In, Out>> ctx) {
     Output<?> predictions = ctx.getPredictions();
     Output<?> truth = ctx.getPartition().getValidationTarget();
-    ClassifierMeasure cm = new ClassifierMeasure(predictions, truth, ctx.getEstimates(),
-        ctx.getPredictor().getClasses());
+    ClassifierMeasure cm = new ClassifierMeasure(ctx.getPredictor().getClasses(), predictions,
+        truth, ctx.getEstimates());
 
     ctx.getMeasureCollection().add("accuracy", cm.getAccuracy());
     ctx.getMeasureCollection().add("error", cm.getError());

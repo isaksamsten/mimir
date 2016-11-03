@@ -22,14 +22,12 @@ package org.briljantframework.mimir.classification;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.briljantframework.array.Arrays;
-import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.Range;
 import org.briljantframework.data.Collectors;
 import org.briljantframework.data.Is;
@@ -37,14 +35,11 @@ import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.parser.CsvParser;
 import org.briljantframework.data.series.Series;
+import org.briljantframework.data.series.SeriesUtils;
 import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.mimir.classification.tree.pattern.*;
-import org.briljantframework.mimir.classification.tune.Configuration;
-import org.briljantframework.mimir.classification.tune.GridSearch;
-import org.briljantframework.mimir.classification.tune.Updatables;
 import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.distance.EuclideanDistance;
-import org.junit.Test;
 
 /**
  * Created by isak on 11/16/15.
@@ -61,7 +56,7 @@ public class LearnerTest {
 
     CsvParser parser = new CsvParser(new FileReader("/Users/isak/Tmp/pima-indians-diabetes.txt"));
     parser.getSettings().setSkipRows(1);
-    DataFrame dataset = DataFrames.permute(parser.parse(DataFrame::builder));
+    DataFrame dataset = DataFrames.permute(parser.parse(DataFrame::newBuilder));
     String classVariable = "Class variable (0 or 1)";
     DataFrame data = dataset.drop(classVariable).apply(v -> {
       v.set(v.where(Is::NA), v.mean());
@@ -81,12 +76,14 @@ public class LearnerTest {
     Range trainIdx = Range.of(trainSize);
     Range testIdx = Range.of(trainSize, data.rows());
 
-    createPairs(data.loc().getRow(trainIdx), labels.loc().get(trainIdx), trainingInput,
+    createPairs(data.loc().getRow(trainIdx), SeriesUtils.select(labels, trainIdx), trainingInput,
         trainingOutput);
-    createPairs(data.loc().getRow(testIdx), labels.loc().get(testIdx), testInput, testOutput);
+    createPairs(data.loc().getRow(testIdx), SeriesUtils.select(labels, testIdx), testInput,
+        testOutput);
 
-    ClassifierValidator<Pair<Series, Series>, Classifier<Pair<Series, Series>, Object>> validator =
-        ClassifierValidator.holdoutValidator(testInput, testOutput);
+    // ClassifierValidator<Pair<Series, Series>, Classifier<Pair<Series, Series>, Object>> validator
+    // =
+    // ClassifierValidator.holdoutValidator(testInput, testOutput);
 
 
     System.out.println(Outputs.valueCounts(trainingOutput));
@@ -96,23 +93,24 @@ public class LearnerTest {
     RandomPatternForest.Learner<Pair<Series, Series>, Object, Pair<Integer, Double>> learner =
         getPairFeatureLearner(100);
     learner.set(PatternTree.PATTERN_COUNT, 1);
-    System.out.println(validator.test(learner, trainingInput, trainingOutput));
+    // System.out.println(validator.test(learner, trainingInput, trainingOutput));
 
   }
 
-  private RandomPatternForest.Learner<Pair<Series, Series>, Boolean, Double> getPairDistanceLearner(
+  private RandomPatternForest.Learner<Pair<Series, Series>, Object, Double> getPairDistanceLearner(
       int size) {
     PatternFactory<Pair<Series, Series>, Double> factory =
         new SamplingPatternFactory<Pair<Series, Series>, Double>() {
           @Override
           protected Double createPattern(Pair<Series, Series> input) {
-            return EuclideanDistance.getInstance().compute(input.getLeft().loc(),
-                input.getRight().loc());
+            return EuclideanDistance.getInstance().compute(input.getLeft().values(),
+                input.getRight().values());
           }
         };
 
     PatternDistance<Pair<Series, Series>, Double> distance = (a, b) -> {
-      double dist = EuclideanDistance.getInstance().compute(a.getLeft().loc(), a.getRight().loc());
+      double dist =
+          EuclideanDistance.getInstance().compute(a.getLeft().values(), a.getRight().values());
       return Math.abs(dist - b);
     };
     return new RandomPatternForest.Learner<>(factory, distance, size);
@@ -139,7 +137,7 @@ public class LearnerTest {
   }
 
   private double computeMeanDiff(Pair<Series, Series> input, int index) {
-    return input.getLeft().loc().getDouble(index) + input.getRight().loc().getDouble(index);
+    return input.getLeft().values().getDouble(index) + input.getRight().values().getDouble(index);
   }
 
   private void createPairs(DataFrame data, Series labels, Input<Pair<Series, Series>> input,
@@ -148,17 +146,17 @@ public class LearnerTest {
       for (int j = 0; j < data.rows(); j++) {
         if (i != j) {
           input.add(new ImmutablePair<>(data.loc().getRow(i), data.loc().getRow(j)));
-          output.add(Is.equal(labels.loc().get(i), labels.loc().get(j)));
+          output.add(Is.equal(labels.values().get(i), labels.values().get(j)));
         }
       }
     }
   }
 
   public void testGridSearch() throws Exception {
-    GridSearch<Instance, Object, LogisticRegression<Object>> gridSearch =
-        new GridSearch<>(ClassifierValidator.crossValidator(10));
-    gridSearch.add(Updatables.enumeration(LogisticRegression.MAX_ITERATIONS, 100));
-    gridSearch.add(Updatables.linspace(LogisticRegression.REGULARIZATION, 0.001, 10, 25));
+    // GridSearch<Instance, Object, LogisticRegression<Object>> gridSearch =
+    // new GridSearch<>(ClassifierValidator.crossValidator(10));
+    // gridSearch.add(Updatables.enumeration(LogisticRegression.MAX_ITERATIONS, 100));
+    // gridSearch.add(Updatables.linspace(LogisticRegression.REGULARIZATION, 0.001, 10, 25));
 
     DataFrame iris = DataFrames.permute(Datasets.loadIris());
     DataFrame replaceNa = iris.drop("Class").apply(v -> {
@@ -169,15 +167,15 @@ public class LearnerTest {
 
     Input<Instance> x = Inputs.asInput(replaceNa);
     Output<?> y = Outputs.asOutput(classVector);
-    LogisticRegression.Learner<Object> learner = new LogisticRegression.Learner<>(1);
-    List<Configuration<Object>> tune = gridSearch.tune(learner, x, y);
-
-    tune.sort((a, b) -> -Double.compare(a.getResult().getMeasure("accuracy").mean(),
-        b.getResult().getMeasure("accuracy").mean()));
-
-    for (Configuration<Object> f : tune) {
-      System.out.println(f.getParameters() + " " + f.getResult().getMeasure("accuracy").mean());
-    }
+    LogisticRegression.Learner learner = new LogisticRegression.Learner(1);
+    // List<Configuration<Object>> tune = gridSearch.tune(learner, x, y);
+    //
+    // tune.sort((a, b) -> -Double.compare(a.getResult().getMeasure("accuracy").mean(),
+    // b.getResult().getMeasure("accuracy").mean()));
+    //
+    // for (Configuration<Object> f : tune) {
+    // System.out.println(f.getParameters() + " " + f.getResult().getMeasure("accuracy").mean());
+    // }
 
   }
 
@@ -188,7 +186,7 @@ public class LearnerTest {
 
     try {
       CsvParser parser = new CsvParser(new FileReader("/home/isak/Tmp/madelon.txt"));
-      DataFrame df = DataFrames.permute(parser.parse(DataFrame::builder), new Random(123));
+      DataFrame df = DataFrames.permute(parser.parse(DataFrame::newBuilder), new Random(123));
       Object column = "class";
       DataFrame x = df.drop(column);
       Series y = df.get(column);
@@ -276,7 +274,7 @@ public class LearnerTest {
   // double sum = 0;
   // for (int i = 0; i < m && sum < bsf; i++) {
   // double x = normalize(t[i + j], mean, std) - c.get(i);
-  // // double x = ((t[i + j] - mean) / std) - c.loc().getAsDouble(i);
+  // // double x = ((t[i + j] - mean) / std) - c.values().getAsDouble(i);
   // sum += x * x;
   // }
   // return sum;
@@ -528,13 +526,14 @@ public class LearnerTest {
   // // new ProbabilityEstimateNonconformity.Learner(new RandomForest.Learner(100),
   // // ProbabilityCostFunction.margin());
   // // InductiveConformalClassifier.Learner c = new InductiveConformalClassifier.Learner(nc);
-  // // InductiveConformalClassifier icp = c.fit(x.loc().getRecord(train), y.loc().get(train));
-  // // icp.calibrate(x.loc().getRecord(cal), y.loc().get(cal));
+  // // InductiveConformalClassifier icp = c.fit(x.values().getRecord(train),
+  // y.values().get(train));
+  // // icp.calibrate(x.values().getRecord(cal), y.values().get(cal));
   // //
-  // // DoubleArray prediction = icp.estimate(x.loc().getRecord(test));
+  // // DoubleArray prediction = icp.estimate(x.values().getRecord(test));
   // // System.out.println(Arrays.mean(0, prediction));
   // // ConformalClassifierMeasure m =
-  // // new ConformalClassifierMeasure(y.loc().get(test), prediction, 0.9, icp.getClasses());
+  // // new ConformalClassifierMeasure(y.values().get(test), prediction, 0.9, icp.getClasses());
   // // System.out.println(m.getError());
   //
   // }
@@ -572,7 +571,7 @@ public class LearnerTest {
   //
   // // Initialize an inductive conformal classifier using the non-conformity learner
   // InductiveConformalClassifier.Learner<Instance> cp = new InductiveConformalClassifier.Learner<>(
-  // nc, ClassifierCalibrator.classConditional(), false);
+  // nc, Calibrator.classConditional(), false);
   //
   // // Create a validator for evaluating the validity and efficiency of the conformal classifier.
   // In
@@ -597,7 +596,7 @@ public class LearnerTest {
   // // for (DoubleArray shapelet : f.getImportantShapelets()) {
   // // DoubleArray a = DoubleArray.zeros(x.columns());
   // // for (int i = 0; i < shapelet.size(); i++) {
-  // // a.set(shapelet.start() + i, shapelet.loc().getAsDouble(i));
+  // // a.set(shapelet.start() + i, shapelet.values().getAsDouble(i));
   // // }
   // // System.out.println(shapelet);
   // // }

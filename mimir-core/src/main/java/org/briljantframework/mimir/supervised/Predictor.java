@@ -94,9 +94,4 @@ public interface Predictor<In, Out> {
      */
     Properties getParameters();
   }
-
-  @Deprecated
-  interface Configurator<In, Out, C extends Learner<In, Out, ? extends Predictor<In, Out>>> {
-    C configure();
-  }
 }

@@ -39,17 +39,17 @@ public class SeriesPieDataset extends AbstractDataset implements PieDataset {
 
   @Override
   public Comparable getKey(int index) {
-    return (Comparable) vector.getIndex().get(index);
+    return (Comparable) vector.index().get(index);
   }
 
   @Override
   public int getIndex(Comparable key) {
-    return vector.getIndex().getLocation(key);
+    return vector.index().getLocation(key);
   }
 
   @Override
   public List getKeys() {
-    return vector.getIndex();
+    return vector.index();
   }
 
   @Override
@@ -64,6 +64,6 @@ public class SeriesPieDataset extends AbstractDataset implements PieDataset {
 
   @Override
   public Number getValue(int index) {
-    return vector.get(Number.class, vector.getIndex().get(index));
+    return vector.get(Number.class, vector.index().get(index));
   }
 }

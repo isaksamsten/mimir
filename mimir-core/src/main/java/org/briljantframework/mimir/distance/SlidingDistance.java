@@ -43,8 +43,8 @@ public class SlidingDistance implements Distance<Series> {
     Series candidate = a.size() < b.size() ? a : b;
     Series vector = a.size() >= b.size() ? a : b;
     for (int i = 0; i <= vector.size() - candidate.size(); i++) {
-      Shapelet subShapelet = new Shapelet(i, candidate.size(), vector.loc());
-      double sumDistance = distanceMeasure.compute(candidate.loc(), subShapelet);
+      Shapelet subShapelet = new Shapelet(i, candidate.size(), vector.values());
+      double sumDistance = distanceMeasure.compute(candidate.values(), subShapelet);
       if (sumDistance < minDistance) {
         minDistance = sumDistance;
       }

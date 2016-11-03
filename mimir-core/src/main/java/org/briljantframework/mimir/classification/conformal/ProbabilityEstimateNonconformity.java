@@ -22,28 +22,28 @@ package org.briljantframework.mimir.classification.conformal;
 
 import static org.briljantframework.mimir.classification.ClassifierCharacteristic.ESTIMATOR;
 
-import java.util.List;
 import java.util.Objects;
 
 import org.briljantframework.Check;
+import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.classification.Classifier;
+import org.briljantframework.mimir.classification.ProbabilityEstimator;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
+import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * Implements a nonconformity scorer based on an underlying classifier and a probability cost
  * function.
- * 
+ *
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class ProbabilityEstimateNonconformity<In, Out, T extends Classifier<In, Out>>
-    implements ClassifierNonconformity<In, Out> {
+public class ProbabilityEstimateNonconformity<In, Out> implements Nonconformity<In, Out> {
 
-  private final T classifier;
+  private final ProbabilityEstimator<In, Out> classifier;
   private final ProbabilityCostFunction probabilityCostFunction;
 
-  public ProbabilityEstimateNonconformity(T classifier,
+  public ProbabilityEstimateNonconformity(ProbabilityEstimator<In, Out> classifier,
       ProbabilityCostFunction probabilityCostFunction) {
     this.classifier = Objects.requireNonNull(classifier);
     this.probabilityCostFunction = Objects.requireNonNull(probabilityCostFunction);
@@ -51,16 +51,16 @@ public class ProbabilityEstimateNonconformity<In, Out, T extends Classifier<In, 
 
   /**
    * Returns the classifier used as probability estimator
-   * 
+   *
    * @return the classifier used as probability estimator
    */
-  public T getClassifier() {
+  public ProbabilityEstimator<In, Out> getProbabilityEstimator() {
     return classifier;
   }
 
   /**
    * Returns the error function
-   * 
+   *
    * @return the error function
    */
   public ProbabilityCostFunction getProbabilityCostFunction() {
@@ -72,77 +72,65 @@ public class ProbabilityEstimateNonconformity<In, Out, T extends Classifier<In, 
     Objects.requireNonNull(x, "Input data required.");
     Objects.requireNonNull(y, "Input target required.");
     Check.argument(x.size() == y.size(), "The size of input data and input target don't match.");
-    DoubleArray estimate = getClassifier().estimate(x);
+    DoubleArray estimate = getProbabilityEstimator().estimate(x);
     return ProbabilityCostFunction.estimate(getProbabilityCostFunction(), estimate, y,
-        getClasses());
+        getProbabilityEstimator().getClasses());
   }
 
   @Override
   public double estimate(In example, Out label) {
     Objects.requireNonNull(example, "Require an example.");
-    int trueClassIndex = getClasses().indexOf(label);
+    int trueClassIndex = classifier.getClasses().indexOf(label);
     if (trueClassIndex < 0) {
       return 0;
     } else {
-      return getProbabilityCostFunction().apply(getClassifier().estimate(example), trueClassIndex);
+      return getProbabilityCostFunction().apply(getProbabilityEstimator().estimate(example),
+          trueClassIndex);
     }
   }
 
   @Override
-  public List<Out> getClasses() {
-    return getClassifier().getClasses();
+  public Array<Out> getUniqueOutputs() {
+    return getProbabilityEstimator().getClasses();
   }
 
   /**
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
-  public static class Learner<In, Out, T extends Classifier<In, Out>> implements
-      ClassifierNonconformity.Learner<In, Out, ProbabilityEstimateNonconformity<In, Out, T>> {
+  public static class Learner<In, Out> implements Nonconformity.Learner<In, Out> {
 
-    private final Classifier.Learner<In, Out, ? extends T> classifier;
+    private final Predictor.Learner<In, Out, ? extends ProbabilityEstimator<In, Out>> probabilityEstimator;
     private final ProbabilityCostFunction probabilityCostFunction;
 
     /**
      * Constructs a probability nonconformity learner
      *
-     * @param classifier the classifier
+     * @param probabilityEstimator the classifier
      * @param probabilityCostFunction the probability cost function
      */
-    public Learner(Classifier.Learner<In, Out, ? extends T> classifier,
+    public Learner(
+        Predictor.Learner<In, Out, ? extends ProbabilityEstimator<In, Out>> probabilityEstimator,
         ProbabilityCostFunction probabilityCostFunction) {
-      this.classifier = Objects.requireNonNull(classifier, "A classifier is required.");
+      this.probabilityEstimator =
+          Objects.requireNonNull(probabilityEstimator, "A classifier is required.");
       this.probabilityCostFunction =
           Objects.requireNonNull(probabilityCostFunction, "A cost function is required");
     }
 
-    /**
-     * Returns the classifier learner.
-     * 
-     * @return the classifier learner
-     */
-    protected Classifier.Learner<In, Out, ? extends T> getClassifierLearner() {
-      return classifier;
-    }
-
-    /**
-     * Returns the probability cost function.
-     * 
-     * @return the probability cost function
-     */
-    protected ProbabilityCostFunction getProbabilityCostFunction() {
-      return probabilityCostFunction;
+    public Learner(Predictor.Learner<In, Out, ? extends ProbabilityEstimator<In, Out>> pet) {
+      this(pet, ProbabilityCostFunction.margin());
     }
 
     @Override
-    public ProbabilityEstimateNonconformity<In, Out, T> fit(Input<? extends In> x,
+    public ProbabilityEstimateNonconformity<In, Out> fit(Input<? extends In> x,
         Output<? extends Out> y) {
       Objects.requireNonNull(x, "Input data is required.");
       Objects.requireNonNull(y, "Input target is required.");
       Check.argument(x.size() == y.size(), "The size of input data and input target don't match");
-      T pe = getClassifierLearner().fit(x, y);
+      ProbabilityEstimator<In, Out> pe = probabilityEstimator.fit(x, y);
       Check.state(pe != null && pe.getCharacteristics().contains(ESTIMATOR),
           "The produced classifier can't estimate probabilities");
-      return new ProbabilityEstimateNonconformity<>(pe, getProbabilityCostFunction());
+      return new ProbabilityEstimateNonconformity<>(pe, probabilityCostFunction);
     }
   }
 }

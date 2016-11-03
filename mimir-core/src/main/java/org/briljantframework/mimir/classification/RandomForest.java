@@ -26,8 +26,10 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 
 import org.briljantframework.Check;
+import org.briljantframework.array.Array;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
+import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.classification.tree.Example;
 import org.briljantframework.mimir.classification.tree.RandomSplitter;
@@ -38,14 +40,25 @@ import org.briljantframework.mimir.data.*;
  */
 public final class RandomForest<Out> extends Ensemble<Instance, Out> {
 
-  private RandomForest(List<Out> classes, List<? extends Classifier<Instance, Out>> members,
-      BooleanArray oobIndicator) {
+  private final List<?> featureNames;
+  private final List<Class<?>> featureTypes;
+
+  private RandomForest(Array<Out> classes, List<?> featureNames, List<Class<?>> featureTypes,
+      List<? extends DecisionTree<Out>> members, BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
+    this.featureNames = featureNames;
+    this.featureTypes = featureTypes;
   }
 
   @Override
   public String toString() {
     return "Random forest";
+  }
+
+  @Override
+  public DoubleArray estimate(Instance input) {
+    Check.argument(input.size() == featureNames.size(), "illegal input");
+    return averageProbabilities(input);
   }
 
   /**
@@ -55,15 +68,15 @@ public final class RandomForest<Out> extends Ensemble<Instance, Out> {
 
     public Learner(int size) {
       super(size);
-      set(DecisionTree.SPLITTER, RandomSplitter.withMaximumFeatures(-1).create());
+      set(DecisionTree.SPLITTER, RandomSplitter.sqrt());
     }
 
     @Override
     public RandomForest<Out> fit(Input<? extends Instance> x, Output<? extends Out> y) {
-      Check.argument(Dataset.isDataset(x), "requires a dataset");
-      Check.argument(x.size() == y.size());
+      Check.argument(Dataset.isDataset(x), "dataset is required");
+      Check.argument(x.size() == y.size(), "input and output must have the same size");
 
-      List<Out> classes = Outputs.unique(y);
+      Array<Out> classes = Outputs.unique(y);
       Check.argument(classes.size() > 1, "require more than 1 output.");
 
       ClassSet classSet = new ClassSet(y, classes);
@@ -71,11 +84,12 @@ public final class RandomForest<Out> extends Ensemble<Instance, Out> {
       BooleanArray oobIndicator = Arrays.booleanArray(x.size(), size);
       List<FitTask<Out>> fitTasks = new ArrayList<>(size);
       for (int i = 0; i < size; i++) {
-        fitTasks.add(new FitTask<>(classSet, new DecisionTree.Learner<>(getParameters()), x, y,
-            classes, oobIndicator.getColumn(i)));
+        fitTasks.add(
+            new FitTask<>(classSet, getParameters(), x, y, classes, oobIndicator.getColumn(i)));
       }
       try {
-        return new RandomForest<>(classes, execute(fitTasks), oobIndicator);
+        return new RandomForest<Out>(classes, x.getProperty(Dataset.FEATURE_NAMES),
+            x.getProperty(Dataset.FEATURE_TYPES), execute(fitTasks), oobIndicator);
       } catch (Exception e) {
         e.printStackTrace();
         return null;
@@ -87,34 +101,32 @@ public final class RandomForest<Out> extends Ensemble<Instance, Out> {
       return "Random Classification Forest";
     }
 
-    private static final class FitTask<Out> implements Callable<Classifier<Instance, Out>> {
+    private static final class FitTask<Out> implements Callable<DecisionTree<Out>> {
 
       private final ClassSet classSet;
       private final Input<? extends Instance> x;
       private final Output<? extends Out> y;
-      private final List<Out> classes;
+      private final Array<Out> classes;
       private final BooleanArray oobIndicator;
-      private final DecisionTree.Learner<? extends Out> learner;
-      // private final BaseLearner<Instance, ? extends Out, ? extends Classifier<Instance, Out>>
-      // baseLearner;
+      private final Properties properties;
 
-      private FitTask(ClassSet classSet, DecisionTree.Learner<? extends Out> learner,
-          Input<? extends Instance> x, Output<? extends Out> y, List<Out> classes,
-          BooleanArray oobIndicator) {
+      private FitTask(ClassSet classSet, Properties properties, Input<? extends Instance> x,
+          Output<? extends Out> y, Array<Out> classes, BooleanArray oobIndicator) {
         this.classSet = classSet;
         this.x = x;
         this.y = y;
-        this.learner = learner;
         this.classes = classes;
         this.oobIndicator = oobIndicator;
+        this.properties = properties;
       }
 
       @Override
-      public Classifier<Instance, Out> call() throws Exception {
+      public DecisionTree<Out> call() throws Exception {
         Random random = new Random(Thread.currentThread().getId() * System.currentTimeMillis());
         ClassSet bootstrap = sample(classSet, random);
-//        return learner.fit(bootstrap, classes).fit(x, y);
-        throw new UnsupportedOperationException();
+        DecisionTree.Learner<Out> learner =
+            new DecisionTree.Learner<>(classes, properties, bootstrap);
+        return learner.fit(x, y);
       }
 
       public ClassSet sample(ClassSet classSet, Random random) {

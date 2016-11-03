@@ -20,8 +20,8 @@
  */
 package org.briljantframework.mimir.classification;
 
-import static org.briljantframework.array.Arrays.divAssign;
-import static org.briljantframework.array.Arrays.plusAssign;
+import static org.briljantframework.array.Arrays.div;
+import static org.briljantframework.array.Arrays.plus;
 
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -31,19 +31,19 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 import org.briljantframework.Check;
+import org.briljantframework.array.Array;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Property;
 import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Characteristic;
-import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class Ensemble<In, Out> extends AbstractClassifier<In, Out> {
+public abstract class Ensemble<In, Out> extends AbstractClassifier<In, Out>
+    implements ProbabilityEstimator<In, Out> {
 
   /**
    * The number of members in the ensemble
@@ -51,10 +51,10 @@ public class Ensemble<In, Out> extends AbstractClassifier<In, Out> {
   public static final Property<Integer> SIZE =
       Property.of("ensemble_size", Integer.class, 100, i -> i > 0);
 
-  private final List<? extends Classifier<In, Out>> members;
+  private final List<? extends ProbabilityEstimator<In, Out>> members;
   private final BooleanArray oobIndicator;
 
-  protected Ensemble(List<Out> classes, List<? extends Classifier<In, Out>> members,
+  protected Ensemble(Array<Out> classes, List<? extends ProbabilityEstimator<In, Out>> members,
       BooleanArray oobIndicator) {
     super(classes);
     this.members = members;
@@ -66,7 +66,7 @@ public class Ensemble<In, Out> extends AbstractClassifier<In, Out> {
     BooleanArray ind = ensemble.getOobIndicator();
     Check.argument(ind.rows() == x.size(), "input and oob indicator does not match");
 
-    List<? extends Classifier<In, ?>> members = ensemble.getEnsembleMembers();
+    List<? extends ProbabilityEstimator<In, ?>> members = ensemble.getEnsembleMembers();
     DoubleArray estimates = DoubleArray.zeros(x.size(), ensemble.getClasses().size());
     for (int i = 0; i < x.size(); i++) {
       In example = x.get(i);
@@ -75,11 +75,11 @@ public class Ensemble<In, Out> extends AbstractClassifier<In, Out> {
       int size = 0;
       for (int j = 0; j < oob.size(); j++) {
         if (oob.get(j)) {
-          plusAssign(estimate, members.get(j).estimate(example));
+          plus(members.get(j).estimate(example), estimate, estimate);
           size++;
         }
       }
-      divAssign(estimate, DoubleArray.of(size));
+      div(DoubleArray.of(size), estimate, estimate);
     }
     return estimates;
   }
@@ -94,7 +94,7 @@ public class Ensemble<In, Out> extends AbstractClassifier<In, Out> {
     return oobIndicator;
   }
 
-  public List<Classifier<In, Out>> getEnsembleMembers() {
+  public List<ProbabilityEstimator<In, Out>> getEnsembleMembers() {
     return Collections.unmodifiableList(members);
   }
 
@@ -103,22 +103,17 @@ public class Ensemble<In, Out> extends AbstractClassifier<In, Out> {
     return Collections.singleton(ClassifierCharacteristic.ESTIMATOR);
   }
 
-  @Override
-  public DoubleArray estimate(In record) {
+  protected DoubleArray averageProbabilities(In record) {
     List<DoubleArray> predictions =
         members.parallelStream().map(model -> model.estimate(record)).collect(Collectors.toList());
 
     int estimators = getEnsembleMembers().size();
-    List<?> classes = getClasses();
+    Array<?> classes = getClasses();
     DoubleArray m = DoubleArray.zeros(classes.size());
     for (DoubleArray prediction : predictions) {
       m.combineAssign(prediction, (t, o) -> t + o / estimators);
     }
     return m;
-  }
-
-  public interface BaseLearner<In, Out, T extends Classifier<In, Out>> {
-    Predictor.Learner<In, Out, ? extends T> getLearner(ClassSet set, List<Out> classes);
   }
 
   /**
@@ -157,7 +152,7 @@ public class Ensemble<In, Out> extends AbstractClassifier<In, Out> {
      * @return a list of produced models
      * @throws Exception if something goes wrong
      */
-    protected static <In, T extends Classifier<In, ?>> List<T> execute(
+    protected static <In, Out, T extends ProbabilityEstimator<In, Out>> List<T> execute(
         Collection<? extends Callable<T>> callables) throws Exception {
       List<T> models = new ArrayList<>();
       if (THREAD_POOL != null && THREAD_POOL.getActiveCount() < CORES) {
@@ -170,16 +165,6 @@ public class Ensemble<In, Out> extends AbstractClassifier<In, Out> {
         }
       }
       return models;
-    }
-
-    /**
-     * Get the number of members in the ensemble
-     *
-     * @return the size of the ensemble
-     */
-    @Deprecated
-    public int size() {
-      return get(SIZE);
     }
   }
 }

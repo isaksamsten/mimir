@@ -41,9 +41,8 @@ class DataFrameInput extends AbstractInput<Instance> {
   private final Properties properties;
 
   public DataFrameInput(DataFrame df) {
-    Objects.requireNonNull(df, "DataFrame is required.");
+    this.df = Objects.requireNonNull(df, "DataFrame is required.");
     this.properties = createProperties(df);
-    this.df = df;
   }
 
   /*

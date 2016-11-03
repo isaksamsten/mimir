@@ -20,21 +20,22 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
-import java.util.List;
-
+import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.AbstractClassifier;
+import org.briljantframework.mimir.classification.ProbabilityEstimator;
 
 /**
  * Represents a Tree based predictor. Uses a {@link TreeVisitor} to make predictions.
  * 
  * @author Isak Karlsson
  */
-public class TreeClassifier<In, Out> extends AbstractClassifier<In, Out> {
+public class TreeClassifier<In, Out> extends AbstractClassifier<In, Out>
+    implements ProbabilityEstimator<In, Out> {
 
   private final TreeVisitor<In, ?> predictionVisitor;
 
-  protected TreeClassifier(List<Out> classes, TreeVisitor<In, ?> predictionVisitor) {
+  protected TreeClassifier(Array<Out> classes, TreeVisitor<In, ?> predictionVisitor) {
     super(classes);
     this.predictionVisitor = predictionVisitor;
   }

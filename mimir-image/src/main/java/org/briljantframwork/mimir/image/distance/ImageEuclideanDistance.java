@@ -37,10 +37,6 @@ public class ImageEuclideanDistance implements Distance<DoubleArray> {
     Check.argument(x.dims() == 2 && y.dims() == 2, "require square image");
     Check.argument(x.size(0) == y.size(0) && x.size(1) == y.size(1), "images must be of same size");
     int size = x.size();
-    x = x.transpose();
-    y = y.transpose();
-    System.out.println(x);
-    System.out.println(y);
     double sum = 0;
     for (int i = 0; i < size; i++) {
       for (int j = 0; j < size; j++) {

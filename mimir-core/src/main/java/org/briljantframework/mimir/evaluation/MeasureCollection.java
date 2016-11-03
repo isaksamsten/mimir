@@ -54,7 +54,7 @@ public final class MeasureCollection {
   }
 
   public synchronized DataFrame toDataFrame() {
-    DataFrame.Builder df = DataFrame.builder();
+    DataFrame.Builder df = DataFrame.newBuilder();
     for (Map.Entry<Key, Series.Builder> entry : measures.entrySet()) {
       if (entry.getKey().sample == MeasureSample.IN_SAMPLE) {
         continue;

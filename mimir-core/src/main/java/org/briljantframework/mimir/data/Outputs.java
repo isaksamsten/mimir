@@ -26,6 +26,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.briljantframework.DoubleSequence;
+import org.briljantframework.array.Array;
+import org.briljantframework.data.series.Convert;
 import org.briljantframework.data.series.Series;
 
 /**
@@ -106,7 +108,7 @@ public final class Outputs {
     return new VectorOutput<Double>(vector, Double.class) {
       @Override
       public Double get(int index) {
-        return this.vector.loc().getDouble(index);
+        return this.vector.values().getDouble(index);
       }
     };
   }
@@ -118,16 +120,16 @@ public final class Outputs {
    * @param <T> the class of elements
    * @return the new list of unique output values.
    */
-  public static <T> List<T> unique(Output<? extends T> output) {
-    return new ArrayList<>(new HashSet<>(output));
+  public static <T> Array<T> unique(Output<? extends T> output) {
+    return Array.copyOf(new HashSet<>(output));
   }
 
-  public static <T> List<T> unique(Collection<? extends Output<? extends T>> outputs) {
+  public static <T> Array<T> unique(Collection<? extends Output<? extends T>> outputs) {
     HashSet<T> set = new HashSet<>();
     for (Output<? extends T> output : outputs) {
       set.addAll(output);
     }
-    return new ArrayList<>(set);
+    return Array.copyOf(set);
   }
 
   /**
@@ -136,9 +138,9 @@ public final class Outputs {
    * @param output the output
    * @return a new map with value counts
    */
-  public static Map<Object, Integer> valueCounts(Output<?> output) {
-    Map<Object, Integer> counts = new HashMap<>();
-    for (Object value : output) {
+  public static <T> Map<T, Integer> valueCounts(Output<? extends T> output) {
+    Map<T, Integer> counts = new HashMap<>();
+    for (T value : output) {
       counts.compute(value, (k, v) -> v == null ? 1 : v + 1);
     }
     return counts;
@@ -315,22 +317,22 @@ public final class Outputs {
 
     @Override
     public T get(int index) {
-      return vector.loc().get(cls, index);
+      return vector.values().get(cls, index);
     }
 
     @Override
     public Stream<T> stream() {
-      return vector.stream(cls);
+      return vector.values().stream().map(o -> Convert.to(cls, o));
     }
 
     @Override
     public Stream<T> parallelStream() {
-      return vector.stream(cls);
+      return vector.values().parallelStream().map(o -> Convert.to(cls, o));
     }
 
     @Override
     public Iterator<T> iterator() {
-      return vector.asList(cls).iterator();
+      return vector.values(cls).iterator();
     }
   }
 }

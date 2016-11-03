@@ -31,7 +31,7 @@ public interface Impurity {
   /**
    * Calculates the impurity of an array of relative frequencies
    *
-   * @param values the getPosteriorProbabilities
+   * @param values the relative frequencies
    * @return the double
    */
   double impurity(DoubleArray values);

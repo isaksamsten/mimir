@@ -74,7 +74,7 @@ public class LeastTriagleThreeBucketAggregator implements Aggregator {
 
       for (; avgRangeStart < avgRangeEnd; avgRangeStart++) {
         avgX += indexes[avgRangeStart];
-        avgY += in.loc().getDouble(avgRangeStart);
+        avgY += in.values().getDouble(avgRangeStart);
       }
       avgX /= rangeLength;
       avgY /= rangeLength;
@@ -83,10 +83,10 @@ public class LeastTriagleThreeBucketAggregator implements Aggregator {
       int rangeTo = (int) Math.floor((i + 1) * every) + 1;
 
       int pointX = indexes[a];
-      double pointY = in.loc().getDouble(a);
+      double pointY = in.values().getDouble(a);
       double maxArea = Double.NEGATIVE_INFINITY;
       for (; rangeOffset < rangeTo; rangeOffset++) {
-        double xDiff = pointX - avgX * (in.loc().getDouble(rangeOffset) - pointY);
+        double xDiff = pointX - avgX * (in.values().getDouble(rangeOffset) - pointY);
         double yDiff = pointY - avgY * (pointX - indexes[rangeOffset]);
         double area = Math.abs(xDiff - yDiff) * 0.5;
         if (area > maxArea) {

@@ -20,12 +20,13 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.Na;
 import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.data.ArrayOutput;
 import org.briljantframework.mimir.data.Input;
@@ -47,40 +48,13 @@ public interface ConformalClassifier<In, Out> extends Classifier<In, Out> {
    * @return a vector of class-labels for those records with which a label can be assigned with the
    *         given probability; or {@code NA}.
    */
-  default Output<Object> predict(Input<? extends In> x, double significance) {
-    ArrayOutput<Object> predictions = new ArrayOutput<>();
-    for (int i = 0, size = x.size(); i < size; i++) {
-      predictions.add(predict(x.get(i), significance));
+  default Output<Set<Out>> predict(Input<? extends In> x, double significance) {
+    ArrayOutput<Set<Out>> predictions = new ArrayOutput<>();
+    for (In in : x) {
+      predictions.add(predict(in, significance));
     }
     return predictions;
   }
-
-  /**
-   * Returns the prediction of the given example or {@code NA}.
-   *
-   * @param record to which the class label shall be assigned
-   * @return a class-label or {@code NA}
-   */
-  @Override
-  Out predict(In record);
-
-  /**
-   * Returns an {@code [n-samples, n-classes]} double array of p-values associated with each class.
-   *
-   * @param x the data frame of records to estimate the p-values
-   * @return the p-values
-   */
-  @Override
-  DoubleArray estimate(Input<? extends In> x);
-
-  /**
-   * Estimates the the p-values associated with each class.
-   * 
-   * @param record the vector to estimate the posterior probability for
-   * @return the p-values
-   */
-  @Override
-  DoubleArray estimate(In record);
 
   /**
    * Returns the prediction of the given example or {@code NA}. A prediction is given iff one class
@@ -89,41 +63,63 @@ public interface ConformalClassifier<In, Out> extends Classifier<In, Out> {
    * @param record to which the class label shall be assigned
    * @return a class-label or {@code NA}
    */
-  default Object predict(In record, double significance) {
+  default Set<Out> predict(In record, double significance) {
     DoubleArray estimate = estimate(record);
-    if (estimate.filter(v -> v > significance).size() == 1) {
-      return getClasses().get(Arrays.argmax(estimate));
-    } else {
-      return Na.of(Object.class);
+    Set<Out> set = new HashSet<>();
+    for (int i = 0; i < estimate.size(); i++) {
+      if (estimate.get(i) > significance) {
+        set.add(getClasses().get(i));
+      }
     }
+    return set;
   }
 
   /**
-   * Returns a boolean array {@code [n-classes]}, where each element denotes which labels are
-   * included in the prediction set.
+   * Returns an {@code [n-samples, n-classes]} double array of p-values associated with each class.
    *
-   * @param example the example to predict
-   * @param significance the significance level
-   * @return a boolean array
+   * @param x the data frame of records to estimate the p-values
+   * @return the p-values
    */
-  default BooleanArray conformalPredict(In example, double significance) {
-    return estimate(example).where(v -> v >= significance);
+  default DoubleArray estimate(Input<? extends In> x) {
+    DoubleArray estimations = DoubleArray.zeros(x.size(), getClasses().size());
+    IntStream.range(0, x.size()).parallel().forEach(i -> estimations.setRow(i, estimate(x.get(i))));
+    return estimations;
   }
 
   /**
-   * Returns a boolean array of {@code [no examples, no classes]}, where each element denotes whihc
-   * labels are included in the prediction set for the i:th example
-   * 
-   * @param x the data frame
-   * @param significance the specified significance
-   * @return a boolean array
+   * Estimates the the p-values associated with each class.
+   *
+   * @param record the vector to estimate the posterior probability for
+   * @return the p-values
    */
-  default BooleanArray conformalPredict(Input<? extends In> x, double significance) {
-    BooleanArray estimates = Arrays.booleanArray(x.size(), getClasses().size());
-    IntStream.range(0, x.size()).parallel().forEach(i -> {
-      BooleanArray estimate = conformalPredict(x.get(i), significance);
-      estimates.setRow(i, estimate);
-    });
-    return estimates;
-  }
+  DoubleArray estimate(In record);
+
+//  /**
+//   * Returns a boolean array {@code [n-classes]}, where each element denotes which labels are
+//   * included in the prediction set.
+//   *
+//   * @param example the example to predict
+//   * @param significance the significance level
+//   * @return a boolean array
+//   */
+//  default BooleanArray conformalPredict(In example, double significance) {
+//    return estimate(example).where(v -> v >= significance);
+//  }
+//
+//  /**
+//   * Returns a boolean array of {@code [no examples, no classes]}, where each element denotes whihc
+//   * labels are included in the prediction set for the i:th example
+//   *
+//   * @param x the data frame
+//   * @param significance the specified significance
+//   * @return a boolean array
+//   */
+//  default BooleanArray conformalPredict(Input<? extends In> x, double significance) {
+//    BooleanArray estimates = Arrays.booleanArray(x.size(), getClasses().size());
+//    IntStream.range(0, x.size()).parallel().forEach(i -> {
+//      BooleanArray estimate = conformalPredict(x.get(i), significance);
+//      estimates.setRow(i, estimate);
+//    });
+//    return estimates;
+//  }
 }

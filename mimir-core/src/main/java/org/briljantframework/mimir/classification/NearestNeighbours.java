@@ -21,10 +21,10 @@
 package org.briljantframework.mimir.classification;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 import org.briljantframework.Check;
+import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.mimir.data.Input;
@@ -53,19 +53,22 @@ import org.briljantframework.mimir.supervised.Characteristic;
  *
  * @author Isak Karlsson
  */
-public class NearestNeighbours<In,Out> extends AbstractClassifier<In,Out> {
+public class NearestNeighbours<In, Out> extends AbstractClassifier<In, Out>
+    implements ProbabilityEstimator<In, Out> {
+
+  public static final Property<Integer> NEIGHBORS = Property.of("neighbours", Integer.class, 1);
 
   private final Input<? extends In> x;
   private final Output<? extends Out> y;
-  private final Distance<In> distance;
+  private final Distance<? super In> distance;
+
   private final int k;
 
-  private NearestNeighbours(Input<? extends In> x, Output<? extends Out> y, Distance<In> distance, int k,
-      List<Out> classes) {
+  private NearestNeighbours(Array<Out> classes, Input<? extends In> x, Output<? extends Out> y,
+      Distance<? super In> distance, int k) {
     super(classes);
     this.x = x;
     this.y = y;
-
     this.distance = distance;
     this.k = k;
   }
@@ -84,7 +87,7 @@ public class NearestNeighbours<In,Out> extends AbstractClassifier<In,Out> {
       }
     }
 
-    List<?> classes = getClasses();
+    Array<?> classes = getClasses();
     DoubleArray estimate = DoubleArray.zeros(classes.size());
     for (int i = 0; i < classes.size(); i++) {
       estimate.set(i, Is.equal(classes.get(i), cls) ? 1 : 0);
@@ -97,7 +100,7 @@ public class NearestNeighbours<In,Out> extends AbstractClassifier<In,Out> {
     return Collections.singleton(ClassifierCharacteristic.ESTIMATOR);
   }
 
-  public DoubleArray distance(Input<? extends In> x) {
+  public DoubleArray pairwiseDistance(Input<? extends In> x) {
     int n = x.size();
     int m = this.x.size();
     DoubleArray distances = DoubleArray.zeros(n, m);
@@ -113,7 +116,7 @@ public class NearestNeighbours<In,Out> extends AbstractClassifier<In,Out> {
   /**
    * Computes the distance of the given example to all examples in the search space represented by
    * this classifier
-   * 
+   *
    * @param example the given example
    * @return a {@code [search space size]} array of distances to the given example
    */
@@ -130,12 +133,8 @@ public class NearestNeighbours<In,Out> extends AbstractClassifier<In,Out> {
     return y;
   }
 
-  /**
-   * A nearest neighbour learner learns a nearest neighbours classifier
-   */
-  public static class Learner<In,Out> extends AbstractLearner<In, Out, NearestNeighbours<In,Out>> {
-
-    public static final Property<Integer> NEIGHBORS = Property.of("neighbors", Integer.class, 1);
+  public static class Learner<In, Out>
+      extends AbstractLearner<In, Out, NearestNeighbours<In, Out>> {
     private final Distance<In> distance;
 
     public Learner(int k, Distance<In> distance) {
@@ -144,10 +143,10 @@ public class NearestNeighbours<In,Out> extends AbstractClassifier<In,Out> {
     }
 
     @Override
-    public NearestNeighbours<In,Out> fit(Input<? extends In> x, Output<? extends Out> y) {
+    public NearestNeighbours<In, Out> fit(Input<? extends In> x, Output<? extends Out> y) {
       Check.argument(x.size() == y.size(), "The size of x and y don't match: %s != %s.", x.size(),
           y.size());
-      return new NearestNeighbours<>(x, y, distance, get(NEIGHBORS), Outputs.unique(y));
+      return new NearestNeighbours<>(Outputs.unique(y), x, y, distance, get(NEIGHBORS));
     }
 
     @Override

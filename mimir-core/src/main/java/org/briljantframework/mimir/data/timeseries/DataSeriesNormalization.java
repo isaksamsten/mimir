@@ -23,7 +23,7 @@ package org.briljantframework.mimir.data.timeseries;
 import org.briljantframework.DoubleSequence;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.transform.Transformer;
+import org.briljantframework.mimir.data.transform.InputTransformer;
 
 /**
  * <p>
@@ -37,7 +37,7 @@ import org.briljantframework.mimir.data.transform.Transformer;
  *
  * @author Isak Karlsson
  */
-public class DataSeriesNormalization<T extends DoubleSequence> implements Transformer<T, T> {
+public class DataSeriesNormalization<T extends DoubleSequence> implements InputTransformer<T, T> {
 
   /**
    * <p>
@@ -56,7 +56,7 @@ public class DataSeriesNormalization<T extends DoubleSequence> implements Transf
    * @return a new data frame with normalized rows
    */
   @Override
-  public Input<T> transform(Input<? extends T> x) {
+  public Input<T> transform(Input<T> x) {
     // DataFrame.Builder builder = x.newCopyBuilder();
     // for (int i = 0; i < x.rows(); i++) {
     // Vector row = x.loc().getRecord(i);
@@ -73,7 +73,7 @@ public class DataSeriesNormalization<T extends DoubleSequence> implements Transf
   }
 
   @Override
-  public T transform(T x) {
+  public T transformElement(T x) {
     return null;
   }
 }

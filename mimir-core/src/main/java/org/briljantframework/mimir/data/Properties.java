@@ -32,11 +32,11 @@ public final class Properties {
   private final Map<Property<?>, Object> map;
 
   public Properties() {
-    this.map = new HashMap<>();
+    this.map = new IdentityHashMap<>();
   }
 
   public Properties(Properties properties) {
-    this.map = new HashMap<>(properties.map);
+    this.map = new IdentityHashMap<>(properties.map);
   }
 
   /**

@@ -22,6 +22,7 @@ package org.briljantframework.mimir.classification.conformal.evaluation;
 
 import java.util.List;
 
+import org.briljantframework.array.Array;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
@@ -36,7 +37,7 @@ public class ConformalClassifierMeasure {
       noClasses;
 
   public ConformalClassifierMeasure(Output<?> truth, DoubleArray score, double significance,
-      List<?> classes) {
+                                    Array<?> classes) {
     // Compute confidence and credibility
     double correct = 0;
     double avgConfidence = 0;

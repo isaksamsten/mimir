@@ -38,6 +38,7 @@ public final class LinearRegression implements Regression<DoubleSequence> {
 
   public static final Property<Double> REGULARIZATION =
       Property.of("regularization", Double.class, 0.1);
+
   private final DoubleArray theta;
 
   private LinearRegression(DoubleArray theta) {
@@ -79,12 +80,13 @@ public final class LinearRegression implements Regression<DoubleSequence> {
       DoubleArray y = DoubleArray.copyOf(out);
 
       double scalar = getOrDefault(REGULARIZATION);
+      // X'(XX'\lambda*I_n)^-1y
+      // todo: use LGBF
       DoubleArray inner =
           Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.times(Arrays.eye(x.columns()), scalar));
       DoubleArray v = Arrays.dot(Arrays.linalg.pinv(inner), x.transpose());
       DoubleArray theta = Arrays.dot(v, y);
 
-      // X'(XX'\lambda*I_n)^-1y
       return new LinearRegression(theta);
     }
 

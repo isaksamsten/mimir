@@ -34,8 +34,8 @@ public class HammingDistance implements Distance<Series> {
     int size = Math.min(a.size(), b.size());
     double distance = 0;
     for (int i = 0; i < size; i++) {
-      Object av = a.loc().get(Object.class, i);
-      Object bv = b.loc().get(Object.class, i);
+      Object av = a.values().get(i);
+      Object bv = b.values().get(i);
       distance += Objects.equals(av, bv) ? 0 : 1;
     }
 

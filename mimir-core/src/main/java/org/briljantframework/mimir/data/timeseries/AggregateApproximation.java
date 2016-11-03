@@ -23,10 +23,9 @@ package org.briljantframework.mimir.data.timeseries;
 import java.util.Objects;
 
 import org.briljantframework.DoubleSequence;
-import org.briljantframework.data.dataframe.DataFrame;
 //import org.briljantframework.data.dataseries.DataSeriesCollection;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.transform.Transformer;
+import org.briljantframework.mimir.data.transform.InputTransformer;
 
 /**
  * Transforms a DataFrame by, for each row, apply the injected {@link Aggregator} and reduce the
@@ -41,7 +40,7 @@ import org.briljantframework.mimir.data.transform.Transformer;
  *
  * @author Isak Karlsson
  */
-public class AggregateApproximation<T extends DoubleSequence> implements Transformer<T, T> {
+public class AggregateApproximation<T extends DoubleSequence> implements InputTransformer<T, T> {
 
   private final Aggregator aggregator;
 
@@ -72,7 +71,7 @@ public class AggregateApproximation<T extends DoubleSequence> implements Transfo
   }
 
   @Override
-  public Input<T> transform(Input<? extends T> x) {
+  public Input<T> transform(Input<T> x) {
     // DataSeriesCollection.Builder builder =
     // new DataSeriesCollection.Builder(aggregator.getAggregatedType());
     // for (int i = 0; i < x.size(); i++) {
@@ -83,7 +82,7 @@ public class AggregateApproximation<T extends DoubleSequence> implements Transfo
   }
 
   @Override
-  public T transform(T x) {
+  public T transformElement(T x) {
     return null;
   }
 }

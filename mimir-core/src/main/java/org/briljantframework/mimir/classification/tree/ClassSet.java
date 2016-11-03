@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.briljantframework.array.Array;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.data.Output;
@@ -41,16 +42,16 @@ public final class ClassSet implements Iterable<Example> {
   private final Map<Object, Sample> samples;
 
   private final List<Object> targets;
-  private final List<?> domain;
+  private final Array<?> domain;
 
-  public ClassSet(Output<?> column, List<?> domain) {
+  public ClassSet(Output<?> column, Array<?> domain) {
     this(domain);
     for (int i = 0; i < column.size(); i++) {
       add(column.get(i), i, 1);
     }
   }
 
-  public ClassSet(List<?> domain) {
+  public ClassSet(Array<?> domain) {
     samples = new HashMap<>();
     targets = new ArrayList<>();
     this.domain = domain;
@@ -99,7 +100,7 @@ public final class ClassSet implements Iterable<Example> {
     return target;
   }
 
-  public List<?> getDomain() {
+  public Array<?> getDomain() {
     return domain;
   }
 

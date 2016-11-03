@@ -22,6 +22,7 @@ package org.briljantframework.mimir.data.timeseries;
 
 
 import org.briljantframework.Check;
+import org.briljantframework.data.series.DoubleSeries;
 import org.briljantframework.data.series.Series;
 import org.briljantframework.data.series.Type;
 import org.briljantframework.data.series.Types;
@@ -48,7 +49,7 @@ public class LinearAggregator implements Aggregator {
   public Series.Builder partialAggregate(Series in) {
     Check.argument(in.size() > targetSize, "Can't linearly oversample data series.");
 
-    Series.Builder builder = Series.Builder.withCapacity(Double.class, targetSize);
+    Series.Builder builder = Series.Builder.of(Double.class);
     int bin = in.size() / targetSize;
     int pad = in.size() % targetSize;
 
@@ -66,7 +67,7 @@ public class LinearAggregator implements Aggregator {
       int start = currentIndex;
       int end = currentIndex + binInc - 1;
       double w = (double) 1 / 5;
-      builder.add(lerp(in.loc().getDouble(start), in.loc().getDouble(end), w));
+      builder.add(lerp(in.values().getDouble(start), in.values().getDouble(end), w));
       currentIndex += binInc;
     }
     return builder;

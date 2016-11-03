@@ -27,6 +27,7 @@ import org.briljantframework.Check;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.array.Matrices;
+import org.briljantframework.mimir.data.transform.Transformer;
 
 /**
  * Classical multidimensional scaling (MDS) of a data matrix. Also known as principal coordinates
@@ -38,13 +39,17 @@ import org.briljantframework.array.Matrices;
  *
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class MultidimensionalScaling {
+public class MultidimensionalScaling implements Transformer<DoubleArray, DoubleArray> {
 
-  private final DoubleArray coordinates;
+  private final int components;
 
-  public MultidimensionalScaling(DoubleArray proximity, int k) {
+  public MultidimensionalScaling(int k) {
+    this.components = k;
+  }
+
+  public DoubleArray transform(DoubleArray proximity) {
     Check.argument(proximity.isMatrix() && proximity.isSquare(), "non-square proximity matrix");
-    Check.argument(k > 0 && k <= proximity.size(0), "illegal k");
+    Check.argument(components > 0 && components <= proximity.size(0), "illegal component size");
     int m = proximity.size(0);
 
     DoubleArray a = DoubleArray.zeros(m, m);
@@ -70,8 +75,8 @@ public class MultidimensionalScaling {
     DoubleArray realEigenvalues = DoubleArray.of(decomposition.getRealEigenvalues());
     DoubleArray eigenvectors = Matrices.toArray(decomposition.getV());
 
-    DoubleArray coordinates = DoubleArray.zeros(m, k);
-    for (int j = 0; j < k; j++) {
+    DoubleArray coordinates = DoubleArray.zeros(m, components);
+    for (int j = 0; j < components; j++) {
       double eig = realEigenvalues.get(j);
       if (eig < 0) {
         throw new NotStrictlyPositiveException(eig);
@@ -81,10 +86,6 @@ public class MultidimensionalScaling {
         coordinates.set(i, j, eigenvectors.get(i, j) * scale);
       }
     }
-    this.coordinates = coordinates;
-  }
-
-  public DoubleArray getCoordinates() {
-    return coordinates.copy();
+    return coordinates;
   }
 }

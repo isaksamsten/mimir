@@ -28,6 +28,7 @@ import org.briljantframework.Check;
 import org.briljantframework.DoubleSequence;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.transform.InputTransformer;
 
 
 /**
@@ -52,12 +53,12 @@ public final class Approximations {
    * @return a new data frame with {@link org.briljantframework.data.dataframe.DataFrame#columns()}
    *         equals to {@code size}
    */
-  public static <T extends DoubleSequence> Input<T> paa(Input<? extends T> in, int size) {
+  public static <T extends DoubleSequence> Input<T> paa(Input<T> in, int size) {
     return Approximations.<T>paa(size).transform(in);
   }
 
   /**
-   * Returns a {@link org.briljantframework.mimir.data.transform.Transformer} that reduces the
+   * Returns a {@link InputTransformer} that reduces the
    * length of each row-vector to {@code size}.
    *
    * @param size the resulting time series size
@@ -83,7 +84,7 @@ public final class Approximations {
   }
 
   /**
-   * Returns a {@link org.briljantframework.mimir.data.transform.Transformer} that reduces the size
+   * Returns a {@link InputTransformer} that reduces the size
    * and transforms each row in the input data frame to
    */
   public static AggregateApproximation sax(List<String> alphabet) {

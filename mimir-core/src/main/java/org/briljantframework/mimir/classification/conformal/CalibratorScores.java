@@ -18,31 +18,23 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.data.transform;
+package org.briljantframework.mimir.classification.conformal;
 
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.dataset.io.Datasets;
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Inputs;
-import org.briljantframework.mimir.data.Instance;
-import org.junit.Test;
+import org.briljantframework.array.DoubleArray;
 
 /**
- * Created by isak on 3/29/16.
+ * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class ZNormalizerTest {
+public interface CalibratorScores<In, Out> {
 
-  @Test
-  public void fit() throws Exception {
-    DataFrame x = Datasets.loadIris();
-    Input<Instance> in = Inputs.asInput(x);
-
-    Transformation<Instance, Instance> transformation = new ZNormalizer<>();
-    Transformer<Instance, Instance> transformer = transformation.fit(in);
-
-
-    System.out.println(transformer.transform(in));
-
-
-  }
+  /**
+   * Return a double array of [no-calibration, 1] double array of nonconformity scores for the
+   * calibration set used to estimate the p-values when performing a conformal prediction. The
+   * calibration set might be different for different for different examples or lables.
+   *
+   * @param example the example
+   * @param label the label
+   * @return the calibration scores
+   */
+  DoubleArray get(In example, Out label);
 }

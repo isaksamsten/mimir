@@ -42,7 +42,7 @@ public class ManhattanDistance implements Distance<Series> {
     int size = Math.min(a.size(), b.size());
     double distance = 0.0;
     for (int i = 0; i < size; i++) {
-      distance += Math.abs(a.loc().getDouble(i) - b.loc().getDouble(i));
+      distance += Math.abs(a.values().getDouble(i) - b.values().getDouble(i));
     }
     return distance;
   }

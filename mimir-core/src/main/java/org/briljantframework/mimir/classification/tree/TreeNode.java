@@ -20,10 +20,9 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
+import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.series.Series;
-
-import java.util.List;
 
 /**
  * @author Isak Karlsson
@@ -32,7 +31,7 @@ public interface TreeNode<In, T> {
 
   double getWeight();
 
-  List<?> getDomain();
+  Array<?> getDomain();
 
   Series getClassDistribution();
 

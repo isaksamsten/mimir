@@ -21,10 +21,10 @@
 package org.briljantframework.mimir.classification;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 import org.briljantframework.Check;
+import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.series.Convert;
@@ -40,9 +40,12 @@ public class DecisionTree<Out> extends TreeClassifier<Instance, Out> {
 
   public static Property<Double> MIN_LEAF_SIZE = Property.of("min_leaf_size", Double.class, 1.0);
   public static Property<Splitter> SPLITTER = Property.of("splitter", Splitter.class);
+  public static Property<Integer> MAX_DEPTH =
+      Property.of("max_depth", Integer.class, Integer.MAX_VALUE, i -> i > 0);
+
   private final int depth;
 
-  private DecisionTree(List<Out> classes, int depth,
+  private DecisionTree(Array<Out> classes, int depth,
       TreeVisitor<Instance, ValueThreshold> predictionVisitor) {
     super(classes, predictionVisitor);
     this.depth = depth;
@@ -63,23 +66,28 @@ public class DecisionTree<Out> extends TreeClassifier<Instance, Out> {
   public static class Learner<Out> extends AbstractLearner<Instance, Out, DecisionTree<Out>> {
 
     protected ClassSet classSet;
-    protected List<Out> classes = null;
+    protected Array<Out> classes = null;
 
-    protected Learner(Properties parameters, List<Out> classes, ClassSet classSet) {
+    protected Learner(Array<Out> classes, Properties parameters, ClassSet classSet) {
       super(parameters);
       this.classSet = classSet;
       this.classes = classes;
     }
 
     public Learner(Properties parameters) {
+      super(parameters);
+    }
 
+    public Learner() {
+      set(SPLITTER, RandomSplitter.all());
+      set(MIN_LEAF_SIZE, 1.0);
     }
 
     @Override
     public DecisionTree<Out> fit(Input<? extends Instance> in, Output<? extends Out> out) {
       Check.argument(Dataset.isDataset(in), "requires a dataset");
       ClassSet classSet = this.classSet;
-      List<Out> classes = this.classes != null ? this.classes : Outputs.unique(out);
+      Array<Out> classes = this.classes != null ? this.classes : Outputs.unique(out);
       if (classSet == null) {
         classSet = new ClassSet(out, classes);
       }
@@ -96,8 +104,8 @@ public class DecisionTree<Out> extends TreeClassifier<Instance, Out> {
 
     protected TreeNode<Instance, ValueThreshold> build(Input<? extends Instance> frame,
         Output<?> target, Params p, ClassSet classSet, int depth) {
-
-      if (classSet.getTotalWeight() <= getOrDefault(MIN_LEAF_SIZE) || classSet.getTargetCount() == 1) {
+      if (classSet.getTotalWeight() <= getOrDefault(MIN_LEAF_SIZE)
+          || depth >= getOrDefault(MAX_DEPTH) || classSet.getTargetCount() == 1) {
         p.depth = Math.max(p.depth, depth);
         return TreeLeaf.fromExamples(classSet);
       }

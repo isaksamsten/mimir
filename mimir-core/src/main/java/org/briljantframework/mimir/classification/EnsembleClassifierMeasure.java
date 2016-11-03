@@ -25,10 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.DoubleAdder;
 import java.util.stream.IntStream;
 
-import org.briljantframework.array.Arrays;
-import org.briljantframework.array.BooleanArray;
-import org.briljantframework.array.DoubleArray;
-import org.briljantframework.array.IntArray;
+import org.briljantframework.array.*;
 import org.briljantframework.data.Is;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
@@ -36,7 +33,7 @@ import org.briljantframework.mimir.data.Output;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class EnsembleClassifierMeasure<In> {
+public class EnsembleClassifierMeasure {
   private double oobError;
   private double strength;
   private double correlation;
@@ -45,13 +42,13 @@ public class EnsembleClassifierMeasure<In> {
   private double mse;
   private double baseModelError;
 
-  public EnsembleClassifierMeasure(Ensemble<In,?> ensemble, Input<? extends In> trainingData,
+  public <In> EnsembleClassifierMeasure(Ensemble<In, ?> ensemble, Input<? extends In> trainingData,
       Output<?> trainingTarget, Input<? extends In> validationData, Output<?> validationTarget) {
     initializeStrengthCorrelation(ensemble, trainingData, trainingTarget);
     initializeBiasVarianceDecomposition(ensemble, validationData, validationTarget);
   }
 
-  public double getOobErro() {
+  public double getOobError() {
     return oobError;
   }
 
@@ -107,11 +104,11 @@ public class EnsembleClassifierMeasure<In> {
     return argMax;
   }
 
-  private void initializeStrengthCorrelation(Ensemble<In,?> ensemble, Input<? extends In> x,
+  private <In> void initializeStrengthCorrelation(Ensemble<In, ?> ensemble, Input<? extends In> x,
       Output<?> y) {
-    List<?> classes = ensemble.getClasses();
+    Array<?> classes = ensemble.getClasses();
     BooleanArray oobIndicator = ensemble.getOobIndicator();
-    List<? extends Classifier<In,?>> members = ensemble.getEnsembleMembers();
+    List<? extends ProbabilityEstimator<In, ?>> members = ensemble.getEnsembleMembers();
 
     // Store the out-of-bag and in-bag probability estimates
     DoubleArray oobEstimates = DoubleArray.zeros(x.size(), classes.size());
@@ -156,7 +153,7 @@ public class EnsembleClassifierMeasure<In> {
     double variance = strengthSquare - s2;
     double std = 0;
     for (int j = 0; j < members.size(); j++) {
-      Classifier<In,?> member = members.get(j);
+      ProbabilityEstimator<In,?> member = members.get(j);
       AtomicInteger oobSizeA = new AtomicInteger(0);
       DoubleAdder p1A = new DoubleAdder();
       DoubleAdder p2A = new DoubleAdder();
@@ -185,9 +182,9 @@ public class EnsembleClassifierMeasure<In> {
 
   }
 
-  private void initializeBiasVarianceDecomposition(Ensemble<In,?> ensemble, Input<? extends In> x,
-      Output<?> y) {
-    List<?> classes = ensemble.getClasses();
+  private <In> void initializeBiasVarianceDecomposition(Ensemble<In,?> ensemble,
+      Input<? extends In> x, Output<?> y) {
+    Array<?> classes = ensemble.getClasses();
 
     DoubleAdder meanVariance = new DoubleAdder();
     DoubleAdder meanSquareError = new DoubleAdder();
@@ -199,11 +196,11 @@ public class EnsembleClassifierMeasure<In> {
 
 
       /* Stores the probability of the m:th member for the j:th class */
-      List<? extends Classifier<In,?>> members = ensemble.getEnsembleMembers();
+      List<? extends ProbabilityEstimator<In, ?>> members = ensemble.getEnsembleMembers();
       int estimators = members.size();
       DoubleArray memberEstimates = DoubleArray.zeros(estimators, classes.size());
       for (int j = 0; j < estimators; j++) {
-        Classifier<In,?> member = members.get(j);
+        ProbabilityEstimator<In,?> member = members.get(j);
         memberEstimates.setRow(j, member.estimate(record));
       }
 
@@ -238,7 +235,7 @@ public class EnsembleClassifierMeasure<In> {
     this.baseModelError = 1 - baseAccuracy.doubleValue() / x.size();
   }
 
-  private static DoubleArray createTrueClassVector(List<?> classes, Object label) {
+  private static DoubleArray createTrueClassVector(Array<?> classes, Object label) {
     DoubleArray c = DoubleArray.zeros(classes.size());
     for (int j = 0; j < classes.size(); j++) {
       if (Is.equal(classes.get(j), label)) {

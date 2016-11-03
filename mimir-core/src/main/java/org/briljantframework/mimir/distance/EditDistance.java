@@ -57,7 +57,7 @@ public class EditDistance implements Distance<Series> {
       for (int j = 0; j < b.size(); j++) {
         double insert = previousRow.get(j + 1) + 1;
         double delete = currentRow.get(j) + 1;
-        double subs = previousRow.get(j) + (!a.loc().equals(i, b, j) ? 1 : 0);
+        double subs = previousRow.get(j) + (!a.values().equals(i, b.values(), j) ? 1 : 0);
         currentRow.set(j + 1, Math.min(insert, Math.min(delete, subs)));
       }
       previousRow = currentRow;

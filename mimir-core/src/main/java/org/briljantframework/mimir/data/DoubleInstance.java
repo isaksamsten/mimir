@@ -20,42 +20,28 @@
  */
 package org.briljantframework.mimir.data;
 
-import java.util.Objects;
-
-import org.briljantframework.data.series.Series;
-
 /**
- * @author Isak Karlsson
+ * Created by isak on 2016-09-30.
  */
-class SeriesInstance implements Instance {
-  private final Series record;
+class DoubleInstance implements Instance {
+  private final double[] array;
 
-  public SeriesInstance(Series record) {
-    this.record = Objects.requireNonNull(record);
+  public DoubleInstance(double[] array) {
+    this.array = array;
   }
 
   @Override
   public int size() {
-    return record.size();
-  }
-
-  @Override
-  public int getInt(int index) {
-    return record.values().getInt(index);
+    return array.length;
   }
 
   @Override
   public double getDouble(int index) {
-    return record.values().getDouble(index);
-  }
-
-  @Override
-  public <T> T get(Class<T> cls, int index) {
-    return record.values().get(cls, index);
+    return array[index];
   }
 
   @Override
   public Object get(int index) {
-    return record.values().get(index);
+    return getDouble(index);
   }
 }

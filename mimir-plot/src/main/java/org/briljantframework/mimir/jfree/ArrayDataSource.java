@@ -18,44 +18,41 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.data;
+package org.briljantframework.mimir.jfree;
 
-import java.util.Objects;
+import org.briljantframework.array.Array;
 
-import org.briljantframework.data.series.Series;
+import de.erichseifert.gral.data.AbstractDataSource;
+import org.briljantframework.array.ComplexArray;
+import org.jfree.data.ComparableObjectItem;
 
 /**
- * @author Isak Karlsson
+ * Created by isak on 2016-09-27.
  */
-class SeriesInstance implements Instance {
-  private final Series record;
+public class ArrayDataSource extends AbstractDataSource {
 
-  public SeriesInstance(Series record) {
-    this.record = Objects.requireNonNull(record);
+  private final Array<? extends Number> array;
+
+  public ArrayDataSource(Array<? extends Number> array) {
+    super(numberArray(array));
+    this.array = array;
+  }
+
+  private static Class<? extends Comparable<?>>[] numberArray(Array<? extends Number> array) {
+    Class[] c = new Class[array.columns()];
+    for (int i = 0; i < array.columns(); i++) {
+      c[i] = Number.class;
+    }
+    return c;
   }
 
   @Override
-  public int size() {
-    return record.size();
+  public Comparable<?> get(int i, int i1) {
+    return (Comparable<?>) array.get(i, i1);
   }
 
   @Override
-  public int getInt(int index) {
-    return record.values().getInt(index);
-  }
-
-  @Override
-  public double getDouble(int index) {
-    return record.values().getDouble(index);
-  }
-
-  @Override
-  public <T> T get(Class<T> cls, int index) {
-    return record.values().get(cls, index);
-  }
-
-  @Override
-  public Object get(int index) {
-    return record.values().get(index);
+  public int getRowCount() {
+    return array.rows();
   }
 }

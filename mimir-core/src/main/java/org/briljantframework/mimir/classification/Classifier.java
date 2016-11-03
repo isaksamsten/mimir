@@ -20,12 +20,8 @@
  */
 package org.briljantframework.mimir.classification;
 
-import java.util.List;
-
-import org.briljantframework.array.DoubleArray;
+import org.briljantframework.array.Array;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.series.Series;
-import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
@@ -42,55 +38,21 @@ import org.briljantframework.mimir.supervised.Predictor;
  *
  * <p>
  * The output of the classifier is a {@link Classifier} (i.e., the {@code g}) which (hopefully)
- * approximates {@code h}. To estimate how well {@code g} approximates {@code h}, cross-validation
- * {@link ClassifierValidator#crossValidator(int)} can be employed.
+ * approximates {@code h}. To estimate how well {@code g} approximates {@code h},
+ * {@link ClassifierValidator#crossValidator(int) cross-validation} can be employed.
  * </p>
  *
  * A classifier is always atomic, i.e. does not have mutable state.
- *
- * <pre>
- * Tuners.crossValidation(new RandomForest.Builder(), x, y,
- *     Configuration.measureComparator(Accuracy.class), 10,
- *     range(&quot;No. trees&quot;, RandomForest.Builder::withSize, 10, 1000, 10),
- *     range(&quot;No. features&quot;, RandomForest.Builder::withMaximumFeatures, 2, x.columns(), 1));
- * </pre>
  *
  * @author Isak Karlsson
  */
 public interface Classifier<In, Out> extends Predictor<In, Out> {
 
   /**
-   * The classes this predictor is able to predict, i.e. its co-domain. Note that the i:th element
-   * of the returned vector is the label of the j:th column in the probability matrix returned by
-   * {@link #estimate(Input)}.
+   * The classes this classifier is able to predict/produce from its {@link #predict(Object) predict
+   * function}, i.e. the classifiers co-domain.
    *
-   * @return the list of classes.
+   * @return the array of class labels.
    */
-  List<Out> getClasses();
-
-  /**
-   * Estimates the posterior probabilities for all objects in the given input
-   *
-   * <p>
-   * Each column corresponds to the probability of a particular class (the j:th column correspond to
-   * the j:th element (using {@link Series#loc()}) in {@linkplain #getClasses()}) and each row
-   * corresponds to a particular record in the supplied data frame.
-   *
-   * @param x the data frame of records to estimate the posterior probabilities for
-   * @return a matrix with probability estimates; shape = {@code [x.rows(), getClasses().size()]}.
-   */
-  DoubleArray estimate(Input<? extends In> x);
-
-  /**
-   * Estimates the posterior probability for the supplied input.
-   *
-   * <p>
-   * The i:th element in the returned array correspond to the probability of the i:th class in
-   * {@linkplain #getClasses()}
-   *
-   * @param input the input to estimate the posterior probability for
-   * @return an array with probability estimates; shape = {@code [1, this.getClasses().size()]}.
-   */
-  DoubleArray estimate(In input);
-
+  Array<Out> getClasses();
 }

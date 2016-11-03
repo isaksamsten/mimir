@@ -35,8 +35,6 @@ import org.briljantframework.mimir.supervised.Predictor;
  * @author Isak Karlsson
  */
 public class GridSearch<In, Out, P extends Predictor<In, Out>> {
-
-  // private final List<String> parameterNames = new ArrayList<>();
   private final List<Updatable> updatables = new ArrayList<>();
   private Validator<In, Out, P> validator;
 
@@ -66,7 +64,6 @@ public class GridSearch<In, Out, P extends Predictor<In, Out>> {
       results.add(new Configuration<>(result, new Properties(classifier.getParameters())));
     }
   }
-
 
   public List<Configuration<Out>> tune(Predictor.Learner<In, Out, ? extends P> toOptimize,
       Input<? extends In> x, Output<? extends Out> y) {

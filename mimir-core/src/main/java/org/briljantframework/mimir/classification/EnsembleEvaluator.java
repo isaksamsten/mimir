@@ -28,13 +28,23 @@ import org.briljantframework.mimir.evaluation.partition.Partition;
 /**
  * @author Isak Karlsson
  */
-public class EnsembleEvaluator<In> implements Evaluator<In, Object, Ensemble<In, Object>> {
+public class EnsembleEvaluator<In, Out> implements Evaluator<In, Out, Ensemble<In, Out>> {
+
+  private EnsembleEvaluator() {}
+
+  private static EnsembleEvaluator<?, ?> INSTANCE = new EnsembleEvaluator<>();
+
+  @SuppressWarnings("unchecked")
+  public static <In, Out> EnsembleEvaluator<In, Out> getInstance() {
+    return (EnsembleEvaluator<In, Out>) INSTANCE;
+  }
 
   @Override
-  public void accept(EvaluationContext<? extends In, ?, ? extends Ensemble<In, Object>> ctx) {
-    Partition<? extends In, ?> partition = ctx.getPartition();
-    Ensemble<In, ?> predictor = ctx.getPredictor();
-    EnsembleClassifierMeasure<In> em = new EnsembleClassifierMeasure<>(predictor,
+  public void accept(
+      EvaluationContext<? extends In, ? extends Out, ? extends Ensemble<In, Out>> ctx) {
+    Partition<? extends In, ? extends Out> partition = ctx.getPartition();
+    Ensemble<In, Out> predictor = ctx.getPredictor();
+    EnsembleClassifierMeasure em = new EnsembleClassifierMeasure(predictor,
         partition.getTrainingData(), partition.getTrainingTarget(), partition.getValidationData(),
         partition.getValidationTarget());
 
@@ -49,7 +59,7 @@ public class EnsembleEvaluator<In> implements Evaluator<In, Object, Ensemble<In,
     measureCollection.add("ensembleQuality", em.getQuality());
     measureCollection.add("ensembleErrorBound", em.getErrorBound());
 
-    measureCollection.add("oobError", em.getOobErro());
+    measureCollection.add("oobError", em.getOobError());
   }
 
   @Override
