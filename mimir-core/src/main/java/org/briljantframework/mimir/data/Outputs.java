@@ -146,7 +146,7 @@ public final class Outputs {
     return counts;
   }
 
-  private static class ImmutableArrayOutput<T> extends AbstractList<T> implements Output<T> {
+  private static class ImmutableArrayOutput<T> extends AbstractOutput<T> {
     private final T[] values;
 
     public ImmutableArrayOutput(T[] values) {
@@ -178,6 +178,11 @@ public final class Outputs {
     @Override
     public T get(int index) {
       return values[index];
+    }
+
+    @Override
+    public Set<T> unique() {
+      return new HashSet<T>(this);
     }
   }
 

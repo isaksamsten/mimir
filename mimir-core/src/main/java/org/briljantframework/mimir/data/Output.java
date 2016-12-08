@@ -21,6 +21,8 @@
 package org.briljantframework.mimir.data;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.briljantframework.data.series.Convert;
 
@@ -42,4 +44,12 @@ public interface Output<T> extends List<T> {
   default <E> E get(Class<? extends E> cls, int index) {
     return Convert.to(cls, index);
   }
+
+  /**
+   * Returns the unique labels in this
+   * @return
+   */
+  Set<T> unique();
+
+  Map<T, Integer> counts();
 }

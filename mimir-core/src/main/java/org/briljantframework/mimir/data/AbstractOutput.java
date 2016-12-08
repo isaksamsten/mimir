@@ -20,13 +20,13 @@
  */
 package org.briljantframework.mimir.data;
 
-import java.util.AbstractList;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * @author Isak Karlsson
  */
 public abstract class AbstractOutput<T> extends AbstractList<T> implements Output<T> {
+
   @Override
   public Iterator<T> iterator() {
     return new Iterator<T>() {
@@ -42,5 +42,19 @@ public abstract class AbstractOutput<T> extends AbstractList<T> implements Outpu
         return get(current++);
       }
     };
+  }
+
+  @Override
+  public Set<T> unique() {
+    return new HashSet<T>(this);
+  }
+
+  @Override
+  public Map<T, Integer> counts() {
+    HashMap<T, Integer> counts = new HashMap<>();
+    for (T t : this) {
+      counts.compute(t, (k, v) -> k == null ? 1 : v + 1);
+    }
+    return counts;
   }
 }
