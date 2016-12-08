@@ -18,40 +18,34 @@
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package org.briljantframework.mimir.evaluation;
+package org.briljantframework.mimir.classification.conformal.evaluation;
 
 import org.briljantframework.array.DoubleArray;
+import org.briljantframework.mimir.classification.conformal.BootstrapConformalClassifier;
+import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.evaluation.partition.Partition;
+import org.briljantframework.mimir.evaluation.partition.Partitioner;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
- * @author Isak Karlsson <isak-kar@dsv.su.se>
+ * Created by isak on 2016-12-07.
  */
-public interface EvaluationContext<In, Out> {
+public class BootstrapConformalClassifierValidator<In, Out>
+    extends ConformalClassifierValidator<In, Out, BootstrapConformalClassifier<In, Out>> {
 
-  /**
-   * Get the partition into training and testing data.
-   * 
-   * @return the partition
-   */
-  Partition<In, Out> getPartition();
+  public BootstrapConformalClassifierValidator(Partitioner<In, Out> partitioner,
+      DoubleArray confidences) {
+    super(partitioner, confidences);
+  }
 
-  /**
-   * Get the predictions the i:th prediction corresponds to the i:th validation instance.
-   * 
-   * @return the predictions
-   */
-  Output<Out> getPredictions();
+  public BootstrapConformalClassifierValidator(Partitioner<In, Out> partitioner) {
+    super(partitioner);
+  }
 
-  /**
-   *
-   * @return
-   */
-  DoubleArray getEstimates();
-
-  Predictor<In, Out> getPredictor();
-
-  MeasureCollection getMeasureCollection();
-
+  @Override
+  protected BootstrapConformalClassifier<In, Out> fit(
+      Predictor.Learner<? super In, ? super Out, ? extends BootstrapConformalClassifier<In, Out>> learner,
+      Input<In> x, Output<Out> y) {
+    return learner.fit(x, y);
+  }
 }

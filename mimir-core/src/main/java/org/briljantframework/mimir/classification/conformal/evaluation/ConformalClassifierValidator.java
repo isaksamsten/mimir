@@ -23,10 +23,9 @@ package org.briljantframework.mimir.classification.conformal.evaluation;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.classification.conformal.BootstrapConformalClassifier;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
-import org.briljantframework.mimir.classification.conformal.InductiveConformalClassifier;
 import org.briljantframework.mimir.data.ArrayOutput;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
@@ -34,23 +33,20 @@ import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.MutableEvaluationContext;
 import org.briljantframework.mimir.evaluation.Validator;
 import org.briljantframework.mimir.evaluation.partition.FoldPartitioner;
-import org.briljantframework.mimir.evaluation.partition.Partition;
 import org.briljantframework.mimir.evaluation.partition.Partitioner;
-import org.briljantframework.mimir.evaluation.partition.SplitPartitioner;
-import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public abstract class ConformalClassifierValidator<In, Out, P extends ConformalClassifier<In, Out>>
     extends Validator<In, Out, P> {
-  private final List<? extends ConformalClassifierEvaluator> conformalEvaluators;
+  private final List<? extends ConformalClassifierEvaluator<In, Out>> conformalEvaluators;
 
   protected ConformalClassifierValidator(Partitioner<In, Out> partitioner,
       DoubleArray confidences) {
     super(partitioner);
     this.conformalEvaluators = confidences.doubleStream()
-        .mapToObj(ConformalClassifierEvaluator::new).collect(Collectors.toList());
+        .mapToObj(i -> new ConformalClassifierEvaluator<In, Out>(i)).collect(Collectors.toList());
   }
 
   protected ConformalClassifierValidator(Partitioner<In, Out> partitioner) {
@@ -58,7 +54,7 @@ public abstract class ConformalClassifierValidator<In, Out, P extends ConformalC
   }
 
   @Override
-  protected void evaluate(EvaluationContext<In, Out, P> evaluationContext, int fold) {
+  protected void evaluate(EvaluationContext<In, Out> evaluationContext, int fold) {
     for (ConformalClassifierEvaluator<In, Out> evaluator : conformalEvaluators) {
       evaluationContext.getMeasureCollection().add("fold", fold);
       evaluator.accept(evaluationContext);
@@ -67,14 +63,16 @@ public abstract class ConformalClassifierValidator<In, Out, P extends ConformalC
   }
 
   @Override
-  protected void predict(MutableEvaluationContext<In, Out, ? extends P> ctx) {
+  protected void predict(MutableEvaluationContext<In, Out> ctx) {
+    Check.state(ctx.getPredictor() instanceof ConformalClassifier);
     Input<? extends In> validationData = ctx.getPartition().getValidationData();
     Output<Out> predictions = new ArrayOutput<>();
     for (int i = 0; i < validationData.size(); i++) {
       predictions.add(null);
     }
     ctx.setPredictions(predictions);
-    ctx.setEstimates(ctx.getPredictor().estimate(validationData));
+    ConformalClassifier<In, Out> predictor = (ConformalClassifier<In, Out>) ctx.getPredictor();
+    ctx.setEstimates(predictor.estimate(validationData));
   }
 
   /**
@@ -82,86 +80,22 @@ public abstract class ConformalClassifierValidator<In, Out, P extends ConformalC
    *
    * @param folds number of validation folds
    * @param significances the significance levels to evaluate
-   * @param <T> the type of bootstrap conformal classifier
    * @return a validator
    */
-  public static <In, Out, T extends BootstrapConformalClassifier<In, Out>> ConformalClassifierValidator<In, Out, T> crossValidator(
-      int folds, DoubleArray significances) {
-    return validator(new FoldPartitioner<>(folds), significances);
+  public static <In, Out> BootstrapConformalClassifierValidator<In, Out> crossValidator(int folds,
+      DoubleArray significances) {
+    return new BootstrapConformalClassifierValidator<In, Out>(new FoldPartitioner<>(folds),
+        significances);
   }
-
 
   /**
    * Validator for bootstrap enabled conformal classifiers (for the significance levels [0.01, 0.1])
    *
    * @param folds number of validation folds
-   * @param <T> the type of bootstrap conformal classifier
    * @return a validator
    */
-  public static <In, Out, T extends BootstrapConformalClassifier<In, Out>> ConformalClassifierValidator<In, Out, T> crossValidator(
-      int folds) {
+  public static <In, Out> BootstrapConformalClassifierValidator<In, Out> crossValidator(int folds) {
     return crossValidator(folds, DoubleArray.range(0.01, 0.11, 0.01));
-  }
-
-  /**
-   * Validator for bootstrap enabled conformal classifiers with the traning data partitioned
-   * according to the given partitioner.
-   * 
-   * @param partitioner the partitioner
-   * @param significances the significance levels
-   * @param <T> the type
-   * @return a validator
-   */
-  public static <In, Out, T extends BootstrapConformalClassifier<In, Out>> ConformalClassifierValidator<In, Out, T> validator(
-      Partitioner<In, Out> partitioner, DoubleArray significances) {
-    return new ConformalClassifierValidator<In, Out, T>(partitioner, significances) {
-      @Override
-      protected T fit(Predictor.Learner<? super In, ? super Out, ? extends T> learner, Input<In> x,
-          Output<Out> y) {
-        return learner.fit(x, y);
-      }
-    };
-  }
-
-  /**
-   * Validator for inductive conformal classifiers with the training data partitioned according to
-   * the given partitioner.
-   * 
-   * @param partitioner the partitioner
-   * @param calibrationSize the calibration set size (as a fraction of the available training data
-   *        in each fold)
-   * @param significance the significance levels
-   * @param <T> the type of conformal classifier
-   * @return a validator
-   */
-  public static <In, Out, T extends InductiveConformalClassifier<In, Out>> ConformalClassifierValidator<In, Out, T> validator(
-      Partitioner<In, Out> partitioner, double calibrationSize, DoubleArray significance) {
-    return new ConformalClassifierValidator<In, Out, T>(partitioner, significance) {
-
-      @Override
-      protected T fit(Predictor.Learner<? super In, ? super Out, ? extends T> learner, Input<In> x,
-          Output<Out> y) {
-        SplitPartitioner<In, Out> partitioner = new SplitPartitioner<>(calibrationSize);
-        Partition<In, Out> partition = partitioner.partition(x, y).iterator().next();
-        T icc = learner.fit(partition.getTrainingData(), partition.getTrainingTarget());
-        icc.calibrate(partition.getValidationData(), partition.getValidationTarget());
-        return icc;
-      }
-    };
-  }
-
-  /**
-   * Validator for inductive conformal classifiers with the training data partitioned according to
-   * the given partitioner with the default significance levels ([0.01, 0.1])
-   * 
-   * @param partitioner the partitioner
-   * @param calibrationSize the calibration set size
-   * @param <T> the type of conformal classifier
-   * @return a validator
-   */
-  public static <In, Out, T extends InductiveConformalClassifier<In, Out>> ConformalClassifierValidator<In, Out, T> validator(
-      Partitioner<In, Out> partitioner, double calibrationSize) {
-    return validator(partitioner, calibrationSize, DoubleArray.range(0.01, 0.11, 0.01));
   }
 
   /**
@@ -171,24 +105,23 @@ public abstract class ConformalClassifierValidator<In, Out, P extends ConformalC
    * @param folds the number of folds
    * @param calibrationSize the calibration set size (in each fold)
    * @param significance the confidence for which to acceptEvaluators the
-   * @param <T> the type of validator
    * @return a new validator for evaluating conformal classifiers of the specified type
    */
-  public static <In, Out, T extends InductiveConformalClassifier<In, Out>> ConformalClassifierValidator<In, Out, T> crossValidator(
-      int folds, double calibrationSize, DoubleArray significance) {
-    return validator(new FoldPartitioner<>(folds), calibrationSize, significance);
+  public static <In, Out> InductiveConformalClassifierValidator<In, Out> crossValidator(int folds,
+      double calibrationSize, DoubleArray significance) {
+    return new InductiveConformalClassifierValidator<In, Out>(new FoldPartitioner<>(folds),
+        significance, calibrationSize);
   }
 
   /**
    * Returns a k-fold cross validator for evaluating inductive conformal classifiers.
-   * 
+   *
    * @param folds the number of folds
    * @param calibrationSize the calibration set size
-   * @param <T> the type of inductive conformal classifier
    * @return a new validator
    */
-  public static <In, Out, T extends InductiveConformalClassifier<In, Out>> ConformalClassifierValidator<In, Out, T> crossValidator(
-      int folds, double calibrationSize) {
+  public static <In, Out> InductiveConformalClassifierValidator<In, Out> crossValidator(int folds,
+      double calibrationSize) {
     return crossValidator(folds, calibrationSize, DoubleArray.range(0.01, 0.11, 0.01));
   }
 }

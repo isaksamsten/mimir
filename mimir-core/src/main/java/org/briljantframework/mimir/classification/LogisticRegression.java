@@ -162,14 +162,14 @@ public class LogisticRegression<Out> extends AbstractClassifier<DoubleSequence, 
     return "LogisticRegression{" + "coefficients=" + coefficients + ", logLoss=" + logLoss + '}';
   }
 
-  public static class Evaluator implements
-      org.briljantframework.mimir.evaluation.Evaluator<DoubleSequence, Object, LogisticRegression<Object>> {
+  public static class Evaluator
+      implements org.briljantframework.mimir.evaluation.Evaluator<DoubleSequence, Object> {
 
     @Override
-    public void accept(
-        EvaluationContext<? extends DoubleSequence, ?, ? extends LogisticRegression<Object>> ctx) {
-      ctx.getMeasureCollection().add("logLoss", MeasureSample.IN_SAMPLE,
-          ctx.getPredictor().getLogLoss());
+    public void accept(EvaluationContext<DoubleSequence, Object> ctx) {
+      Check.state(ctx.getPredictor() instanceof LogisticRegression, "expect logistic regression");
+      LogisticRegression<Object> predictor = (LogisticRegression<Object>) ctx.getPredictor();
+      ctx.getMeasureCollection().add("logLoss", MeasureSample.IN_SAMPLE, predictor.getLogLoss());
     }
   }
 

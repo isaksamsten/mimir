@@ -38,6 +38,7 @@ import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.data.Outputs;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
+import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * <h1>Publications</h1>
@@ -71,13 +72,13 @@ public class RandomPatternForest<In, Out> extends Ensemble<In, Out> {
     return averageProbabilities(input);
   }
 
-  public static class DepthEvaluator<In> implements
-      org.briljantframework.mimir.evaluation.Evaluator<In, Object, RandomPatternForest<In, Object>> {
+  public static class DepthEvaluator<In>
+      implements org.briljantframework.mimir.evaluation.Evaluator<In, Object> {
 
     @Override
-    public void accept(
-        EvaluationContext<? extends In, ?, ? extends RandomPatternForest<In, Object>> ctx) {
-      ctx.getMeasureCollection().add("depth", ctx.getPredictor().getAverageDepth());
+    public void accept(EvaluationContext<In, Object> ctx) {
+      RandomPatternForest<In, Object> predictor = (RandomPatternForest<In, Object>) ctx.getPredictor();
+      ctx.getMeasureCollection().add("depth", predictor.getAverageDepth());
     }
   }
 

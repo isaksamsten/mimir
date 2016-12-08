@@ -36,16 +36,19 @@ import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.parser.CsvParser;
 import org.briljantframework.data.series.Series;
 import org.briljantframework.data.series.SeriesUtils;
-import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.mimir.classification.tree.pattern.*;
 import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.distance.EuclideanDistance;
+import org.junit.Ignore;
+import org.junit.Test;
 
 /**
  * Created by isak on 11/16/15.
  */
 public class LearnerTest {
 
+  @Test
+  @Ignore
   public void testPairWiseClassifier() throws FileNotFoundException {
     // DataFrame iris = DataFrames.permute(Datasets.loadIris());
     // DataFrame data = iris.drop("Class").apply(v -> {
@@ -81,9 +84,8 @@ public class LearnerTest {
     createPairs(data.loc().getRow(testIdx), SeriesUtils.select(labels, testIdx), testInput,
         testOutput);
 
-    // ClassifierValidator<Pair<Series, Series>, Classifier<Pair<Series, Series>, Object>> validator
-    // =
-    // ClassifierValidator.holdoutValidator(testInput, testOutput);
+    ClassifierValidator<Pair<Series, Series>, Object> validator =
+        ClassifierValidator.holdoutValidator(testInput, testOutput);
 
 
     System.out.println(Outputs.valueCounts(trainingOutput));
@@ -91,9 +93,9 @@ public class LearnerTest {
     System.out.println(labels.collect(Collectors.valueCounts()));
 
     RandomPatternForest.Learner<Pair<Series, Series>, Object, Pair<Integer, Double>> learner =
-        getPairFeatureLearner(100);
+        getPairFeatureLearner(3);
     learner.set(PatternTree.PATTERN_COUNT, 1);
-    // System.out.println(validator.test(learner, trainingInput, trainingOutput));
+    System.out.println(validator.test(learner, trainingInput, trainingOutput));
 
   }
 
@@ -152,13 +154,14 @@ public class LearnerTest {
     }
   }
 
+  @Ignore
   public void testGridSearch() throws Exception {
     // GridSearch<Instance, Object, LogisticRegression<Object>> gridSearch =
     // new GridSearch<>(ClassifierValidator.crossValidator(10));
     // gridSearch.add(Updatables.enumeration(LogisticRegression.MAX_ITERATIONS, 100));
     // gridSearch.add(Updatables.linspace(LogisticRegression.REGULARIZATION, 0.001, 10, 25));
 
-    DataFrame iris = DataFrames.permute(Datasets.loadIris());
+    DataFrame iris = null; // DataFrames.permute(Datasets.loadIris());
     DataFrame replaceNa = iris.drop("Class").apply(v -> {
       v.set(v.where(Is::NA), v.mean());
       return v;

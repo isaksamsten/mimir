@@ -1,0 +1,14 @@
+0.2-SNAPSHOT
+============
+
+Breaking changes:
+
+  * Remove generic predictor from Validator
+
+Major changes:
+
+  * none
+
+Minor changes:
+
+  * none

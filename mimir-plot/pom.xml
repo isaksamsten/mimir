@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.briljantframework</groupId>
     <artifactId>mimir</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.2-SNAPSHOT</version>
   </parent>
   <artifactId>mimir-plot</artifactId>
   <packaging>jar</packaging>
@@ -20,12 +20,7 @@
     <dependency>
       <groupId>org.briljantframework</groupId>
       <artifactId>mimir-core</artifactId>
-      <version>0.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.briljantframework</groupId>
-      <artifactId>briljant-dataset</artifactId>
-      <version>0.4-SNAPSHOT</version>
+      <version>0.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.jfree</groupId>

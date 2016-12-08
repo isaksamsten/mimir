@@ -20,6 +20,7 @@
  */
 package org.briljantframework.mimir.classification;
 
+import org.briljantframework.Check;
 import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.Evaluator;
@@ -27,7 +28,7 @@ import org.briljantframework.mimir.evaluation.Evaluator;
 /**
  * @author Isak Karlsson
  */
-public class ClassifierEvaluator<In, Out> implements Evaluator<In, Out, Classifier<In, Out>> {
+public class ClassifierEvaluator<In, Out> implements Evaluator<In, Out> {
 
   private ClassifierEvaluator() {}
 
@@ -39,12 +40,13 @@ public class ClassifierEvaluator<In, Out> implements Evaluator<In, Out, Classifi
   }
 
   @Override
-  public void accept(
-      EvaluationContext<? extends In, ? extends Out, ? extends Classifier<In, Out>> ctx) {
+  public void accept(EvaluationContext<In, Out> ctx) {
+    Check.state(ctx.getPredictor() instanceof Classifier, "expect classifier");
     Output<?> predictions = ctx.getPredictions();
     Output<?> truth = ctx.getPartition().getValidationTarget();
-    ClassifierMeasure cm = new ClassifierMeasure(ctx.getPredictor().getClasses(), predictions,
-        truth, ctx.getEstimates());
+    Classifier<In, Out> classifier = (Classifier<In, Out>) ctx.getPredictor();
+    ClassifierMeasure cm =
+        new ClassifierMeasure(classifier.getClasses(), predictions, truth, ctx.getEstimates());
 
     ctx.getMeasureCollection().add("accuracy", cm.getAccuracy());
     ctx.getMeasureCollection().add("error", cm.getError());

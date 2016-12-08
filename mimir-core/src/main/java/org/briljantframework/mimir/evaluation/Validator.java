@@ -25,10 +25,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.data.ArrayOutput;
 import org.briljantframework.mimir.data.Input;
 import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.evaluation.partition.FoldPartitioner;
 import org.briljantframework.mimir.evaluation.partition.Partition;
 import org.briljantframework.mimir.evaluation.partition.Partitioner;
@@ -75,11 +75,10 @@ import org.briljantframework.mimir.supervised.Predictor;
  */
 public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
 
-  private final Set<Evaluator<In, Out, ? super P>> evaluators;
+  private final Set<Evaluator<In, Out>> evaluators;
   private final Partitioner<In, Out> partitioner;
 
-  public Validator(Set<? extends Evaluator<In, Out, ? super P>> evaluators,
-      Partitioner<In, Out> partitioner) {
+  public Validator(Set<? extends Evaluator<In, Out>> evaluators, Partitioner<In, Out> partitioner) {
     this.evaluators = new HashSet<>(evaluators);
     this.partitioner = partitioner;
   }
@@ -96,10 +95,10 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
    * @param y the target to used during evaluation
    * @return a result
    */
-  public Result<Out> test(Predictor.Learner<? super In, ? super Out, ? extends P> learner, Input<? extends In> x,
-      Output<? extends Out> y) {
+  public Result<Out> test(Predictor.Learner<? super In, ? super Out, ? extends P> learner,
+      Input<? extends In> x, Output<? extends Out> y) {
     Collection<Partition<In, Out>> partitions = getPartitioner().partition(x, y);
-    MutableEvaluationContext<In, Out, P> ctx = new MutableEvaluationContext<>();
+    MutableEvaluationContext<In, Out> ctx = new MutableEvaluationContext<>();
     Output<Out> actual = new ArrayOutput<>();
     Output<Out> predictions = new ArrayOutput<>();
     double avgFitTime = 0, avgPredictTime = 0, avgTrainingSize = 0, avgValidationSize = 0;
@@ -124,7 +123,7 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
       double predictTime = (System.nanoTime() - start) / 1e6;
 
       // Step 4: Compute the given measures
-      EvaluationContext<In, Out, P> evaluationContext = ctx.getEvaluationContext();
+      EvaluationContext<In, Out> evaluationContext = ctx.getEvaluationContext();
       evaluate(evaluationContext, iteration++);
 
       actual.addAll(validationTarget);
@@ -146,23 +145,24 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
    * @param evaluationContext the evaluation context
    * @param fold the current partition number
    */
-  protected void evaluate(EvaluationContext<In, Out, P> evaluationContext, int fold) {
+  protected void evaluate(EvaluationContext<In, Out> evaluationContext, int fold) {
     evaluationContext.getMeasureCollection().add("fold", fold);
     acceptEvaluators(evaluationContext);
   }
 
   /**
    * Fit the given predictor using the supplied training data
-   *  @param learner the learner for learning a predictor of the given type
+   * 
+   * @param learner the learner for learning a predictor of the given type
    * @param x the input features
    * @param y the input label
    */
-  protected abstract P fit(Predictor.Learner<? super In, ? super Out, ? extends P> learner, Input<In> x,
-                           Output<Out> y);
+  protected abstract P fit(Predictor.Learner<? super In, ? super Out, ? extends P> learner,
+      Input<In> x, Output<Out> y);
 
-  protected abstract void predict(MutableEvaluationContext<In, Out, ? extends P> ctx);
+  protected abstract void predict(MutableEvaluationContext<In, Out> ctx);
 
-  protected void acceptEvaluators(EvaluationContext<In, Out, P> context) {
+  protected void acceptEvaluators(EvaluationContext<In, Out> context) {
     evaluators.forEach(evaluator -> evaluator.accept(context));
   }
 
@@ -172,7 +172,7 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
    * @param evaluator the evaluator
    * @return true if the validator contains the specified evaluator
    */
-  public final boolean contains(Evaluator<In, Out, ? super P> evaluator) {
+  public final boolean contains(Evaluator<In, Out> evaluator) {
     return evaluators.contains(evaluator);
   }
 
@@ -182,7 +182,7 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
    * @param evaluator the evaluator to remove
    * @return boolean if the validator contained the specified evaluator
    */
-  public final boolean remove(Evaluator<In, Out, ? super P> evaluator) {
+  public final boolean remove(Evaluator<In, Out> evaluator) {
     return evaluators.remove(evaluator);
   }
 
@@ -206,7 +206,7 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
    *
    * @param evaluator the evaluator
    */
-  public final void add(Evaluator<In, Out, ? super P> evaluator) {
+  public final void add(Evaluator<In, Out> evaluator) {
     this.evaluators.add(evaluator);
   }
 

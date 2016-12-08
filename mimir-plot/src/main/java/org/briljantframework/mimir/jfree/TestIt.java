@@ -20,30 +20,14 @@
  */
 package org.briljantframework.mimir.jfree;
 
-import static org.briljantframework.mimir.data.transform.Transformations.meanImputer;
-import static org.briljantframework.mimir.data.transform.Transformations.zNormalization;
-import static org.briljantframework.mimir.data.transform.Transformations.pairwiseDistance;
-
 import org.apache.commons.math3.distribution.RealDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.array.IntArray;
-import org.briljantframework.array.Range;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.series.Series;
-import org.briljantframework.dataset.io.Datasets;
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Inputs;
-import org.briljantframework.mimir.data.Instance;
-import org.briljantframework.mimir.data.transform.Transformation;
-import org.briljantframework.mimir.distance.EuclideanDistance;
-import org.briljantframework.mimir.mds.MultidimensionalScaling;
-import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.xy.XYDataset;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -100,40 +84,41 @@ class TestIt {
     // Transformer<String, Integer> hello = x.fit("hello");
     // System.out.println(hello.transform("Isak"));
 
-    DataFrame x = Datasets.loadIris();
-    Input<Instance> in = Inputs.asInput(x.drop("Class"));
-    Transformation<Input<Instance>, DoubleArray> f = meanImputer().followedBy(zNormalization())
-        .followedBy(pairwiseDistance(EuclideanDistance.getInstance()))
-        .followedBy(new MultidimensionalScaling(2));
-
-    DoubleArray mds = f.fitTransform(in);
-
-    XYDataset cls1 = new ArrayXYDataset(mds.get(Range.of(50), IntArray.of(0)).boxed(),
-        mds.get(Range.of(0, 50), IntArray.of(1)).boxed());
-    XYDataset cls2 = new ArrayXYDataset(mds.get(Range.of(50, 100), IntArray.of(0)).boxed(),
-        mds.get(Range.of(50, 100), IntArray.of(1)).boxed());
-    XYDataset cls3 = new ArrayXYDataset(mds.get(Range.of(100, 150), IntArray.of(0)).boxed(),
-        mds.get(Range.of(100, 150), IntArray.of(1)).boxed());
-
-
-
-    XYLineAndShapeRenderer cls1Renderer = new XYLineAndShapeRenderer(false, true);
-    XYPlot scatter = new XYPlot(cls1, new NumberAxis("component_0"), new NumberAxis("component_1"), cls1Renderer);
-
-    scatter.setDataset(1, cls2);
-
-    XYLineAndShapeRenderer cls2Renderer = new XYLineAndShapeRenderer(false, true);
-    cls2Renderer.setBaseFillPaint(Plots.DEFAULT_COLORS.get(1));
-    scatter.setRenderer(1, cls2Renderer);
-
-    XYLineAndShapeRenderer cls3Renderer = new XYLineAndShapeRenderer(false, true);
-    cls2Renderer.setBaseFillPaint(Plots.DEFAULT_COLORS.get(2));
-    scatter.setRenderer(2, cls3Renderer);
-    scatter.setDataset(2, cls3);
-
-
-
-    Plots.show(scatter);
+    // DataFrame x = Datasets.loadIris();
+    // Input<Instance> in = Inputs.asInput(x.drop("Class"));
+    // Transformation<Input<Instance>, DoubleArray> f = meanImputer().followedBy(zNormalization())
+    // .followedBy(pairwiseDistance(EuclideanDistance.getInstance()))
+    // .followedBy(new MultidimensionalScaling(2));
+    //
+    // DoubleArray mds = f.fitTransform(in);
+    //
+    // XYDataset cls1 = new ArrayXYDataset(mds.get(Range.of(50), IntArray.of(0)).boxed(),
+    // mds.get(Range.of(0, 50), IntArray.of(1)).boxed());
+    // XYDataset cls2 = new ArrayXYDataset(mds.get(Range.of(50, 100), IntArray.of(0)).boxed(),
+    // mds.get(Range.of(50, 100), IntArray.of(1)).boxed());
+    // XYDataset cls3 = new ArrayXYDataset(mds.get(Range.of(100, 150), IntArray.of(0)).boxed(),
+    // mds.get(Range.of(100, 150), IntArray.of(1)).boxed());
+    //
+    //
+    //
+    // XYLineAndShapeRenderer cls1Renderer = new XYLineAndShapeRenderer(false, true);
+    // XYPlot scatter = new XYPlot(cls1, new NumberAxis("component_0"), new
+    // NumberAxis("component_1"), cls1Renderer);
+    //
+    // scatter.setDataset(1, cls2);
+    //
+    // XYLineAndShapeRenderer cls2Renderer = new XYLineAndShapeRenderer(false, true);
+    // cls2Renderer.setBaseFillPaint(Plots.DEFAULT_COLORS.get(1));
+    // scatter.setRenderer(1, cls2Renderer);
+    //
+    // XYLineAndShapeRenderer cls3Renderer = new XYLineAndShapeRenderer(false, true);
+    // cls2Renderer.setBaseFillPaint(Plots.DEFAULT_COLORS.get(2));
+    // scatter.setRenderer(2, cls3Renderer);
+    // scatter.setDataset(2, cls3);
+    //
+    //
+    //
+    // Plots.show(scatter);
 
 
     // System.out.println(x);

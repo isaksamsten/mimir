@@ -30,13 +30,12 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson
  */
-public class MutableEvaluationContext<In, Out, P extends Predictor<In, Out>>
-    implements EvaluationContext<In, Out, P> {
+public class MutableEvaluationContext<In, Out> implements EvaluationContext<In, Out> {
 
   private final ImmutableEvaluationContext evaluationContext = new ImmutableEvaluationContext();
 
   private Output<Out> predictions;
-  private P predictor;
+  private Predictor<In, Out> predictor;
   private Partition<In, Out> partition;
   private DoubleArray estimates;
 
@@ -69,7 +68,7 @@ public class MutableEvaluationContext<In, Out, P extends Predictor<In, Out>>
    * 
    * @param predictor the predictor
    */
-  public void setPredictor(P predictor) {
+  public void setPredictor(Predictor<In, Out> predictor) {
     this.predictor = Objects.requireNonNull(predictor, "requires a predictor");
   }
 
@@ -88,7 +87,7 @@ public class MutableEvaluationContext<In, Out, P extends Predictor<In, Out>>
     return estimates;
   }
 
-  public P getPredictor() {
+  public Predictor<In, Out> getPredictor() {
     return predictor;
   }
 
@@ -97,11 +96,11 @@ public class MutableEvaluationContext<In, Out, P extends Predictor<In, Out>>
     throw new UnsupportedOperationException();
   }
 
-  public EvaluationContext<In, Out, P> getEvaluationContext() {
+  public EvaluationContext<In, Out> getEvaluationContext() {
     return evaluationContext;
   }
 
-  private class ImmutableEvaluationContext implements EvaluationContext<In, Out, P> {
+  private class ImmutableEvaluationContext implements EvaluationContext<In, Out> {
 
     private final MeasureCollection measureCollection = new MeasureCollection();
 
@@ -121,7 +120,7 @@ public class MutableEvaluationContext<In, Out, P extends Predictor<In, Out>>
     }
 
     @Override
-    public P getPredictor() {
+    public Predictor<In, Out> getPredictor() {
       return predictor;
     }
 

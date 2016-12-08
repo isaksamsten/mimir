@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
+import org.briljantframework.Check;
 import org.briljantframework.array.Array;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
@@ -37,10 +38,9 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class ClassifierValidator<In, Out, T extends Classifier<In, Out>>
-    extends Validator<In, Out, T> {
+public class ClassifierValidator<In, Out> extends Validator<In, Out, Classifier<In, Out>> {
 
-  public ClassifierValidator(Set<? extends Evaluator<In, Out, ? super T>> evaluators,
+  public ClassifierValidator(Set<? extends Evaluator<In, Out>> evaluators,
       Partitioner<In, Out> partitioner) {
     super(evaluators, partitioner);
   }
@@ -50,23 +50,22 @@ public class ClassifierValidator<In, Out, T extends Classifier<In, Out>>
   }
 
   @Override
-  protected T fit(Predictor.Learner<? super In, ? super Out, ? extends T> learner, Input<In> x,
+  protected final Classifier<In, Out> fit(
+      Predictor.Learner<? super In, ? super Out, ? extends Classifier<In, Out>> learner, Input<In> x,
       Output<Out> y) {
     return learner.fit(x, y);
   }
 
   @Override
-  protected void predict(MutableEvaluationContext<In, Out, ? extends T> ctx) {
-    T p = ctx.getPredictor();
+  protected final void predict(MutableEvaluationContext<In, Out> ctx) {
+    Check.state(ctx.getPredictor() instanceof Classifier, "expect classifier");
+    Classifier<In, Out> p = (Classifier<In, Out>) ctx.getPredictor();
     Partition<In, Out> partition = ctx.getEvaluationContext().getPartition();
     Input<In> x = partition.getValidationData();
     ArrayOutput<Out> predictions = new ArrayOutput<>();
 
-    // For the case where the classifier reports the ESTIMATOR characteristic
-    // improve the performance by avoiding to recompute the classifications twice.
     if (p instanceof ProbabilityEstimator) {
       Array<Out> classes = p.getClasses();
-      @SuppressWarnings("unchecked")
       DoubleArray estimate = ((ProbabilityEstimator<In, Out>) p).estimate(x);
       ctx.setEstimates(estimate);
       for (int i = 0; i < estimate.rows(); i++) {
@@ -78,8 +77,8 @@ public class ClassifierValidator<In, Out, T extends Classifier<In, Out>>
     }
   }
 
-  public static <In, Out, T extends Classifier<In, Out>> ClassifierValidator<In, Out, T> holdoutValidator(
-      Input<? extends In> testX, Output<? extends Out> testY) {
+  public static <In, Out> ClassifierValidator<In, Out> holdoutValidator(Input<? extends In> testX,
+      Output<? extends Out> testY) {
     return createValidator(new Partitioner<In, Out>() {
       @Override
       public Collection<Partition<In, Out>> partition(Input<? extends In> x,
@@ -91,23 +90,21 @@ public class ClassifierValidator<In, Out, T extends Classifier<In, Out>>
     });
   }
 
-  public static <In, Out, T extends Classifier<In, Out>> ClassifierValidator<In, Out, T> splitValidator(
-      double testFraction) {
+  public static <In, Out> ClassifierValidator<In, Out> splitValidator(double testFraction) {
     return createValidator(new SplitPartitioner<>(testFraction));
   }
 
-  public static <In, Out, T extends Classifier<In, Out>> ClassifierValidator<In, Out, T> leaveOneOutValidator() {
+  public static <In, Out> ClassifierValidator<In, Out> leaveOneOutValidator() {
     return createValidator(new LeaveOneOutPartitioner<>());
   }
 
-  public static <In, Out, T extends Classifier<In, Out>> ClassifierValidator<In, Out, T> crossValidator(
-      int folds) {
+  public static <In, Out> ClassifierValidator<In, Out> crossValidator(int folds) {
     return createValidator(new FoldPartitioner<>(folds));
   }
 
-  private static <In, Out, T extends Classifier<In, Out>> ClassifierValidator<In, Out, T> createValidator(
+  private static <In, Out> ClassifierValidator<In, Out> createValidator(
       Partitioner<In, Out> partitioner) {
-    ClassifierValidator<In, Out, T> v = new ClassifierValidator<>(partitioner);
+    ClassifierValidator<In, Out> v = new ClassifierValidator<>(partitioner);
     v.add(ClassifierEvaluator.getInstance());
     return v;
   }

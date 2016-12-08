@@ -20,6 +20,7 @@
  */
 package org.briljantframework.mimir.classification;
 
+import org.briljantframework.Check;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.Evaluator;
 import org.briljantframework.mimir.evaluation.MeasureCollection;
@@ -28,7 +29,7 @@ import org.briljantframework.mimir.evaluation.partition.Partition;
 /**
  * @author Isak Karlsson
  */
-public class EnsembleEvaluator<In, Out> implements Evaluator<In, Out, Ensemble<In, Out>> {
+public class EnsembleEvaluator<In, Out> implements Evaluator<In, Out> {
 
   private EnsembleEvaluator() {}
 
@@ -40,10 +41,11 @@ public class EnsembleEvaluator<In, Out> implements Evaluator<In, Out, Ensemble<I
   }
 
   @Override
-  public void accept(
-      EvaluationContext<? extends In, ? extends Out, ? extends Ensemble<In, Out>> ctx) {
-    Partition<? extends In, ? extends Out> partition = ctx.getPartition();
-    Ensemble<In, Out> predictor = ctx.getPredictor();
+  public void accept(EvaluationContext<In, Out> ctx) {
+    Check.state(ctx.getPredictor() instanceof Ensemble, "expect ensemble");
+
+    Partition<In, Out> partition = ctx.getPartition();
+    Ensemble<In, Out> predictor = (Ensemble<In, Out>) ctx.getPredictor();
     EnsembleClassifierMeasure em = new EnsembleClassifierMeasure(predictor,
         partition.getTrainingData(), partition.getTrainingTarget(), partition.getValidationData(),
         partition.getValidationTarget());

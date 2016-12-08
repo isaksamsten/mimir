@@ -28,12 +28,12 @@ import org.briljantframework.mimir.supervised.Predictor;
 /**
  * @author Isak Karlsson
  */
-public interface Evaluator<In, Out, P extends Predictor<In, Out>> {
+public interface Evaluator<In, Out> {
 
   /**
    * Performs a modification to the evaluation context. For example, adding a measure.
    *
    * @param ctx the evaluation context
    */
-  void accept(EvaluationContext<? extends In, ? extends Out, ? extends P> ctx);
+  void accept(EvaluationContext<In, Out> ctx);
 }

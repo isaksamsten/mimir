@@ -27,9 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.series.Series;
-import org.briljantframework.dataset.io.Datasets;
 import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.classification.ClassifierValidator;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
@@ -48,7 +46,7 @@ public class RandomPatternForestTest {
 
   @Test
   public void testLength() throws Exception {
-    DataFrame data = DataFrames.permute(Datasets.loadSyntheticControl());
+    DataFrame data = null;
     Input<TimeSeries> in = new ArrayInput<>();
     Output<Integer> out = new ArrayOutput<>();
 
@@ -71,7 +69,7 @@ public class RandomPatternForestTest {
           @Override
           protected Shapelet createPattern(TimeSeries input) {
             int start = ThreadLocalRandom.current().nextInt(input.size() - 40);
-//            int end = ThreadLocalRandom.current().nextInt(start + 2, input.size() -1);
+            // int end = ThreadLocalRandom.current().nextInt(start + 2, input.size() -1);
             return new IndexSortedNormalizedShapelet(start, 40, input);
           }
         };
@@ -80,8 +78,7 @@ public class RandomPatternForestTest {
         new RandomPatternForest.Learner<>(patternFactory, distance, 100);
 
     f.set(PatternTree.PATTERN_COUNT, 100);
-    ClassifierValidator<TimeSeries, Object, RandomPatternForest<TimeSeries, Object>> validator =
-        ClassifierValidator.crossValidator(10);
+    ClassifierValidator<TimeSeries, Object> validator = ClassifierValidator.crossValidator(10);
 
     System.out.println(validator.test(f, in, out).getMeasures().reduce(Series::mean));
 
