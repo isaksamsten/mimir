@@ -74,7 +74,7 @@ public class RandomPatternForestTest {
           }
         };
 
-    RandomPatternForest.Learner<TimeSeries, Object, Shapelet> f =
+    RandomPatternForest.Learner<TimeSeries, Object> f =
         new RandomPatternForest.Learner<>(patternFactory, distance, 100);
 
     f.set(PatternTree.PATTERN_COUNT, 100);

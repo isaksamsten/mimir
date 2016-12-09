@@ -92,14 +92,14 @@ public class LearnerTest {
     System.out.println(Outputs.valueCounts(testOutput));
     System.out.println(labels.collect(Collectors.valueCounts()));
 
-    RandomPatternForest.Learner<Pair<Series, Series>, Object, Pair<Integer, Double>> learner =
+    RandomPatternForest.Learner<Pair<Series, Series>, Object> learner =
         getPairFeatureLearner(3);
     learner.set(PatternTree.PATTERN_COUNT, 1);
     System.out.println(validator.test(learner, trainingInput, trainingOutput));
 
   }
 
-  private RandomPatternForest.Learner<Pair<Series, Series>, Object, Double> getPairDistanceLearner(
+  private RandomPatternForest.Learner<Pair<Series, Series>, Object> getPairDistanceLearner(
       int size) {
     PatternFactory<Pair<Series, Series>, Double> factory =
         new SamplingPatternFactory<Pair<Series, Series>, Double>() {
@@ -118,7 +118,7 @@ public class LearnerTest {
     return new RandomPatternForest.Learner<>(factory, distance, size);
   }
 
-  private RandomPatternForest.Learner<Pair<Series, Series>, Object, Pair<Integer, Double>> getPairFeatureLearner(
+  private RandomPatternForest.Learner<Pair<Series, Series>, Object> getPairFeatureLearner(
       int size) {
     PatternFactory<Pair<Series, Series>, Pair<Integer, Double>> factory =
         new SamplingPatternFactory<Pair<Series, Series>, Pair<Integer, Double>>() {
