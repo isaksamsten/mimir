@@ -4,6 +4,7 @@
 Breaking changes:
 
   * Remove generic predictor from Validator
+  * Remove unnecessary generic argument for RandomPatternForest.Learner and PatternTree.Learner
 
 Major changes:
 
