@@ -20,10 +20,7 @@
  */
 package org.briljantframework.mimir.data;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -33,7 +30,7 @@ import java.util.function.UnaryOperator;
  * 
  * @author Isak Karlsson
  */
-public class ArrayInput<T> extends AbstractInput<T> {
+public class ArrayInput<T> extends AbstractInput<T> implements RandomAccess {
 
   private final Properties properties;
   private final ArrayList<T> inputs = new ArrayList<>();

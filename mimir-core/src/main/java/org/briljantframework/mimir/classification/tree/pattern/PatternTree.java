@@ -66,14 +66,20 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
       Property.of("assessment", Learner.Assessment.class, Learner.Assessment.IG);
 
   private final int depth;
+  private final TreeNode<In, ?> rootNode;
 
-  private PatternTree(Array<Out> classes, TreeVisitor<In, ?> predictionVisitor, int depth) {
+  private PatternTree(Array<Out> classes, TreeVisitor<In, ?> predictionVisitor, TreeNode<In, ?> rootNode, int depth) {
     super(classes, predictionVisitor);
     this.depth = depth;
+    this.rootNode = rootNode;
   }
 
   public int getDepth() {
     return depth;
+  }
+
+  public TreeNode<In, ?> getRootNode() {
+    return rootNode;
   }
 
   private static class TreeBuilder<In, Out, E> {
@@ -112,7 +118,7 @@ public class PatternTree<In, Out> extends TreeClassifier<In, Out> {
       // WeightVisitor
 
       TreeVisitor<In, ?> visitor = patternVisitorFactory.createVisitor(node, patternDistance);
-      return new PatternTree<>(classes, visitor, params.depth);
+      return new PatternTree<>(classes, visitor, node, params.depth);
     }
 
     private Gain getGain() {

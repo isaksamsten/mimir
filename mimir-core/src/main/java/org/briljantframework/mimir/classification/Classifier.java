@@ -42,7 +42,6 @@ import org.briljantframework.mimir.supervised.Predictor;
  * {@link ClassifierValidator#crossValidator(int) cross-validation} can be employed.
  * </p>
  *
- * A classifier is always atomic, i.e. does not have mutable state.
  *
  * @author Isak Karlsson
  */
