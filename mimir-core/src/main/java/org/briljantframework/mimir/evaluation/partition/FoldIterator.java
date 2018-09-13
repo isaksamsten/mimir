@@ -20,14 +20,16 @@
  */
 package org.briljantframework.mimir.evaluation.partition;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 
 import org.briljantframework.Check;
+import org.briljantframework.array.Arrays;
+import org.briljantframework.array.IntArray;
+import org.briljantframework.array.Range;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.mimir.classification.ClassifierValidator;
-import org.briljantframework.mimir.data.*;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Inputs;
 
 /**
  * Lazy iterator that partitions the supplied {@linkplain DataFrame data frame} and {@code Vector
@@ -96,14 +98,19 @@ import org.briljantframework.mimir.data.*;
 public class FoldIterator<In, Out> implements Iterator<Partition<In, Out>> {
 
   private final int folds, foldSize, rows;
-  private final Input<? extends In> x;
-  private final Output<? extends Out> y;
+  private final Input<In> x;
+  private final List<Out> y;
   private final int reminder;
 
   private int current = 0;
+  private IntArray order;
 
-  public FoldIterator(Input<? extends In> x, Output<? extends Out> y, int folds) {
-    Check.argument(x.size() == y.size(), "Data and target must be of equal size.");
+  public FoldIterator(Input<In> x, List<Out> y, int folds) {
+    this(x, y, folds, false);
+  }
+
+  public FoldIterator(Input<In> x, List<Out> y, int folds, boolean random) {
+    Check.argument(x.size() == y.size(), "Input and output must be of equal size.");
     Check.argument(folds > 1 && folds <= x.size(), "Invalid fold count.");
 
     this.x = Objects.requireNonNull(x);
@@ -112,6 +119,11 @@ public class FoldIterator<In, Out> implements Iterator<Partition<In, Out>> {
     this.folds = folds;
     this.foldSize = rows / folds;
     this.reminder = rows % folds;
+    if (random) {
+      order = Arrays.shuffle(Range.of(x.size()));
+    } else {
+      order = Range.of(x.size());
+    }
   }
 
   @Override
@@ -126,11 +138,11 @@ public class FoldIterator<In, Out> implements Iterator<Partition<In, Out>> {
     }
 
     current += 1;
-    Input<In> xTraining = new ArrayInput<>(x.getProperties());
-    Output<Out> yTraining = new ArrayOutput<>();
+    Input<In> xTraining = x.getSchema().newInput();
+    List<Out> yTraining = new ArrayList<>();
 
-    Input<In> xValidation = new ArrayInput<>(x.getProperties());
-    Output<Out> yValidation = new ArrayOutput<>();
+    Input<In> xValidation = x.getSchema().newInput();
+    List<Out> yValidation = new ArrayList<>();
 
     int index = 0;
     int foldEnd = rows - foldSize * current;
@@ -147,8 +159,9 @@ public class FoldIterator<In, Out> implements Iterator<Partition<In, Out>> {
     // foldSize * current examples as training examples
     int trainingEnd = foldEnd - pad;
     for (int i = 0; i < trainingEnd; i++) {
-      xTraining.add(x.get(index));
-      yTraining.add(y.get(index));
+      int ind = order.get(index);
+      xTraining.add(x.get(ind));
+      yTraining.add(y.get(ind));
       index += 1;
     }
 
@@ -156,20 +169,22 @@ public class FoldIterator<In, Out> implements Iterator<Partition<In, Out>> {
     // next foldSize * current examples until validation end
     int validationEnd = foldEnd + foldSize;
     for (int i = trainingEnd; i < validationEnd; i++) {
-      xValidation.add(x.get(index));
-      yValidation.add(y.get(index));
+      int ind = order.get(index);
+      xValidation.add(x.get(ind));
+      yValidation.add(y.get(ind));
       index += 1;
     }
 
     // Part 3: this is a training part
     for (int i = validationEnd; i < rows; i++) {
-      xTraining.add(x.get(index));
-      yTraining.add(y.get(index));
+      int ind = order.get(index);
+      xTraining.add(x.get(ind));
+      yTraining.add(y.get(ind));
       index += 1;
     }
 
     return new Partition<>(Inputs.unmodifiableInput(xTraining),
-        Inputs.unmodifiableInput(xValidation), Outputs.unmodifiableOutput(yTraining),
-        Outputs.unmodifiableOutput(yValidation));
+        Inputs.unmodifiableInput(xValidation), Collections.unmodifiableList(yTraining),
+        Collections.unmodifiableList(yValidation));
   }
 }

@@ -23,10 +23,10 @@ package org.briljantframework.mimir.evaluation.partition;
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 import org.briljantframework.Check;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 
 /**
  * Creates a k-fold partitioner
@@ -37,18 +37,25 @@ import org.briljantframework.mimir.data.Output;
 public class FoldPartitioner<In, Out> implements Partitioner<In, Out> {
 
   private final int folds;
+  private final boolean shuffle;
 
   public FoldPartitioner(int folds) {
-    this.folds = folds;
+    this(folds, false);
   }
 
+  public FoldPartitioner(int folds, boolean shuffle) {
+    this.folds = folds;
+    this.shuffle = shuffle;
+  }
+
+
   @Override
-  public Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y) {
+  public Collection<Partition<In, Out>> partition(Input<In> x, List<Out> y) {
     Check.dimension(x.size(), y.size());
     return new AbstractCollection<Partition<In, Out>>() {
       @Override
       public Iterator<Partition<In, Out>> iterator() {
-        return new FoldIterator<>(x, y, folds);
+        return new FoldIterator<>(x, y, folds, shuffle);
       }
 
       @Override

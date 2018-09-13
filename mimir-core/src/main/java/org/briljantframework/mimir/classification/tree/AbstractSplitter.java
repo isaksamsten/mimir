@@ -20,26 +20,17 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
-import static org.briljantframework.mimir.classification.tree.AbstractSplitter.Direction.*;
-
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.briljantframework.data.Is;
-import org.briljantframework.data.series.Convert;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Instance;
 
 /**
  * Created by Isak Karlsson on 10/09/14.
  */
-public abstract class AbstractSplitter implements Splitter {
+public abstract class AbstractSplitter<T> implements Splitter<T> {
 
-  protected enum Direction {
-    MISSING, LEFT, RIGHT
-  }
-
-  protected TreeSplit<ValueThreshold> split(Input<? extends Instance> in, ClassSet classSet,
-      int axis, Object threshold) {
+  protected TreeSplit<T> split(Input<? extends T> in, ClassSet classSet,
+      TreeNodeTest<T> tester) {
     ClassSet left = new ClassSet(classSet.getDomain());
     ClassSet right = new ClassSet(classSet.getDomain());
 
@@ -56,24 +47,9 @@ public abstract class AbstractSplitter implements Splitter {
       /*
        * STEP 1: Partition the examples according to threshold
        */
-      boolean nominal = Is.nominal(threshold);
-      double numericThreshold = Double.NaN;
-      if (!nominal) {
-        numericThreshold = Convert.to(Double.class, threshold);
-      }
       for (Example example : sample) {
-        Direction direction = MISSING;
-        Instance record = in.get(example.getIndex());
-        Object axisValue = record.get(axis);
-        if (!Is.NA(axisValue)) {
-          if (nominal) {
-            direction = Is.equal(threshold, axisValue) ? LEFT : RIGHT;
-          } else {
-            // getDouble(axis) can be optimized in some cases
-            direction =
-                Double.compare(record.getDouble(axis), numericThreshold) <= 0 ? LEFT : RIGHT;
-          }
-        }
+        T record = in.get(example.getIndex());
+        Direction direction = tester.test(record);
         switch (direction) {
           case LEFT:
             leftSample.add(example);
@@ -102,7 +78,7 @@ public abstract class AbstractSplitter implements Splitter {
       }
     }
 
-    return new TreeSplit<>(left, right, ValueThreshold.create(axis, threshold));
+    return new TreeSplit<>(left, right, tester);
   }
 
   /**

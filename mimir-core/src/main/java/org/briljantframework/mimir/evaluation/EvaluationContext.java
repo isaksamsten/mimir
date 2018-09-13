@@ -21,9 +21,10 @@
 package org.briljantframework.mimir.evaluation;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.partition.Partition;
 import org.briljantframework.mimir.supervised.Predictor;
+
+import java.util.List;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -42,7 +43,7 @@ public interface EvaluationContext<In, Out> {
    * 
    * @return the predictions
    */
-  Output<Out> getPredictions();
+  List<Out> getPredictions();
 
   /**
    *

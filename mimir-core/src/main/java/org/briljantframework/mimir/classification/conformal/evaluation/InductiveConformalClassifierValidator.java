@@ -23,11 +23,12 @@ package org.briljantframework.mimir.classification.conformal.evaluation;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.conformal.InductiveConformalClassifier;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.partition.Partition;
 import org.briljantframework.mimir.evaluation.partition.Partitioner;
 import org.briljantframework.mimir.evaluation.partition.SplitPartitioner;
 import org.briljantframework.mimir.supervised.Predictor;
+
+import java.util.List;
 
 /**
  * Created by isak on 2016-12-07.
@@ -49,10 +50,10 @@ public class InductiveConformalClassifierValidator<In, Out>
     this.calibrationSize = calibrationSize;
   }
 
-  @Override
+  // @Override
   protected InductiveConformalClassifier<In, Out> fit(
-      Predictor.Learner<? super In, ? super Out, ? extends InductiveConformalClassifier<In, Out>> learner,
-      Input<In> x, Output<Out> y) {
+      Predictor.Learner<In, Out, ? extends InductiveConformalClassifier<In, Out>> learner,
+      Input<In> x, List<Out> y) {
     SplitPartitioner<In, Out> partitioner = new SplitPartitioner<>(calibrationSize);
     Partition<In, Out> partition = partitioner.partition(x, y).iterator().next();
 

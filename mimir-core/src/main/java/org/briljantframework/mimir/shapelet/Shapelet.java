@@ -20,7 +20,9 @@
  */
 package org.briljantframework.mimir.shapelet;
 
-import org.briljantframework.DoubleSequence;
+import org.briljantframework.DoubleVector;
+
+import java.util.StringJoiner;
 
 /**
  * A Shapelet is a (short) view of a larger data series (i.e. a vector). The underlying vector
@@ -38,12 +40,12 @@ import org.briljantframework.DoubleSequence;
  * @author Isak Karlsson
  */
 // TODO: override getAs... to support the changed indexing
-public class Shapelet implements DoubleSequence {
+public class Shapelet implements DoubleVector {
 
-  private final DoubleSequence timeSeries;
+  private final DoubleVector timeSeries;
   private final int start, length;
 
-  public Shapelet(int start, int length, DoubleSequence timeSeries) {
+  public Shapelet(int start, int length, DoubleVector timeSeries) {
     this.start = start;
     this.length = length;
     this.timeSeries = timeSeries;
@@ -68,24 +70,12 @@ public class Shapelet implements DoubleSequence {
     return timeSeries.getDouble(start + index);
   }
 
-  // @Override
-  // public Series reindex(Index index) {
-  // Series n = parent.copy();
-  // n.setIndex(index);
-  // return new Shapelet(start, length, n);
-  // }
-
-  // @Override
-  // protected double getDoubleElement(int i) {
-  // return parent.loc().getDouble(start + i);
-  // }
-
-  // @Override
-  // public String toString() {
-  // List<String> r = new ArrayList<>();
-  // for (int i = 0; i < size(); i++) {
-  // r.add(getStringElement(i));
-  // }
-  // return String.format("Shapelet(%s, shape=(%d, 1))", r, size());
-  // }
+  @Override
+  public String toString() {
+    StringJoiner j = new StringJoiner(",", "[", "]");
+    for (int i = 0; i < size(); i++) {
+      j.add(getDouble(i) + "");
+    }
+    return j.toString();
+  }
 }

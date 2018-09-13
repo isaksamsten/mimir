@@ -20,17 +20,7 @@
  */
 package org.briljantframework.mimir.data.transform;
 
-import java.util.List;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import org.briljantframework.Check;
-import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.Is;
-import org.briljantframework.data.dataframe.DataFrame;
-import org.briljantframework.data.series.Series;
-import org.briljantframework.mimir.data.*;
-import org.briljantframework.mimir.distance.Distance;
+import org.briljantframework.mimir.data.Input;
 
 
 public final class Transformers {
@@ -39,7 +29,7 @@ public final class Transformers {
 
   public static <T> Transformer<Input<T>, Input<T>> head(int k) {
     return (in) -> {
-      Input<T> newInput = new ArrayInput<T>();
+      Input<T> newInput = in.getSchema().newInput();
       for (int i = 0; i < k; i++) {
         newInput.add(in.get(i));
       }

@@ -20,20 +20,19 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
+import java.util.List;
 import java.util.Objects;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.Array;
 import org.briljantframework.mimir.classification.ProbabilityEstimator;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public class InductiveConformalClassifier<In, Out> extends AbstractConformalClassifier<In, Out> {
+public class InductiveConformalClassifier<In, Out> extends ConformalClassifier<In, Out> {
 
   private final Nonconformity<In, Out> nonconformity;
   private Calibrator<In, Out> calibrator;
@@ -52,7 +51,7 @@ public class InductiveConformalClassifier<In, Out> extends AbstractConformalClas
    * @param x the input
    * @param y the calibration target
    */
-  public void calibrate(Input<? extends In> x, Output<? extends Out> y) {
+  public void calibrate(Input<In> x, List<Out> y) {
     calibration = calibrator.calibrate(nonconformity, x, y);
   }
 
@@ -71,7 +70,7 @@ public class InductiveConformalClassifier<In, Out> extends AbstractConformalClas
    * @author Isak Karlsson <isak-kar@dsv.su.se>
    */
   public static class Learner<In, Out>
-      extends AbstractLearner<In, Out, InductiveConformalClassifier<In, Out>> {
+      extends ConformalClassifier.Learner<In, Out, InductiveConformalClassifier<In, Out>> {
 
     private final Nonconformity.Learner<In, Out> learner;
     private final Calibrator<In, Out> calibrator;
@@ -96,8 +95,7 @@ public class InductiveConformalClassifier<In, Out> extends AbstractConformalClas
     }
 
     @Override
-    public InductiveConformalClassifier<In, Out> fit(Input<? extends In> in,
-        Output<? extends Out> out) {
+    public InductiveConformalClassifier<In, Out> fit(Input<In> in, List<Out> out) {
       Objects.requireNonNull(in, "Input data is required.");
       Objects.requireNonNull(out, "Input target is required.");
       Check.argument(in.size() == out.size(),

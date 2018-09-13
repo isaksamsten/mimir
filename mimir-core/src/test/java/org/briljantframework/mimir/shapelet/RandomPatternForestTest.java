@@ -21,66 +21,58 @@
 package org.briljantframework.mimir.shapelet;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 
-import org.apache.commons.lang3.StringUtils;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.classification.Classifier;
-import org.briljantframework.mimir.classification.ClassifierValidator;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
 import org.briljantframework.mimir.classification.tree.pattern.*;
-import org.briljantframework.mimir.data.ArrayInput;
-import org.briljantframework.mimir.data.ArrayOutput;
-import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.timeseries.TimeSeries;
-import org.briljantframework.mimir.distance.EarlyAbandonSlidingDistance;
 import org.junit.Ignore;
 import org.junit.Test;
 
 @Ignore
 public class RandomPatternForestTest {
 
+
   @Test
   public void testLength() throws Exception {
-    DataFrame data = null;
-    Input<TimeSeries> in = new ArrayInput<>();
-    Output<Integer> out = new ArrayOutput<>();
-
-    for (Series series : data.getRows()) {
-      in.add(TimeSeries.copyOf(series.values().subList(1, series.size())));
-      out.add(series.values().getInt(0));
-    }
-
-
-    EarlyAbandonSlidingDistance d = new EarlyAbandonSlidingDistance();
-    PatternDistance<TimeSeries, Shapelet> distance = new PatternDistance<TimeSeries, Shapelet>() {
-      @Override
-      public double computeDistance(TimeSeries a, Shapelet b) {
-        return d.compute(a, b);
-      }
-    };
-
-    PatternFactory<TimeSeries, Shapelet> patternFactory =
-        new SamplingPatternFactory<TimeSeries, Shapelet>() {
-          @Override
-          protected Shapelet createPattern(TimeSeries input) {
-            int start = ThreadLocalRandom.current().nextInt(input.size() - 40);
-            // int end = ThreadLocalRandom.current().nextInt(start + 2, input.size() -1);
-            return new IndexSortedNormalizedShapelet(start, 40, input);
-          }
-        };
-
-    RandomPatternForest.Learner<TimeSeries, Object> f =
-        new RandomPatternForest.Learner<>(patternFactory, distance, 100);
-
-    f.set(PatternTree.PATTERN_COUNT, 100);
-    ClassifierValidator<TimeSeries, Object> validator = ClassifierValidator.crossValidator(10);
-
-    System.out.println(validator.test(f, in, out).getMeasures().reduce(Series::mean));
+//    DataFrame data = null;
+//    Input<TimeSeries> in = new MutableInput<>();
+//    Output<Integer> out = new MutableOutput<>();
+//
+//    for (Series series : data.getRows()) {
+//      in.add(TimeSeries.copyOf(series.values().subList(1, series.size())));
+//      out.add(series.values().getInt(0));
+//    }
+//
+//
+//    EarlyAbandonSlidingDistance d = new EarlyAbandonSlidingDistance();
+//    PatternDistance<TimeSeries, Shapelet> distance = new PatternDistance<TimeSeries, Shapelet>() {
+//      @Override
+//      public double computeDistance(TimeSeries a, Shapelet b) {
+//        return d.compute(a, b);
+//      }
+//    };
+//
+//    PatternFactory<TimeSeries, Shapelet> patternFactory =
+//        new SamplingPatternFactory<TimeSeries, Shapelet>() {
+//          @Override
+//          protected Shapelet createPattern(TimeSeries input) {
+//            int start = ThreadLocalRandom.current().nextInt(input.size() - 40);
+//            // int end = ThreadLocalRandom.current().nextInt(start + 2, input.size() -1);
+//            return new IndexSortedNormalizedShapelet(start, 40, input);
+//          }
+//        };
+//
+//    RandomPatternForest.Learner<TimeSeries, Object> f =
+//        new RandomPatternForest.Learner<>(patternFactory, distance, 100);
+//
+//    f.set(PatternTree.PATTERN_COUNT, 100);
+//    ClassifierValidator<TimeSeries, Object> validator = ClassifierValidator.crossValidator(10);
+//
+//    System.out.println(validator.test(f, in, out).getMeasures().reduce(Series::mean));
 
 
 
@@ -310,7 +302,7 @@ public class RandomPatternForestTest {
     // Mote_strain = 0.5
     // DataFrame x = train.drop(0);
     // Input<Instance> input = Inputs.newInput(x);
-    // Output<Object> output = new ArrayOutput<>(y.toList());
+    // Output<Object> output = new MutableOutput<>(y.toList());
     //
     // SplitPartitioner<Instance, Object> partitioner = new SplitPartitioner<>(0.1);
     // Partition<Instance, Object> trainPart = partitioner.partition(input,
@@ -429,9 +421,9 @@ public class RandomPatternForestTest {
     DataFrame.Builder builder = DataFrame.newBuilder();
     builder.setColumn("Class", x.get(0));
     for (Object column : columns) {
-      if (StringUtils.isWhitespace(column.toString())) {
-        continue;
-      }
+//      if (StringUtils.isWhitespace(column.toString())) {
+//        continue;
+//      }
       Series.Builder columnBuilder = Series.Builder.of(Boolean.class);
       for (Object recordKey : x.getIndex().keySet()) {
         columnBuilder.add(x.ix().getRow(recordKey).values().contains(column));

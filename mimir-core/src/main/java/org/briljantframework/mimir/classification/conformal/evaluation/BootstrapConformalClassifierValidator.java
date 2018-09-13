@@ -23,9 +23,10 @@ package org.briljantframework.mimir.classification.conformal.evaluation;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.conformal.BootstrapConformalClassifier;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.partition.Partitioner;
 import org.briljantframework.mimir.supervised.Predictor;
+
+import java.util.List;
 
 /**
  * Created by isak on 2016-12-07.
@@ -42,10 +43,10 @@ public class BootstrapConformalClassifierValidator<In, Out>
     super(partitioner);
   }
 
-  @Override
+  // @Override
   protected BootstrapConformalClassifier<In, Out> fit(
-      Predictor.Learner<? super In, ? super Out, ? extends BootstrapConformalClassifier<In, Out>> learner,
-      Input<In> x, Output<Out> y) {
+      Predictor.Learner<In, Out, ? extends BootstrapConformalClassifier<In, Out>> learner,
+      Input<In> x, List<Out> y) {
     return learner.fit(x, y);
   }
 }

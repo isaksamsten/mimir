@@ -35,9 +35,8 @@ import org.briljantframework.array.Array;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Property;
-import org.briljantframework.mimir.supervised.AbstractLearner;
-import org.briljantframework.mimir.supervised.Characteristic;
+import org.briljantframework.mimir.Property;
+import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -98,11 +97,6 @@ public abstract class Ensemble<In, Out> extends AbstractClassifier<In, Out>
     return Collections.unmodifiableList(members);
   }
 
-  @Override
-  public Set<Characteristic> getCharacteristics() {
-    return Collections.singleton(ClassifierCharacteristic.ESTIMATOR);
-  }
-
   protected DoubleArray averageProbabilities(In record) {
     List<DoubleArray> predictions =
         members.parallelStream().map(model -> model.estimate(record)).collect(Collectors.toList());
@@ -120,7 +114,7 @@ public abstract class Ensemble<In, Out> extends AbstractClassifier<In, Out>
    * @author Isak Karlsson
    */
   public abstract static class Learner<In, Out, P extends Ensemble<In, Out>>
-      extends AbstractLearner<In, Out, P> {
+      extends Predictor.Learner<In, Out, P> {
 
     private final static ThreadPoolExecutor THREAD_POOL;
     private final static int CORES;

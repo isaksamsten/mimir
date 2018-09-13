@@ -21,23 +21,25 @@
 package org.briljantframework.mimir.classification.tree.pattern;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.ToDoubleFunction;
 
+import org.briljantframework.Check;
 import org.briljantframework.array.Array;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
+import org.briljantframework.mimir.Properties;
 import org.briljantframework.mimir.classification.Classifier;
 import org.briljantframework.mimir.classification.Ensemble;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.classification.tree.Example;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.Outputs;
-import org.briljantframework.mimir.data.Properties;
+import org.briljantframework.mimir.data.Schema;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 
 /**
@@ -51,9 +53,12 @@ import org.briljantframework.mimir.evaluation.EvaluationContext;
  */
 public class RandomPatternForest<In, Out> extends Ensemble<In, Out> {
 
-  private RandomPatternForest(Array<Out> classes, List<? extends PatternTree<In, Out>> members,
-      BooleanArray oobIndicator) {
+  private final Schema<In> schema;
+
+  private RandomPatternForest(Schema<In> schema, Array<Out> classes,
+      List<? extends PatternTree<In, Out>> members, BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
+    this.schema = schema;
   }
 
   public double getAverageDepth() {
@@ -69,6 +74,7 @@ public class RandomPatternForest<In, Out> extends Ensemble<In, Out> {
 
   @Override
   public DoubleArray estimate(In input) {
+    Check.argument(schema.isValid(input), "is valid input");
     return averageProbabilities(input);
   }
 
@@ -87,52 +93,52 @@ public class RandomPatternForest<In, Out> extends Ensemble<In, Out> {
     private final PatternFactory<? super In, ? extends E> patternFactory;
     private final PatternDistance<? super In, ? super E> patternDistance;
     private final PatternVisitorFactory<In, E> patternVisitorFactory;
+    private final ToDoubleFunction<E> weighter;
 
     private TreeFitHelper(PatternFactory<? super In, ? extends E> patternFactory,
         PatternDistance<? super In, ? super E> patternDistance,
-        PatternVisitorFactory<In, E> patternVisitorFactory) {
+        PatternVisitorFactory<In, E> patternVisitorFactory, ToDoubleFunction<E> weighter) {
       this.patternFactory = patternFactory;
       this.patternDistance = patternDistance;
       this.patternVisitorFactory = patternVisitorFactory;
+      this.weighter = weighter;
     }
 
     final PatternTree.Learner<In, Out> getPatternTree(Array<Out> classes, ClassSet sample,
         Properties properties) {
       return new PatternTree.Learner<>(classes, patternFactory, patternDistance,
-          patternVisitorFactory, sample, properties);
+          patternVisitorFactory, weighter, sample, properties);
     }
   }
 
   public static class Learner<In, Out>
       extends Ensemble.Learner<In, Out, RandomPatternForest<In, Out>> {
 
-    // private final PatternTree.Configurator<In, ?> configurator;
-//    private final PatternFactory<? super In, ? extends E> patternFactory;
-//    private final PatternDistance<? super In, ? super E> patternDistance;
-//    private final PatternVisitorFactory<In, E> patternVisitorFactory;
-
     private final TreeFitHelper<In, Out, ?> treeFitHelper;
 
     public <E> Learner(PatternFactory<? super In, ? extends E> patternFactory,
         PatternDistance<? super In, ? super E> patternDistance, int size) {
-      this(patternFactory, patternDistance, new DefaultPatternVisitorFactory<>(), size);
+      this(patternFactory, patternDistance, new DefaultPatternVisitorFactory<>(), (x) -> 1, size);
+    }
+
+    public <E> Learner(PatternFactory<? super In, ? extends E> patternFactory,
+        PatternDistance<? super In, ? super E> patternDistance, ToDoubleFunction<E> weighter,
+        int size) {
+      this(patternFactory, patternDistance, new DefaultPatternVisitorFactory<>(), weighter, size);
     }
 
     public <E> Learner(PatternFactory<? super In, ? extends E> patternFactory,
         PatternDistance<? super In, ? super E> patternDistance,
-        PatternVisitorFactory<In, E> patternVisitorFactory, int size) {
+        PatternVisitorFactory<In, E> patternVisitorFactory, ToDoubleFunction<E> weighter,
+        int size) {
       super(size);
-//      this.patternFactory = patternFactory;
-//      this.patternDistance = patternDistance;
-//      this.patternVisitorFactory = patternVisitorFactory;
-
-      this.treeFitHelper = new TreeFitHelper<In, Out, E>(patternFactory, patternDistance, patternVisitorFactory);
+      this.treeFitHelper =
+          new TreeFitHelper<>(patternFactory, patternDistance, patternVisitorFactory, weighter);
     }
 
     @Override
-    public RandomPatternForest<In, Out> fit(Input<? extends In> x, Output<? extends Out> y) {
-      Array<Out> classes = Outputs.unique(y);
-
+    public RandomPatternForest<In, Out> fit(Input<In> x, List<Out> y) {
+      Array<Out> classes = Array.copyOf(new HashSet<>(y));
       ClassSet classSet = new ClassSet(y, classes);
       List<FitTask<In, Out>> tasks = new ArrayList<>();
       int members = get(Ensemble.SIZE);
@@ -140,13 +146,14 @@ public class RandomPatternForest<In, Out> extends Ensemble<In, Out> {
       for (int i = 0; i < members; i++) {
         BooleanArray oobI = oobIndicator.getColumn(i);
         ClassSet sample = sample(classSet, ThreadLocalRandom.current(), oobI);
-        PatternTree.Learner<In, Out> patternTree = treeFitHelper.getPatternTree(classes, sample, getParameters());
+        PatternTree.Learner<In, Out> patternTree =
+            treeFitHelper.getPatternTree(classes, sample, getParameters());
         tasks.add(new FitTask<>(x, y, patternTree));
       }
 
       try {
         List<PatternTree<In, Out>> models = Ensemble.Learner.execute(tasks);
-        return new RandomPatternForest<>(classes, models, oobIndicator);
+        return new RandomPatternForest<>(x.getSchema(), classes, models, oobIndicator);
       } catch (Exception e) {
         e.printStackTrace();
         throw new RuntimeException(e);
@@ -190,40 +197,20 @@ public class RandomPatternForest<In, Out> extends Ensemble<In, Out> {
     }
 
     private static final class FitTask<In, Out> implements Callable<PatternTree<In, Out>> {
-      private final Input<? extends In> x;
-      private final Output<? extends Out> y;
+      private final Input<In> x;
+      private final List<Out> y;
       private final PatternTree.Learner<In, Out> patternTree;
-      // private final BooleanArray oobIndicator;
 
-
-      // private FitTask(ClassSet classSet, Input<? extends In> x, Output<?> y,
-      // PatternTree.Configurator<In, ?> patternTree, List<?> classes,
-      // BooleanArray oobIndicator) {
-      // this.classSet = classSet;
-      // this.x = x;
-      // this.y = y;
-      // this.classes = classes;
-      // this.patternTree = patternTree;
-      // this.oobIndicator = oobIndicator;
-      // }
-
-      public FitTask(Input<? extends In> x, Output<? extends Out> y,
-          PatternTree.Learner<In, Out> patternTree) {
+      public FitTask(Input<In> x, List<Out> y, PatternTree.Learner<In, Out> patternTree) {
         this.patternTree = patternTree;
         this.x = x;
         this.y = y;
-        // this.oobIndicator = oobIndicator;
-
       }
 
       @Override
       public PatternTree<In, Out> call() throws Exception {
-        // Random random = new Random(Thread.currentThread().getId() * System.nanoTime());
-        // ClassSet sample = sample(classSet, random);
         return patternTree.fit(x, y);
       }
-
-      // public ClassSet sampleNoBootstrap(c)
     }
   }
 }

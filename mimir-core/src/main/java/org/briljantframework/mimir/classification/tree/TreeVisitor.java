@@ -25,19 +25,25 @@ import org.briljantframework.array.DoubleArray;
 /**
  * @author Isak Karlsson
  */
-public interface TreeVisitor<In, T> {
+public class TreeVisitor<In> {
 
-  TreeNode<In, T> getRoot();
-
-  default DoubleArray visit(In example) {
-    return getRoot().visit(this, example);
-  }
-
-  default DoubleArray visit(TreeNode<In, T> node, In example) {
+  public DoubleArray visit(TreeNode<In> node, In example) {
     return node.visit(this, example);
   }
 
-  DoubleArray visitLeaf(TreeLeaf<In, T> leaf, In example);
+  public DoubleArray visitLeaf(TreeLeaf<In> leaf, In example) {
+    return leaf.getProbabilities();
+  }
 
-  DoubleArray visitBranch(TreeBranch<In, T> node, In example);
+  public DoubleArray visitBranch(TreeBranch<In> node, In example) {
+    switch (node.getTreeNodeTest().test(example)) {
+      case LEFT:
+        return visit(node.getLeft(), example);
+      case RIGHT:
+        return visit(node.getRight(), example);
+      case MISSING:
+      default:
+        return visit(node.getLeft(), example);
+    }
+  }
 }

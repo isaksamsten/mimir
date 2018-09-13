@@ -21,12 +21,12 @@
 package org.briljantframework.mimir.classification.conformal;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 import org.briljantframework.util.primitive.DoubleList;
 
 /**
@@ -77,6 +77,5 @@ public interface Calibrator<In, Out> {
    * @param x the calibration data
    * @param y the calibration target
    */
-  CalibratorScores<In, Out> calibrate(Nonconformity<? super In, ? super Out> nc, Input<? extends In> x,
-      Output<? extends Out> y);
+  CalibratorScores<In, Out> calibrate(Nonconformity<In, Out> nc, Input<In> x, List<Out> y);
 }

@@ -23,10 +23,10 @@ package org.briljantframework.mimir.evaluation.partition;
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 import org.briljantframework.Check;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 
 /**
  * The split partitioner simply partitions the input {@code DataFrame} (with {@code m rows}) and
@@ -42,18 +42,24 @@ import org.briljantframework.mimir.data.Output;
 public class SplitPartitioner<In, Out> implements Partitioner<In, Out> {
 
   private final double testFraction;
+  private final boolean shuffle;
 
   public SplitPartitioner(double testFraction) {
+    this(testFraction, false);
+  }
+
+  public SplitPartitioner(double testFraction, boolean shuffle) {
+    this.shuffle = shuffle;
     Check.inRange(testFraction, 0, 1);
     this.testFraction = testFraction;
   }
 
   @Override
-  public Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y) {
+  public Collection<Partition<In, Out>> partition(Input<In> x, List<Out> y) {
     return new AbstractCollection<Partition<In, Out>>() {
       @Override
       public Iterator<Partition<In, Out>> iterator() {
-        return new SplitIterator<>(x, y, testFraction);
+        return new SplitIterator<>(x, y, testFraction, shuffle);
       }
 
       @Override

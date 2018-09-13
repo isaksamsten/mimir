@@ -5,7 +5,7 @@
   <groupId>org.briljantframework</groupId>
   <artifactId>mimir</artifactId>
   <packaging>pom</packaging>
-  <version>0.2-SNAPSHOT</version>
+  <version>0.3-SNAPSHOT</version>
 
   <name>Mimir framework</name>
   <description>Mimir - statistical learning framework</description>
@@ -85,9 +85,6 @@
 
   <modules>
     <module>mimir-core</module>
-    <module>mimir-plot</module>
-    <!--<module>mimir-weka</module>-->
-    <!--<module>mimir-image</module>-->
   </modules>
 
   <properties>

@@ -20,39 +20,33 @@
  */
 package org.briljantframework.mimir.data;
 
-import java.util.List;
+import java.util.AbstractList;
+import java.util.Iterator;
 
 /**
  * A collection of input variables.
  *
  * @author Isak Karlsson
  */
-public interface Input<T> extends List<T> {
+public abstract class Input<T> extends AbstractList<T> {
+  static final String ILLEGAL_SCHEMA = "Illegal value according to schema";
 
-  /**
-   * Returns a collection of properties for the given input.
-   * 
-   * @return the collection of properties for the input.
-   */
-  Properties getProperties();
+  @Override
+  public Iterator<T> iterator() {
+    return new Iterator<T>() {
+      public int current = 0;
 
-  /**
-   * Return true if the input contains the specified property.
-   * 
-   * @param property the key
-   * @return true if key is set
-   */
-  default boolean hasProperty(Property<?> property) {
-    return getProperties().contains(property);
+      @Override
+      public boolean hasNext() {
+        return current < size();
+      }
+
+      @Override
+      public T next() {
+        return get(current++);
+      }
+    };
   }
 
-  /**
-   * Returns the specified property.
-   * 
-   * @param property the property
-   * @return the value for the given property
-   */
-  default <E> E getProperty(Property<E> property) {
-    return getProperties().get(property);
-  }
+  public abstract Schema<T> getSchema();
 }

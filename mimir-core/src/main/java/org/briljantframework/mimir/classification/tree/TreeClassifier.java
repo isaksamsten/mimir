@@ -20,10 +20,12 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
+import org.briljantframework.Check;
 import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.AbstractClassifier;
 import org.briljantframework.mimir.classification.ProbabilityEstimator;
+import org.briljantframework.mimir.data.Schema;
 
 /**
  * Represents a Tree based predictor. Uses a {@link TreeVisitor} to make predictions.
@@ -33,15 +35,21 @@ import org.briljantframework.mimir.classification.ProbabilityEstimator;
 public class TreeClassifier<In, Out> extends AbstractClassifier<In, Out>
     implements ProbabilityEstimator<In, Out> {
 
-  private final TreeVisitor<In, ?> predictionVisitor;
+  private final TreeVisitor<In> predictionVisitor;
+  private final TreeNode<In> root;
+  private final Schema<In> schema;
 
-  protected TreeClassifier(Array<Out> classes, TreeVisitor<In, ?> predictionVisitor) {
+  protected TreeClassifier(Schema<In> schema, Array<Out> classes, TreeNode<In> root,
+      TreeVisitor<In> predictionVisitor) {
     super(classes);
+    this.schema = schema;
+    this.root = root;
     this.predictionVisitor = predictionVisitor;
   }
 
   @Override
   public DoubleArray estimate(In record) {
-    return predictionVisitor.visit(record);
+    Check.argument(schema.isValid(record));
+    return root.visit(predictionVisitor, record);
   }
 }

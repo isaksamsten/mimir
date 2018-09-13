@@ -20,6 +20,22 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
+import java.io.FileReader;
+import java.util.List;
+
+import org.briljantframework.data.dataframe.DataFrame;
+import org.briljantframework.data.parser.CsvParser;
+import org.briljantframework.data.parser.Parser;
+import org.briljantframework.data.series.Series;
+import org.briljantframework.mimir.classification.ClassifierValidator;
+import org.briljantframework.mimir.classification.DecisionTree;
+import org.briljantframework.mimir.classification.RandomForest;
+import org.briljantframework.mimir.classification.tree.RandomSplitter;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.evaluation.Result;
+import org.briljantframework.mimir.supervised.data.DataFrameInput;
+import org.briljantframework.mimir.supervised.data.Instance;
+import org.briljantframework.mimir.supervised.data.MultidimensionalSchema;
 import org.junit.Test;
 
 /**
@@ -29,11 +45,46 @@ public class ProbabilityCostFunctionTest {
 
   @Test
   public void testMargin() throws Exception {
+    Parser parser = new CsvParser(new FileReader(
+        "/Users/isak/anaconda3/pkgs/blaze-0.9.1-py35_0/lib/python3.5/site-packages/blaze/examples/data/iris.csv"));
+
+    DataFrame data = parser.parse();
+
+    System.out.println(data);
+    Input<Instance> input = new DataFrameInput(data.drop("species"));
+    List<Object> output = data.get("species").values();
+
+    RandomForest.Learner<Object> model = new RandomForest.Learner<>(100);
+    model.set(DecisionTree.SPLITTER, RandomSplitter.sqrt());
+    System.out.println(input.getSchema());
+
+    ClassifierValidator<Instance, Object> validator = ClassifierValidator.crossValidator(10);
+    Result<Object> test = validator.test(model, input, output);
+    System.out.println(test.getMeasures().reduce(Series::mean));
+
+
+
+    // InductiveConformalClassifier.Learner<Instance, Object> iccl =
+    // new InductiveConformalClassifier.Learner<>(model);
+    // InductiveConformalClassifier<Instance, Object> icc = iccl.fit(input, output);
+    // icc.calibrate(input, output);
+    // System.out.println(icc.predict(input.get(33), 0.01));
+
+
 
   }
 
   @Test
   public void testInverseProbability() throws Exception {
+    MultidimensionalSchema schema = new MultidimensionalSchema(3, 0);
+    schema.setAttributeName(0, "age");
+    schema.setAttributeName(1, "income");
+    schema.setAttributeName(2, "bmi");
 
+    System.out.println(schema);
+    Input<Instance> in = schema.newInput();
+    in.add(schema.newInstance().set("age", 10).set("income", 0).set("bmi", 33).build());
+
+    System.out.println(in);
   }
 }

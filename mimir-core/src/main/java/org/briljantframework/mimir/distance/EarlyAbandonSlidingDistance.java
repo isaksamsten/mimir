@@ -20,17 +20,19 @@
  */
 package org.briljantframework.mimir.distance;
 
-import java.util.Objects;
-
-import org.briljantframework.DoubleSequence;
-import org.briljantframework.data.series.Series;
-import org.briljantframework.mimir.shapelet.IndexSortedNormalizedShapelet;
+import org.briljantframework.DoubleVector;
 import org.briljantframework.mimir.shapelet.NormalizedShapelet;
 
 /**
  * Created by Isak Karlsson on 23/09/14.
  */
-public class EarlyAbandonSlidingDistance implements Distance<DoubleSequence> {
+public class EarlyAbandonSlidingDistance implements Distance<DoubleVector> {
+
+  private static EarlyAbandonSlidingDistance INSTANCE = new EarlyAbandonSlidingDistance();
+
+  public static EarlyAbandonSlidingDistance getInstance() {
+    return INSTANCE;
+  }
 
   /**
    * If {@code a} is shorter than {@code b}, then {@code a} is considered a shapelet and slid
@@ -44,25 +46,26 @@ public class EarlyAbandonSlidingDistance implements Distance<DoubleSequence> {
    * @return the shortest possible distance of a (or b) as it is slid against b (or a)
    */
   @Override
-  public double compute(DoubleSequence a, DoubleSequence b) {
+  public double compute(DoubleVector a, DoubleVector b) {
     double minDistance = Double.POSITIVE_INFINITY;
-    DoubleSequence candidate = a.size() < b.size() ? a : b;
-    DoubleSequence vector = a.size() >= b.size() ? a : b;
+    DoubleVector candidate = a.size() < b.size() ? a : b;
+    DoubleVector vector = a.size() >= b.size() ? a : b;
     if (!(candidate instanceof NormalizedShapelet)) {
       if (!(vector instanceof NormalizedShapelet)) {
         vector = new NormalizedShapelet(0, vector.size(), vector);
       }
       // return new SlidingDistance(EuclideanDistance.getInstance()).compute(vector,
       // new NormalizedShapelet(0, candidate.size(), candidate));
-       candidate = new NormalizedShapelet(0, candidate.size(), candidate);
-//      throw new IllegalArgumentException("Candidate shapelet must be z-normalized");
+      candidate = new NormalizedShapelet(0, candidate.size(), candidate);
+      // throw new IllegalArgumentException("Candidate shapelet must be z-normalized");
     }
 
     int[] order = null;
+    // TODO: this does no longer work.
     // If the candidate is IndexSorted, use this to optimize the search
-    if (candidate instanceof IndexSortedNormalizedShapelet) {
-      order = ((IndexSortedNormalizedShapelet) candidate).getSortOrder();
-    }
+    // if (candidate instanceof IndexSortedNormalizedShapelet) {
+    // order = ((IndexSortedNormalizedShapelet) candidate).getSortOrder();
+    // }
 
     int seriesSize = vector.size();
     int m = candidate.size();
@@ -93,7 +96,7 @@ public class EarlyAbandonSlidingDistance implements Distance<DoubleSequence> {
     return Math.sqrt(minDistance / candidate.size());
   }
 
-  double distance(DoubleSequence c, double[] t, int j, int m, int[] order, double mean, double std,
+  double distance(DoubleVector c, double[] t, int j, int m, int[] order, double mean, double std,
       double bsf) {
     double sum = 0;
     for (int i = 0; i < m && sum < bsf; i++) {

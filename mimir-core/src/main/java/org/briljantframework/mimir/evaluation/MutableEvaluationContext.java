@@ -20,10 +20,10 @@
  */
 package org.briljantframework.mimir.evaluation;
 
+import java.util.List;
 import java.util.Objects;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.partition.Partition;
 import org.briljantframework.mimir.supervised.Predictor;
 
@@ -34,7 +34,7 @@ public class MutableEvaluationContext<In, Out> implements EvaluationContext<In, 
 
   private final ImmutableEvaluationContext evaluationContext = new ImmutableEvaluationContext();
 
-  private Output<Out> predictions;
+  private List<Out> predictions;
   private Predictor<In, Out> predictor;
   private Partition<In, Out> partition;
   private DoubleArray estimates;
@@ -50,7 +50,7 @@ public class MutableEvaluationContext<In, Out> implements EvaluationContext<In, 
    * 
    * @param predictions the out of sample predictions
    */
-  public void setPredictions(Output<Out> predictions) {
+  public void setPredictions(List<Out> predictions) {
     this.predictions = Objects.requireNonNull(predictions, "requires predictions");
   }
 
@@ -78,7 +78,7 @@ public class MutableEvaluationContext<In, Out> implements EvaluationContext<In, 
   }
 
   @Override
-  public Output<Out> getPredictions() {
+  public List<Out> getPredictions() {
     return predictions;
   }
 
@@ -110,7 +110,7 @@ public class MutableEvaluationContext<In, Out> implements EvaluationContext<In, 
     }
 
     @Override
-    public Output<Out> getPredictions() {
+    public List<Out> getPredictions() {
       return predictions;
     }
 

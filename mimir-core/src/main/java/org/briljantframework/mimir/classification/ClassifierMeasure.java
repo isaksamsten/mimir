@@ -23,9 +23,9 @@ package org.briljantframework.mimir.classification;
 import static org.briljantframework.array.Arrays.doubleVector;
 import static org.briljantframework.array.Arrays.mean;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.Array;
@@ -34,8 +34,6 @@ import org.briljantframework.data.Is;
 import org.briljantframework.data.Na;
 import org.briljantframework.data.series.DoubleSeries;
 import org.briljantframework.data.series.Series;
-import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.Outputs;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -59,8 +57,8 @@ public class ClassifierMeasure {
    * @param predicted the predicated values
    * @param truth the true values
    */
-  public ClassifierMeasure(Output<?> predicted, Output<?> truth) {
-    this(Outputs.unique(Arrays.asList(predicted, truth)), predicted, truth, null);
+  public ClassifierMeasure(List<?> predicted, List<?> truth) {
+    this(Array.copyOf(new HashSet<>(Arrays.asList(predicted, truth))), predicted, truth, null);
   }
 
   /**
@@ -71,8 +69,7 @@ public class ClassifierMeasure {
    * @param truth the true values
    * @param scores an array of scores (one column per class; one row per instance)
    */
-  public ClassifierMeasure(Array<?> classes, Output<?> predicted, Output<?> truth,
-      DoubleArray scores) {
+  public ClassifierMeasure(Array<?> classes, List<?> predicted, List<?> truth, DoubleArray scores) {
     Check.argument(predicted.size() == truth.size(),
         "The predicted and actual values must have the same size.");
     Check.argument(classes != null, "Classes are required");
@@ -95,11 +92,11 @@ public class ClassifierMeasure {
     }
   }
 
-  public ClassifierMeasure(Array<?> classes, Output<?> predicted, Output<?> truth) {
+  public ClassifierMeasure(Array<?> classes, List<?> predicted, List<?> truth) {
     this(classes, predicted, truth, null);
   }
 
-  private double averageRecall(Output<?> prediction, Output<?> truth, Array<?> classes) {
+  private double averageRecall(List<?> prediction, List<?> truth, Array<?> classes) {
     Check.argument(prediction.size() == truth.size(), "illegal size");
     double[] recall = new double[classes.size()];
     for (int i = 0; i < classes.size(); i++) {
@@ -118,24 +115,25 @@ public class ClassifierMeasure {
     return mean(doubleVector(recall));
   }
 
-  public static double averagePrecision(Output<?> prediction, Output<?> truth, Array<?> classes) {
+  public static double averagePrecision(List<?> prediction, List<?> truth, Array<?> classes) {
     Check.argument(prediction.size() == truth.size(), "illegal size");
     return mean(precision(prediction, truth, classes));
   }
 
-  public static DoubleArray precision(Output<?> pred, Output<?> actual, Collection<?> classes) {
+  public static DoubleArray precision(List<?> pred, List<?> actual, Collection<?> classes) {
     Check.argument(pred.size() == actual.size(), "illegal size");
     return DoubleArray.of(computePrecision(pred, actual, classes));
   }
 
-  public static DoubleArray precision(Output<?> pred, Output<?> actual) {
+  public static DoubleArray precision(List<?> pred, List<?> actual) {
     Check.argument(pred.size() == actual.size(), "illegal size");
     double[] precisionPerClass =
-        computePrecision(pred, actual, Outputs.unique(Arrays.asList(pred, actual)));
+        computePrecision(pred, actual, Array.copyOf(new HashSet<>(Arrays.asList(pred, actual))));
     return DoubleArray.of(precisionPerClass);
   }
 
-  private static double[] computePrecision(Output<?> prediction, Output<?> truth, Collection<?> classes) {
+  private static double[] computePrecision(List<?> prediction, List<?> truth,
+      Collection<?> classes) {
     double[] precision = new double[classes.size()];
     int i = 0;
     for (Object cls : classes) {
@@ -160,7 +158,7 @@ public class ClassifierMeasure {
    * @param t the actual values; shape {@code [no samples]}
    * @return the accuracy
    */
-  public static double accuracy(Output<?> p, Output<?> t) {
+  public static double accuracy(List<?> p, List<?> t) {
     Check.argument(p.size() == t.size(), PREDICTED_ACTUAL_SIZE);
     double accuracy = 0;
 
@@ -184,7 +182,7 @@ public class ClassifierMeasure {
    *        {@code scores}
    * @return the brier score
    */
-  public static double brierScore(Output<?> p, Output<?> t, DoubleArray scores, Array<?> c) {
+  public static double brierScore(List<?> p, List<?> t, DoubleArray scores, Array<?> c) {
     Check.argument(scores.isMatrix() && scores.columns() == c.size() && scores.rows() == p.size(),
         ILLEGAL_SCORE_MATRIX);
 
@@ -218,10 +216,11 @@ public class ClassifierMeasure {
    * @param c the classes
    * @return the weighted area under ROC curve
    */
-  public static double averageAreaUnderRocCurve(Output<?> p, Output<?> a, DoubleArray score,
+  public static double averageAreaUnderRocCurve(List<?> p, List<?> a, DoubleArray score,
       Array<?> c) {
     Series auc = areaUnderRocCurve(p, a, score, c);
-    Map<Object, Integer> dist = Outputs.valueCounts(a);
+    Map<Object, Long> dist =
+        a.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     double averageAuc = 0;
     for (Object classKey : auc.index()) {
       if (dist.containsKey(classKey)) {
@@ -241,7 +240,7 @@ public class ClassifierMeasure {
    *        the j:th column of the score matrix
    * @return a vector of labels (from {@code c}) and its associated area under roc-curve
    */
-  public static Series areaUnderRocCurve(Output<?> p, Output<?> t, DoubleArray score, Array<?> c) {
+  public static Series areaUnderRocCurve(List<?> p, List<?> t, DoubleArray score, Array<?> c) {
     Check.argument(score.isMatrix() && score.columns() == c.size() && score.rows() == p.size(),
         ILLEGAL_SCORE_MATRIX);
     Check.argument(p.size() == t.size(), PREDICTED_ACTUAL_SIZE);
@@ -254,7 +253,7 @@ public class ClassifierMeasure {
     return builder.build();
   }
 
-  private static double computeAuc(Output<?> p, Output<?> t, DoubleArray score, Object label) {
+  private static double computeAuc(List<?> p, List<?> t, DoubleArray score, Object label) {
     double truePositives = 0, falsePositives = 0, positives = 0;
     PredictionProbability[] pairs = new PredictionProbability[p.size()];
     for (int i = 0; i < t.size(); i++) {
@@ -312,7 +311,7 @@ public class ClassifierMeasure {
    * @param t the actual values; shape {@code [no samples]}
    * @return the error rate
    */
-  public static double error(Output<Object> p, Output<Object> t) {
+  public static double error(List<Object> p, List<Object> t) {
     return 1 - accuracy(p, t);
   }
 

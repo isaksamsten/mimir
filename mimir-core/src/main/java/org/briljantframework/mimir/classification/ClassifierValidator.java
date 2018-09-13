@@ -20,9 +20,7 @@
  */
 package org.briljantframework.mimir.classification;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.Array;
@@ -51,8 +49,8 @@ public class ClassifierValidator<In, Out> extends Validator<In, Out, Classifier<
 
   @Override
   protected final Classifier<In, Out> fit(
-      Predictor.Learner<? super In, ? super Out, ? extends Classifier<In, Out>> learner, Input<In> x,
-      Output<Out> y) {
+      Predictor.Learner<In, Out, ? extends Classifier<In, Out>> learner, Input<In> x,
+      List<Out> y) {
     return learner.fit(x, y);
   }
 
@@ -62,7 +60,7 @@ public class ClassifierValidator<In, Out> extends Validator<In, Out, Classifier<
     Classifier<In, Out> p = (Classifier<In, Out>) ctx.getPredictor();
     Partition<In, Out> partition = ctx.getEvaluationContext().getPartition();
     Input<In> x = partition.getValidationData();
-    ArrayOutput<Out> predictions = new ArrayOutput<>();
+    List<Out> predictions = new ArrayList<>();
 
     if (p instanceof ProbabilityEstimator) {
       Array<Out> classes = p.getClasses();
@@ -78,20 +76,19 @@ public class ClassifierValidator<In, Out> extends Validator<In, Out, Classifier<
   }
 
   public static <In, Out> ClassifierValidator<In, Out> holdoutValidator(Input<? extends In> testX,
-      Output<? extends Out> testY) {
+      List<? extends Out> testY) {
     return createValidator(new Partitioner<In, Out>() {
       @Override
-      public Collection<Partition<In, Out>> partition(Input<? extends In> x,
-          Output<? extends Out> y) {
+      public Collection<Partition<In, Out>> partition(Input<In> x, List<Out> y) {
         return Collections
             .singleton(new Partition<>(Inputs.unmodifiableInput(x), Inputs.unmodifiableInput(testX),
-                Outputs.unmodifiableOutput(y), Outputs.unmodifiableOutput(testY)));
+                Collections.unmodifiableList(y), Collections.unmodifiableList(testY)));
       }
     });
   }
 
   public static <In, Out> ClassifierValidator<In, Out> splitValidator(double testFraction) {
-    return createValidator(new SplitPartitioner<>(testFraction));
+    return createValidator(new SplitPartitioner<>(testFraction, true));
   }
 
   public static <In, Out> ClassifierValidator<In, Out> leaveOneOutValidator() {
@@ -99,7 +96,7 @@ public class ClassifierValidator<In, Out> extends Validator<In, Out, Classifier<
   }
 
   public static <In, Out> ClassifierValidator<In, Out> crossValidator(int folds) {
-    return createValidator(new FoldPartitioner<>(folds));
+    return createValidator(new FoldPartitioner<>(folds, true));
   }
 
   private static <In, Out> ClassifierValidator<In, Out> createValidator(

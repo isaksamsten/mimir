@@ -20,12 +20,12 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
+import java.util.List;
 import java.util.stream.IntStream;
 
 import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -40,7 +40,7 @@ public interface Nonconformity<In, Out> {
    * @param y the true class labels of the examples
    * @return a {@code [no examples]} double array of nonconformity scores
    */
-  default DoubleArray estimate(Input<? extends In> x, Output<? extends Out> y) {
+  default DoubleArray estimate(Input<In> x, List<Out> y) {
     DoubleArray array = DoubleArray.zeros(x.size());
     // Run in parallel
     IntStream.range(0, x.size()).parallel()
@@ -79,6 +79,6 @@ public interface Nonconformity<In, Out> {
      * @param y the input target
      * @return a nonconformity score function
      */
-    Nonconformity<In, Out> fit(Input<? extends In> x, Output<? extends Out> y);
+    Nonconformity<In, Out> fit(Input<In> x, List<Out> y);
   }
 }

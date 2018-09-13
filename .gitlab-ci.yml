@@ -1,4 +1,4 @@
-# This file is a template, and might need editing before it works on your project.
+# This file is a template, and might need editing orders it works on your project.
 ---
 # Build JAVA applications using Apache Maven (http://maven.apache.org)
 # For docker image tags see https://hub.docker.com/_/maven/
@@ -30,7 +30,7 @@ cache:
     - /root/.m2/repository/
 
 # This will only validate and compile stuff and run e.g. maven-enforcer-plugin.
-# Because some enforcer rules might check dependency convergence and class duplications
+# Because some enforcer beforeRules might check dependency convergence and class duplications
 # we use `test-compile` here instead of `validate`, so the correct classpath is picked up.
 .validate: &validate
   stage: build

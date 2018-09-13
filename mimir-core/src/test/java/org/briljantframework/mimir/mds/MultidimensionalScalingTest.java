@@ -21,10 +21,9 @@
 package org.briljantframework.mimir.mds;
 
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.data.ArrayInput;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.transform.Transformers;
-import org.briljantframework.mimir.distance.EuclideanDistance;
+import org.briljantframework.mimir.data.MutableInput;
+import org.briljantframework.mimir.data.Schema;
 import org.junit.Test;
 
 /**
@@ -35,7 +34,17 @@ public class MultidimensionalScalingTest {
 
   @Test
   public void testTransformy() throws Exception {
-    Input<DoubleArray> thing = new ArrayInput<>();
+    Input<DoubleArray> thing = new MutableInput<>(new Schema<DoubleArray>() {
+      @Override
+      public Input<DoubleArray> newInput() {
+        return new MutableInput<>(this);
+      }
+
+      @Override
+      public boolean isValid(DoubleArray ex) {
+        return true;
+      }
+    });
     thing.add(DoubleArray.of(1, 2, 3));
     thing.add(DoubleArray.of(1, 2, 3));
     thing.add(DoubleArray.of(1, 2, 3));

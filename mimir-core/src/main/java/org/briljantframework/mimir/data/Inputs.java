@@ -21,18 +21,15 @@
 package org.briljantframework.mimir.data;
 
 
+import org.briljantframework.data.dataframe.DataFrame;
+import org.briljantframework.mimir.supervised.data.Instance;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.function.Consumer;
-import java.util.function.DoubleUnaryOperator;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-
-import org.briljantframework.DoubleSequence;
-import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.dataframe.DataFrame;
 
 /**
  * @author Isak Karlsson
@@ -40,18 +37,6 @@ import org.briljantframework.data.dataframe.DataFrame;
 public final class Inputs {
 
   private Inputs() {}
-
-  /**
-   * Create a new input based on instance from a {@link DataFrame}.
-   * <p/>
-   * The returned input is immutable.
-   * 
-   * @param dataFrame the data frame
-   * @return a new instance input
-   */
-  public static Input<Instance> asInput(DataFrame dataFrame) {
-    return new DataFrameInput(dataFrame);
-  }
 
   /**
    * Returns an unmodifiable view of the given input. A shallow copy of the input properties are
@@ -69,54 +54,11 @@ public final class Inputs {
     return new UnmodifiableInput<>(input);
   }
 
-  /**
-   * Converts an input of double sequences to a double array while applying the given operator to
-   * each value.
-   *
-   * <p/>
-   * <strong>Required properties</strong>
-   * <ul>
-   * <li>{@link Dataset#FEATURE_SIZE}</li>
-   * </ul>
-   *
-   * @param x the input
-   * @param operator the operator
-   * @return a double array
-   */
-  public static DoubleArray toDoubleArray(Input<? extends DoubleSequence> x,
-      DoubleUnaryOperator operator) {
-    int n = x.size();
-    int m = x.getProperty(Dataset.FEATURE_SIZE);
-    DoubleArray out = DoubleArray.zeros(n, m);
-    for (int i = 0; i < n; i++) {
-      DoubleSequence v = x.get(i);
-      for (int j = 0; j < m; j++) {
-        out.set(i, j, operator.applyAsDouble(v.getDouble(j)));
-      }
-    }
-    return out;
-  }
 
-  /**
-   * Converts an input of double sequences to a double array.
-   *
-   * <p/>
-   * <strong>Required properties</strong>
-   * <ul>
-   * <li>{@link Dataset#FEATURE_SIZE}</li>
-   * </ul>
-   *
-   * @param x the input
-   * @return a double array
-   */
-  public static DoubleArray toDoubleArray(Input<? extends DoubleSequence> x) {
-    return toDoubleArray(x, DoubleUnaryOperator.identity());
-  }
-
-  private static class UnmodifiableInput<E> extends AbstractInput<E> {
+  private static class UnmodifiableInput<E> extends Input<E> {
     private final Input<? extends E> c;
 
-    public UnmodifiableInput(Input<? extends E> c) {
+    UnmodifiableInput(Input<? extends E> c) {
       this.c = c;
     }
 
@@ -166,6 +108,12 @@ public final class Inputs {
           i.forEachRemaining(action);
         }
       };
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Schema<E> getSchema() {
+      return (Schema<E>) c.getSchema();
     }
 
     public boolean add(E e) {
@@ -223,11 +171,6 @@ public final class Inputs {
     @Override
     public Stream<E> parallelStream() {
       return (Stream<E>) c.parallelStream();
-    }
-
-    @Override
-    public Properties getProperties() {
-      return c.getProperties();
     }
 
     @Override

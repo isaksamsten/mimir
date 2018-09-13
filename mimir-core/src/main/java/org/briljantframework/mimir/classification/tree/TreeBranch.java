@@ -27,29 +27,31 @@ import org.briljantframework.data.series.Series;
 /**
  * Created by isak on 2/11/15.
  */
-public final class TreeBranch<In, T> implements TreeNode<In, T> {
+public final class TreeBranch<In> implements TreeNode<In> {
 
-  private final TreeNode<In, T> left;
-  private final TreeNode<In, T> right;
-  private final TreeNode<In, T> missing;
+  private final TreeNode<In> left;
+  private final TreeNode<In> right;
+  private final TreeNode<In> missing;
   private final Array<?> domain;
   private final Series classDistribution;
-  private final T threshold;
+  private final TreeNodeTest<In> threshold;
   private final double weight;
+  private final double impurity;
+  private final ClassSet classSet;
 
 
-  public TreeBranch(TreeNode<In, T> left, TreeNode<In, T> right, Array<?> domain, T threshold,
-      double weight) {
-    this(left, right, null, domain, null, threshold, weight);
+  public TreeBranch(TreeNode<In> left, TreeNode<In> right, Array<?> domain,
+      TreeNodeTest<In> threshold, double weight, double impurity) {
+    this(left, right, null, domain, null, threshold, weight, impurity, null);
   }
 
-  public TreeBranch(TreeNode<In, T> left, TreeNode<In, T> right, TreeNode<In, T> missing,
-      Array<?> domain, T threshold, double weight) {
-    this(left, right, missing, domain, null, threshold, weight);
+  public TreeBranch(TreeNode<In> left, TreeNode<In> right, TreeNode<In> missing, Array<?> domain,
+      TreeNodeTest<In> threshold, double weight, double impurity) {
+    this(left, right, missing, domain, null, threshold, weight, impurity, null);
   }
 
-  public TreeBranch(TreeNode<In, T> left, TreeNode<In, T> right, TreeNode<In, T> missing,
-      Array<?> domain, Series classDistribution, T threshold, double weight) {
+  public TreeBranch(TreeNode<In> left, TreeNode<In> right, TreeNode<In> missing, Array<?> domain,
+      Series classDistribution, TreeNodeTest<In> threshold, double weight, double impurity, ClassSet classSet) {
     this.left = left;
     this.right = right;
     this.domain = domain;
@@ -57,24 +59,34 @@ public final class TreeBranch<In, T> implements TreeNode<In, T> {
     this.threshold = threshold;
     this.weight = weight;
     this.missing = missing;
+    this.impurity = impurity;
+    this.classSet = classSet;
   }
 
-  public TreeNode<In, T> getLeft() {
+  public double getImpurity() {
+    return impurity;
+  }
+
+  public ClassSet getClassSet() {
+    return classSet;
+  }
+
+  public TreeNode<In> getLeft() {
     return left;
   }
 
-  public TreeNode<In, T> getRight() {
+  public TreeNode<In> getRight() {
     return right;
   }
 
   /**
    * @return null if missing is missing
    */
-  public TreeNode<In, T> getMissing() {
+  public TreeNode<In> getMissing() {
     return missing;
   }
 
-  public T getThreshold() {
+  public TreeNodeTest<In> getTreeNodeTest() {
     return threshold;
   }
 
@@ -93,7 +105,7 @@ public final class TreeBranch<In, T> implements TreeNode<In, T> {
   }
 
   @Override
-  public DoubleArray visit(TreeVisitor<In, T> visitor, In example) {
+  public DoubleArray visit(TreeVisitor<In> visitor, In example) {
     return visitor.visitBranch(this, example);
   }
 }

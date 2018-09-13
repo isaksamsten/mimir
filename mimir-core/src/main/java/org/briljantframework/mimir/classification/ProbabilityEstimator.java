@@ -47,7 +47,7 @@ public interface ProbabilityEstimator<In, Out> extends Classifier<In, Out> {
    * @param x the data frame of records to estimate the posterior probabilities for
    * @return a matrix with probability estimates; shape = {@code [x.rows(), getClasses().size()]}.
    */
-  default DoubleArray estimate(Input<? extends In> x) {
+  default DoubleArray estimate(Input<In> x) {
     DoubleArray estimations = DoubleArray.zeros(x.size(), getClasses().size());
     IntStream.range(0, x.size()).parallel().forEach(i -> estimations.setRow(i, estimate(x.get(i))));
     return estimations;

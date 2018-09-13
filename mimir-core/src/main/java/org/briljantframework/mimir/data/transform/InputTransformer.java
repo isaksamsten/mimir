@@ -21,9 +21,6 @@
 package org.briljantframework.mimir.data.transform;
 
 
-import java.util.stream.Collectors;
-
-import org.briljantframework.mimir.data.ArrayInput;
 import org.briljantframework.mimir.data.Input;
 
 
@@ -35,10 +32,7 @@ public interface InputTransformer<T, E> extends Transformer<Input<T>, Input<E>> 
    * @param x data frame to transform
    * @return transformation of input
    */
-  default Input<E> transform(Input<T> x) {
-    return x.stream().map(this::transformElement)
-        .collect(Collectors.toCollection(() -> new ArrayInput<>(x.getProperties())));
-  }
+  Input<E> transform(Input<T> x);
 
   /**
    * Transform the given input element

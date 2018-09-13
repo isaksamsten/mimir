@@ -20,7 +20,7 @@
  */
 package org.briljantframework.mimir.distance;
 
-import org.briljantframework.DoubleSequence;
+import org.briljantframework.DoubleVector;
 import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.shapelet.Shapelet;
 
@@ -29,9 +29,9 @@ import org.briljantframework.mimir.shapelet.Shapelet;
  */
 public class SlidingDistance implements Distance<Series> {
 
-  private final Distance<? super DoubleSequence> distanceMeasure;
+  private final Distance<? super DoubleVector> distanceMeasure;
 
-  public SlidingDistance(Distance<? super DoubleSequence> instance) {
+  public SlidingDistance(Distance<? super DoubleVector> instance) {
     this.distanceMeasure = instance;
   }
 

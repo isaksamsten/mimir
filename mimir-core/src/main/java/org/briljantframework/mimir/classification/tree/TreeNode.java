@@ -27,7 +27,7 @@ import org.briljantframework.data.series.Series;
 /**
  * @author Isak Karlsson
  */
-public interface TreeNode<In, T> {
+public interface TreeNode<In> {
 
   double getWeight();
 
@@ -35,5 +35,5 @@ public interface TreeNode<In, T> {
 
   Series getClassDistribution();
 
-  DoubleArray visit(TreeVisitor<In, T> visitor, In example);
+  DoubleArray visit(TreeVisitor<In> visitor, In example);
 }

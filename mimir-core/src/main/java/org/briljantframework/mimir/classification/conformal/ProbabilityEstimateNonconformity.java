@@ -20,8 +20,7 @@
  */
 package org.briljantframework.mimir.classification.conformal;
 
-import static org.briljantframework.mimir.classification.ClassifierCharacteristic.ESTIMATOR;
-
+import java.util.List;
 import java.util.Objects;
 
 import org.briljantframework.Check;
@@ -29,7 +28,6 @@ import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.ProbabilityEstimator;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.supervised.Predictor;
 
 /**
@@ -68,7 +66,7 @@ public class ProbabilityEstimateNonconformity<In, Out> implements Nonconformity<
   }
 
   @Override
-  public DoubleArray estimate(Input<? extends In> x, Output<? extends Out> y) {
+  public DoubleArray estimate(Input<In> x, List<Out> y) {
     Objects.requireNonNull(x, "Input data required.");
     Objects.requireNonNull(y, "Input target required.");
     Check.argument(x.size() == y.size(), "The size of input data and input target don't match.");
@@ -122,14 +120,11 @@ public class ProbabilityEstimateNonconformity<In, Out> implements Nonconformity<
     }
 
     @Override
-    public ProbabilityEstimateNonconformity<In, Out> fit(Input<? extends In> x,
-        Output<? extends Out> y) {
+    public ProbabilityEstimateNonconformity<In, Out> fit(Input<In> x, List<Out> y) {
       Objects.requireNonNull(x, "Input data is required.");
       Objects.requireNonNull(y, "Input target is required.");
       Check.argument(x.size() == y.size(), "The size of input data and input target don't match");
       ProbabilityEstimator<In, Out> pe = probabilityEstimator.fit(x, y);
-      Check.state(pe != null && pe.getCharacteristics().contains(ESTIMATOR),
-          "The produced classifier can't estimate probabilities");
       return new ProbabilityEstimateNonconformity<>(pe, probabilityCostFunction);
     }
   }

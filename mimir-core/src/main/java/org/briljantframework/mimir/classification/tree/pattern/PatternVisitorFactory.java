@@ -28,6 +28,6 @@ import org.briljantframework.mimir.classification.tree.TreeVisitor;
  */
 public interface PatternVisitorFactory<T, E> {
 
-  TreeVisitor<T, PatternTree.Threshold<E>> createVisitor(TreeNode<T, PatternTree.Threshold<E>> root,
+  TreeVisitor<T> createVisitor(TreeNode<T> root,
       PatternDistance<? super T, ? super E> patternDistance);
 }

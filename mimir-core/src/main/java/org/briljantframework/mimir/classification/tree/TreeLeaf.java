@@ -20,8 +20,6 @@
  */
 package org.briljantframework.mimir.classification.tree;
 
-import java.util.List;
-
 import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.series.Series;
@@ -29,7 +27,7 @@ import org.briljantframework.data.series.Series;
 /**
  * @author Isak Karlsson
  */
-public final class TreeLeaf<In, T> implements TreeNode<In, T> {
+public final class TreeLeaf<In> implements TreeNode<In> {
 
   private final Array<?> domain;
   private final DoubleArray probabilities;
@@ -41,11 +39,11 @@ public final class TreeLeaf<In, T> implements TreeNode<In, T> {
     this.weight = weight;
   }
 
-  public static <In, T> TreeLeaf<In, T> fromExamples(ClassSet classSet) {
+  public static <In> TreeLeaf<In> fromExamples(ClassSet classSet) {
     return fromExamples(classSet, 1);
   }
 
-  public static <In, T> TreeLeaf<In, T> fromExamples(ClassSet classSet, double weight) {
+  public static <In> TreeLeaf<In> fromExamples(ClassSet classSet, double weight) {
     Array<?> domain = classSet.getDomain();
     DoubleArray prob = DoubleArray.zeros(domain.size());
     double totalWeight = classSet.getTotalWeight();
@@ -84,7 +82,7 @@ public final class TreeLeaf<In, T> implements TreeNode<In, T> {
   }
 
   @Override
-  public final DoubleArray visit(TreeVisitor<In, T> visitor, In example) {
+  public final DoubleArray visit(TreeVisitor<In> visitor, In example) {
     return visitor.visitLeaf(this, example);
   }
 

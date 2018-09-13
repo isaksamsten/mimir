@@ -20,12 +20,10 @@
  */
 package org.briljantframework.mimir.supervised;
 
-import java.util.Set;
-
+import org.briljantframework.mimir.Properties;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.Properties;
-import org.briljantframework.mimir.data.Property;
+
+import java.util.List;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -46,52 +44,31 @@ public interface Predictor<In, Out> {
    * @param x the data frame
    * @return a vector of predictions
    */
-  Output<Out> predict(Input<? extends In> x);
-
-  /**
-   * Get a set of characteristics for this particular predictor
-   *
-   * @return the set of characteristics
-   */
-  Set<Characteristic> getCharacteristics();
+  List<Out> predict(Input<In> x);
 
   /**
    * Generates a predictor based on some underlying algorithm and properties.
    */
-  interface Learner<In, Out, P extends Predictor<In, Out>> {
+  abstract class Learner<In, Out, P extends Predictor<In, Out>> extends Parameterized {
+
+    protected Learner(Properties parameters) {
+      super(parameters);
+    }
+
+    protected Learner() {}
 
     /**
      * Fit a predictor to the given input data.
-     * 
+     *
      * @param in the input data
      * @param out the output target
      * @return a predictor for predicting the output value of an input
      */
-    P fit(Input<? extends In> in, Output<? extends Out> out);
+    public abstract P fit(Input<In> in, List<Out> out);
 
-    /**
-     * Set the specified parameter to the specified value.
-     *
-     * @param key the parameter key
-     * @param value the parameter value
-     * @param <T> the type of parameter value
-     */
-    <T> void set(Property<T> key, T value);
-
-    /**
-     * Get the parameter value for the specified key.
-     *
-     * @param key the parameter key
-     * @param <T> the type of parameter value
-     * @return the parameter value
-     */
-    <T> T get(Property<T> key);
-
-    /**
-     * Get a typed map of parameter values.
-     *
-     * @return the parameters
-     */
-    Properties getParameters();
+    @Override
+    public String toString() {
+      return "Learner{ parameters: " + getParameters() + "}";
+    }
   }
 }

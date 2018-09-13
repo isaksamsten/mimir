@@ -22,16 +22,16 @@ package org.briljantframework.mimir.shapelet;
 
 import java.util.function.IntBinaryOperator;
 
-import org.briljantframework.DoubleSequence;
+import org.briljantframework.DoubleVector;
 import org.briljantframework.util.sort.QuickSort;
 
 /**
  * @author Isak Karlsson
  */
 public class IndexSortedNormalizedShapelet extends NormalizedShapelet {
-  protected final int[] order;
+  private final int[] order;
 
-  public IndexSortedNormalizedShapelet(int start, int length, DoubleSequence vector) {
+  public IndexSortedNormalizedShapelet(int start, int length, DoubleVector vector) {
     super(start, length, vector);
     if (vector instanceof IndexSortedNormalizedShapelet) {
       this.order = ((IndexSortedNormalizedShapelet) vector).getSortOrder();

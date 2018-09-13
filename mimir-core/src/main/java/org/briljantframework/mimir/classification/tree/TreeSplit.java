@@ -23,22 +23,22 @@ package org.briljantframework.mimir.classification.tree;
 /**
  * Created by isak on 2/11/15.
  */
-public final class TreeSplit<E> {
+public final class TreeSplit<In> {
 
   private final ClassSet right;
   private final ClassSet left;
   private final ClassSet missing;
-  private final E threshold;
+  private final TreeNodeTest<In> threshold;
   private double impurity = 0;
 
-  public TreeSplit(ClassSet left, ClassSet right, ClassSet missing, E threshold) {
+  public TreeSplit(ClassSet left, ClassSet right, ClassSet missing, TreeNodeTest<In> threshold) {
     this.left = left;
     this.right = right;
     this.threshold = threshold;
     this.missing = missing;
   }
 
-  public TreeSplit(ClassSet left, ClassSet right, E threshold) {
+  public TreeSplit(ClassSet left, ClassSet right, TreeNodeTest<In> threshold) {
     this.left = left;
     this.right = right;
     this.threshold = threshold;
@@ -68,7 +68,7 @@ public final class TreeSplit<E> {
     this.impurity = impurity;
   }
 
-  public E getThreshold() {
+  public TreeNodeTest<In> getThreshold() {
     return threshold;
   }
 

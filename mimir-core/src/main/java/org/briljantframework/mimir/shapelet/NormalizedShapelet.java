@@ -20,8 +20,7 @@
  */
 package org.briljantframework.mimir.shapelet;
 
-import org.briljantframework.DoubleSequence;
-import org.briljantframework.data.series.Series;
+import org.briljantframework.DoubleVector;
 
 /**
  * A z-normalized sub sequence view of another MatrixLike
@@ -33,7 +32,7 @@ public class NormalizedShapelet extends Shapelet {
   private final double sigma;
   private final double mean;
 
-  public NormalizedShapelet(int start, int length, DoubleSequence timeSeries) {
+  public NormalizedShapelet(int start, int length, DoubleVector timeSeries) {
     super(start, length, timeSeries);
     if (timeSeries instanceof NormalizedShapelet) {
       this.sigma = ((NormalizedShapelet) timeSeries).sigma;

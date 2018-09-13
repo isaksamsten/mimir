@@ -21,6 +21,7 @@
 package org.briljantframework.mimir.classification;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -30,24 +31,25 @@ import org.briljantframework.array.Array;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.BooleanArray;
 import org.briljantframework.array.DoubleArray;
+import org.briljantframework.mimir.Properties;
 import org.briljantframework.mimir.classification.tree.ClassSet;
 import org.briljantframework.mimir.classification.tree.Example;
 import org.briljantframework.mimir.classification.tree.RandomSplitter;
 import org.briljantframework.mimir.data.*;
+import org.briljantframework.mimir.supervised.data.Instance;
+import org.briljantframework.mimir.supervised.data.MultidimensionalSchema;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public final class RandomForest<Out> extends Ensemble<Instance, Out> {
 
-  private final List<?> featureNames;
-  private final List<Class<?>> featureTypes;
+  private final MultidimensionalSchema schema;
 
-  private RandomForest(Array<Out> classes, List<?> featureNames, List<Class<?>> featureTypes,
+  private RandomForest(Array<Out> classes, MultidimensionalSchema schema,
       List<? extends DecisionTree<Out>> members, BooleanArray oobIndicator) {
     super(classes, members, oobIndicator);
-    this.featureNames = featureNames;
-    this.featureTypes = featureTypes;
+    this.schema = schema;
   }
 
   @Override
@@ -57,7 +59,7 @@ public final class RandomForest<Out> extends Ensemble<Instance, Out> {
 
   @Override
   public DoubleArray estimate(Instance input) {
-    Check.argument(input.size() == featureNames.size(), "illegal input");
+    Check.argument(schema.isValid(input), "illegal input");
     return averageProbabilities(input);
   }
 
@@ -72,11 +74,11 @@ public final class RandomForest<Out> extends Ensemble<Instance, Out> {
     }
 
     @Override
-    public RandomForest<Out> fit(Input<? extends Instance> x, Output<? extends Out> y) {
-      Check.argument(Dataset.isDataset(x), "dataset is required");
+    public RandomForest<Out> fit(Input<Instance> x, List<Out> y) {
+      Check.argument(x.getSchema() instanceof MultidimensionalSchema, "illegal schema");
       Check.argument(x.size() == y.size(), "input and output must have the same size");
 
-      Array<Out> classes = Outputs.unique(y);
+      Array<Out> classes = Array.copyOf(new HashSet<>(y));
       Check.argument(classes.size() > 1, "require more than 1 output.");
 
       ClassSet classSet = new ClassSet(y, classes);
@@ -88,8 +90,8 @@ public final class RandomForest<Out> extends Ensemble<Instance, Out> {
             new FitTask<>(classSet, getParameters(), x, y, classes, oobIndicator.getColumn(i)));
       }
       try {
-        return new RandomForest<Out>(classes, x.getProperty(Dataset.FEATURE_NAMES),
-            x.getProperty(Dataset.FEATURE_TYPES), execute(fitTasks), oobIndicator);
+        return new RandomForest<>(classes, (MultidimensionalSchema) x.getSchema(),
+            execute(fitTasks), oobIndicator);
       } catch (Exception e) {
         e.printStackTrace();
         return null;
@@ -104,14 +106,14 @@ public final class RandomForest<Out> extends Ensemble<Instance, Out> {
     private static final class FitTask<Out> implements Callable<DecisionTree<Out>> {
 
       private final ClassSet classSet;
-      private final Input<? extends Instance> x;
-      private final Output<? extends Out> y;
+      private final Input<Instance> x;
+      private final List<Out> y;
       private final Array<Out> classes;
       private final BooleanArray oobIndicator;
       private final Properties properties;
 
-      private FitTask(ClassSet classSet, Properties properties, Input<? extends Instance> x,
-          Output<? extends Out> y, Array<Out> classes, BooleanArray oobIndicator) {
+      private FitTask(ClassSet classSet, Properties properties, Input<Instance> x, List<Out> y,
+          Array<Out> classes, BooleanArray oobIndicator) {
         this.classSet = classSet;
         this.x = x;
         this.y = y;

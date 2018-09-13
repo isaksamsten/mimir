@@ -22,23 +22,21 @@ package org.briljantframework.mimir.classification;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.briljantframework.array.Arrays;
-import org.briljantframework.array.Range;
-import org.briljantframework.data.Collectors;
 import org.briljantframework.data.Is;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.dataframe.DataFrames;
 import org.briljantframework.data.parser.CsvParser;
 import org.briljantframework.data.series.Series;
-import org.briljantframework.data.series.SeriesUtils;
 import org.briljantframework.mimir.classification.tree.pattern.*;
 import org.briljantframework.mimir.data.*;
 import org.briljantframework.mimir.distance.EuclideanDistance;
+import org.briljantframework.mimir.supervised.data.Instance;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -57,45 +55,45 @@ public class LearnerTest {
     // });
     // Series labels = iris.get("Class");
 
-    CsvParser parser = new CsvParser(new FileReader("/Users/isak/Tmp/pima-indians-diabetes.txt"));
-    parser.getSettings().setSkipRows(1);
-    DataFrame dataset = DataFrames.permute(parser.parse(DataFrame::newBuilder));
-    String classVariable = "Class variable (0 or 1)";
-    DataFrame data = dataset.drop(classVariable).apply(v -> {
-      v.set(v.where(Is::NA), v.mean());
-      return v;
-    });;
-    Series labels = dataset.get(classVariable);
-
-    System.out.println(Arrays.sum(0, data.where(Is::NA).intArray()));
-
-    Input<Pair<Series, Series>> trainingInput = new ArrayInput<>();
-    Output<Boolean> trainingOutput = new ArrayOutput<>();
-
-    Input<Pair<Series, Series>> testInput = new ArrayInput<>();
-    Output<Boolean> testOutput = new ArrayOutput<>();
-
-    int trainSize = Math.round(data.rows() * 0.7f);
-    Range trainIdx = Range.of(trainSize);
-    Range testIdx = Range.of(trainSize, data.rows());
-
-    createPairs(data.loc().getRow(trainIdx), SeriesUtils.select(labels, trainIdx), trainingInput,
-        trainingOutput);
-    createPairs(data.loc().getRow(testIdx), SeriesUtils.select(labels, testIdx), testInput,
-        testOutput);
-
-    ClassifierValidator<Pair<Series, Series>, Object> validator =
-        ClassifierValidator.holdoutValidator(testInput, testOutput);
-
-
-    System.out.println(Outputs.valueCounts(trainingOutput));
-    System.out.println(Outputs.valueCounts(testOutput));
-    System.out.println(labels.collect(Collectors.valueCounts()));
-
-    RandomPatternForest.Learner<Pair<Series, Series>, Object> learner =
-        getPairFeatureLearner(3);
-    learner.set(PatternTree.PATTERN_COUNT, 1);
-    System.out.println(validator.test(learner, trainingInput, trainingOutput));
+//    CsvParser parser = new CsvParser(new FileReader("/Users/isak/Tmp/pima-indians-diabetes.txt"));
+//    parser.getSettings().setSkipRows(1);
+//    DataFrame dataset = DataFrames.permute(parser.parse(DataFrame::newBuilder));
+//    String classVariable = "Class variable (0 or 1)";
+//    DataFrame data = dataset.drop(classVariable).apply(v -> {
+//      v.set(v.where(Is::NA), v.mean());
+//      return v;
+//    });;
+//    Series labels = dataset.get(classVariable);
+//
+//    System.out.println(Arrays.sum(0, data.where(Is::NA).intArray()));
+//
+//    Input<Pair<Series, Series>> trainingInput = new MutableInput<>();
+//    Output<Boolean> trainingOutput = new MutableOutput<>();
+//
+//    Input<Pair<Series, Series>> testInput = new MutableInput<>();
+//    Output<Boolean> testOutput = new MutableOutput<>();
+//
+//    int trainSize = Math.round(data.rows() * 0.7f);
+//    Range trainIdx = Range.of(trainSize);
+//    Range testIdx = Range.of(trainSize, data.rows());
+//
+//    createPairs(data.loc().getRow(trainIdx), SeriesUtils.select(labels, trainIdx), trainingInput,
+//        trainingOutput);
+//    createPairs(data.loc().getRow(testIdx), SeriesUtils.select(labels, testIdx), testInput,
+//        testOutput);
+//
+//    ClassifierValidator<Pair<Series, Series>, Object> validator =
+//        ClassifierValidator.holdoutValidator(testInput, testOutput);
+//
+//
+//    System.out.println(Outputs.valueCounts(trainingOutput));
+//    System.out.println(Outputs.valueCounts(testOutput));
+//    System.out.println(labels.collect(Collectors.valueCounts()));
+//
+//    RandomPatternForest.Learner<Pair<Series, Series>, Object> learner =
+//        getPairFeatureLearner(3);
+//    learner.set(PatternTree.PATTERN_COUNT, 1);
+//    System.out.println(validator.test(learner, trainingInput, trainingOutput));
 
   }
 
@@ -143,7 +141,7 @@ public class LearnerTest {
   }
 
   private void createPairs(DataFrame data, Series labels, Input<Pair<Series, Series>> input,
-      Output<Boolean> output) {
+      List<Boolean> output) {
     for (int i = 0; i < data.rows(); i++) {
       for (int j = 0; j < data.rows(); j++) {
         if (i != j) {
@@ -168,9 +166,9 @@ public class LearnerTest {
     });
     Series classVector = iris.get("Class");
 
-    Input<Instance> x = Inputs.asInput(replaceNa);
-    Output<?> y = Outputs.asOutput(classVector);
-    LogisticRegression.Learner learner = new LogisticRegression.Learner(1);
+//    Input<Instance> x = Inputs.asInput(replaceNa);
+//    List<?> y = Outputs.asOutput(classVector);
+//    LogisticRegression.Learner learner = new LogisticRegression.Learner(1);
     // List<Configuration<Object>> tune = gridSearch.tune(learner, x, y);
     //
     // tune.sort((a, b) -> -Double.compare(a.getResult().getMeasure("accuracy").mean(),
@@ -182,7 +180,7 @@ public class LearnerTest {
 
   }
 
-  private Pair<Input<Instance>, Output<?>> loadDataset() {
+  private Pair<Input<Instance>, List<?>> loadDataset() {
     // DataFrame data = DataFrames.permuteRecords(Datasets.loadIris());
     // Input<Instance> x = Inputs.newInput(data.drop("Class"));
     // Output<?> y = Outputs.newOutput(data.get("Class"));
@@ -194,7 +192,8 @@ public class LearnerTest {
       DataFrame x = df.drop(column);
       Series y = df.get(column);
 
-      return new ImmutablePair<>(Inputs.asInput(x), Outputs.asOutput(y));
+//      return new ImmutablePair<>(Inputs.asInput(x), Outputs.asOutput(y));
+      return null;
     } catch (FileNotFoundException e) {
       throw new RuntimeException(e);
     }
@@ -338,7 +337,7 @@ public class LearnerTest {
   // PatternDistance<DoubleSequence, DoubleSequence> rbfKernel = this::rbf;
   //
   // Predictor.Learner<DoubleSequence, Object, Classifier<DoubleSequence>> rbfForest =
-  // new AbstractLearner<DoubleSequence, Object, Classifier<DoubleSequence>>() {
+  // new Learner<DoubleSequence, Object, Classifier<DoubleSequence>>() {
   //
   // @Override
   // public Classifier<DoubleSequence> fit(Input<? extends DoubleSequence> in, Output<?> out) {
@@ -421,7 +420,7 @@ public class LearnerTest {
   //
   // private Input<DoubleSequence> normalize(Input<? extends DoubleSequence> in, double[] mean,
   // double[] std) {
-  // Input<DoubleSequence> xTrans = new ArrayInput<>();
+  // Input<DoubleSequence> xTrans = new MutableInput<>();
   // for (int i = 0; i < in.size(); i++) {
   // DoubleSequence instance = in.get(i);
   //
@@ -502,7 +501,7 @@ public class LearnerTest {
   // @Test
   // public void testTesda2() throws Exception {
   // DataFrame data = DataFrames.permute(Datasets.loadSyntheticControl());
-  // Input<Series> x = new ArrayInput<>(data.drop(0).rows());
+  // Input<Series> x = new MutableInput<>(data.drop(0).rows());
   // Output<?> y = Outputs.asOutput(data.get(0));
   //
   // ClassifierValidator<Series, RandomPatternForest<Series>> v =
@@ -561,7 +560,7 @@ public class LearnerTest {
   // ClassifierValidator<Instance, RandomForest> rfv = ClassifierValidator.crossValidator(10);
   //
   // System.out.println(
-  // mean(rfv.test(new RandomForest.Learner(100), Inputs.asInput(x), new ArrayOutput<>(y))
+  // mean(rfv.test(new RandomForest.Learner(100), Inputs.asInput(x), new MutableOutput<>(y))
   // .getMeasures()));
   //
   // // System.out.println(ClassifierValidator.crossValidator(10).test(classifier, x,
@@ -611,7 +610,7 @@ public class LearnerTest {
   // String testFile = "/Users/isak-kar/Downloads/dataset/OliveOil/OliveOil_TEST";
   // try (DatasetReader train = new MatlabDatasetReader(new FileInputStream(trainFile));
   // DatasetReader test = new MatlabDatasetReader(new FileInputStream(testFile))) {
-  // DataFrame.Builder dataset = new MixedDataFrame.Builder();
+  // DataFrame.MultidimensionalBuilder dataset = new MixedDataFrame.MultidimensionalBuilder();
   // dataset.readAll(train);
   // dataset.readAll(test);
   // return dataset.build();

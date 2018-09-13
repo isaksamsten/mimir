@@ -28,7 +28,6 @@ import java.util.stream.IntStream;
 import org.briljantframework.array.*;
 import org.briljantframework.data.Is;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -43,7 +42,7 @@ public class EnsembleClassifierMeasure {
   private double baseModelError;
 
   public <In> EnsembleClassifierMeasure(Ensemble<In, ?> ensemble, Input<? extends In> trainingData,
-      Output<?> trainingTarget, Input<? extends In> validationData, Output<?> validationTarget) {
+                                        List<?> trainingTarget, Input<? extends In> validationData, List<?> validationTarget) {
     initializeStrengthCorrelation(ensemble, trainingData, trainingTarget);
     initializeBiasVarianceDecomposition(ensemble, validationData, validationTarget);
   }
@@ -105,7 +104,7 @@ public class EnsembleClassifierMeasure {
   }
 
   private <In> void initializeStrengthCorrelation(Ensemble<In, ?> ensemble, Input<? extends In> x,
-      Output<?> y) {
+      List<?> y) {
     Array<?> classes = ensemble.getClasses();
     BooleanArray oobIndicator = ensemble.getOobIndicator();
     List<? extends ProbabilityEstimator<In, ?>> members = ensemble.getEnsembleMembers();
@@ -183,7 +182,7 @@ public class EnsembleClassifierMeasure {
   }
 
   private <In> void initializeBiasVarianceDecomposition(Ensemble<In,?> ensemble,
-      Input<? extends In> x, Output<?> y) {
+      Input<? extends In> x, List<?> y) {
     Array<?> classes = ensemble.getClasses();
 
     DoubleAdder meanVariance = new DoubleAdder();
@@ -206,27 +205,27 @@ public class EnsembleClassifierMeasure {
 
       /* Get the mean probability vector for the i:th example */
       DoubleArray meanEstimate = Arrays.mean(0, memberEstimates);
-      double variance = 0, mse = 0, bias = 0, accuracy = 0;
+      double variance = 0, mse = 0, accuracy = 0;
       for (int j = 0; j < memberEstimates.rows(); j++) {
         DoubleArray r = memberEstimates.getRow(j);
         double meanDiff = 0;
         double trueDiff = 0;
-        double meanTrueDiff = 0;
-        for (int k = 0; k < r.size(); k++) {
-          meanDiff += Math.pow(r.get(k) - meanEstimate.get(k), 2);
+        for (int k = 0; k < c.size(); k++) {
           trueDiff += Math.pow(r.get(k) - c.get(k), 2);
-          meanTrueDiff += Math.pow(meanEstimate.get(k) - c.get(k), 2);
+          meanDiff += Math.pow(r.get(k) - meanEstimate.get(k), 2);
         }
         variance += meanDiff;
         mse += trueDiff;
-        bias += meanTrueDiff;
-        accuracy += Arrays.argmax(r) == classes.indexOf(y.get(i)) ? 1 : 0; // Vectors.find(classes,
-                                                                           // y, i)
+        accuracy += Arrays.argmax(r) == classes.indexOf(y.get(i)) ? 1 : 0;
       }
+      double meanTrueDiff = 0;
+      for (int k = 0; k < c.size(); k++) {
+        meanTrueDiff += Math.pow(meanEstimate.get(k) - c.get(k), 2);
+      }
+      meanBias.add(meanTrueDiff);
       meanVariance.add(variance / estimators);
       meanSquareError.add(mse / estimators);
       baseAccuracy.add(accuracy / estimators);
-      meanBias.add(bias / estimators);
     });
 
     this.variance = meanVariance.doubleValue() / x.size();

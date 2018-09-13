@@ -20,31 +20,28 @@
  */
 package org.briljantframework.mimir.classification.conformal.evaluation;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.conformal.ConformalClassifier;
-import org.briljantframework.mimir.data.ArrayOutput;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.EvaluationContext;
 import org.briljantframework.mimir.evaluation.MutableEvaluationContext;
-import org.briljantframework.mimir.evaluation.Validator;
 import org.briljantframework.mimir.evaluation.partition.FoldPartitioner;
 import org.briljantframework.mimir.evaluation.partition.Partitioner;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public abstract class ConformalClassifierValidator<In, Out, P extends ConformalClassifier<In, Out>>
-    extends Validator<In, Out, P> {
+public abstract class ConformalClassifierValidator<In, Out, P extends ConformalClassifier<In, Out>> {
   private final List<? extends ConformalClassifierEvaluator<In, Out>> conformalEvaluators;
 
   protected ConformalClassifierValidator(Partitioner<In, Out> partitioner,
       DoubleArray confidences) {
-    super(partitioner);
+    // super(partitioner);
     this.conformalEvaluators = confidences.doubleStream()
         .mapToObj(i -> new ConformalClassifierEvaluator<In, Out>(i)).collect(Collectors.toList());
   }
@@ -53,24 +50,25 @@ public abstract class ConformalClassifierValidator<In, Out, P extends ConformalC
     this(partitioner, DoubleArray.range(0.01, 0.11, 0.01));
   }
 
-  @Override
+  // @Override
   protected void evaluate(EvaluationContext<In, Out> evaluationContext, int fold) {
     for (ConformalClassifierEvaluator<In, Out> evaluator : conformalEvaluators) {
       evaluationContext.getMeasureCollection().add("fold", fold);
       evaluator.accept(evaluationContext);
-      acceptEvaluators(evaluationContext);
+      // acceptEvaluators(evaluationContext);
     }
   }
 
-  @Override
+  // @Override
   protected void predict(MutableEvaluationContext<In, Out> ctx) {
     Check.state(ctx.getPredictor() instanceof ConformalClassifier);
     Input<? extends In> validationData = ctx.getPartition().getValidationData();
-    Output<Out> predictions = new ArrayOutput<>();
+    List<Out> predictions = new ArrayList<>();
     for (int i = 0; i < validationData.size(); i++) {
       predictions.add(null);
     }
     ctx.setPredictions(predictions);
+    @SuppressWarnings("unchecked")
     ConformalClassifier<In, Out> predictor = (ConformalClassifier<In, Out>) ctx.getPredictor();
     ctx.setEstimates(predictor.estimate(validationData));
   }

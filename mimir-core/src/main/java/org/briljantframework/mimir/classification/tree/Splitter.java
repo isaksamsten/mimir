@@ -21,13 +21,13 @@
 package org.briljantframework.mimir.classification.tree;
 
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Instance;
-import org.briljantframework.mimir.data.Output;
+
+import java.util.List;
 
 /**
  * @author Isak Karlsson
  */
-public interface Splitter {
+public interface Splitter<In> {
 
   /**
    * Find find a "good" separating split in dataset using Examples
@@ -37,6 +37,5 @@ public interface Splitter {
    * @param target
    * @return the examples . split
    */
-  TreeSplit<ValueThreshold> find(ClassSet classSet, Input<? extends Instance> dataset,
-      Output<?> target);
+  TreeSplit<In> find(ClassSet classSet, Input<? extends In> dataset, List<?> target);
 }

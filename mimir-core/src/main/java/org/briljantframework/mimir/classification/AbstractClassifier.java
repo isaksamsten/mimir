@@ -20,16 +20,13 @@
  */
 package org.briljantframework.mimir.classification;
 
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.IntStream;
 
 import org.briljantframework.array.Array;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.Outputs;
-import org.briljantframework.mimir.supervised.Characteristic;
 
 /**
  * Provides sane defaults for a predictor. Sub-classes only have to implement the
@@ -56,15 +53,11 @@ public abstract class AbstractClassifier<In, Out> implements Classifier<In, Out>
 
   @Override
   @SuppressWarnings("unchecked")
-  public Output<Out> predict(Input<? extends In> x) {
+  public List<Out> predict(Input<In> x) {
     // This guarantees that the order of predictions is the same as the input
     Object[] labels = new Object[x.size()];
     IntStream.range(0, x.size()).parallel().forEach(i -> labels[i] = predict(x.get(i)));
-    return Outputs.asOutput((Out[]) labels);
+    return Arrays.asList((Out[]) labels);
   }
 
-  @Override
-  public Set<Characteristic> getCharacteristics() {
-    return Collections.emptySet();
-  }
 }

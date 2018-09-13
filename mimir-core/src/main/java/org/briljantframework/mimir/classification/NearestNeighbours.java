@@ -20,20 +20,17 @@
  */
 package org.briljantframework.mimir.classification;
 
-import java.util.Collections;
-import java.util.Set;
+import java.util.HashSet;
+import java.util.List;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.data.Is;
+import org.briljantframework.mimir.Property;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.data.Outputs;
-import org.briljantframework.mimir.data.Property;
 import org.briljantframework.mimir.distance.Distance;
-import org.briljantframework.mimir.supervised.AbstractLearner;
-import org.briljantframework.mimir.supervised.Characteristic;
+import org.briljantframework.mimir.supervised.Predictor;
 
 /**
  * In pattern recognition, the k-Nearest Neighbors algorithm (or k-NN for short) is a non-parametric
@@ -58,13 +55,13 @@ public class NearestNeighbours<In, Out> extends AbstractClassifier<In, Out>
 
   public static final Property<Integer> NEIGHBORS = Property.of("neighbours", Integer.class, 1);
 
-  private final Input<? extends In> x;
-  private final Output<? extends Out> y;
+  private final Input<In> x;
+  private final List<Out> y;
   private final Distance<? super In> distance;
 
   private final int k;
 
-  private NearestNeighbours(Array<Out> classes, Input<? extends In> x, Output<? extends Out> y,
+  private NearestNeighbours(Array<Out> classes, Input<In> x, List<Out> y,
       Distance<? super In> distance, int k) {
     super(classes);
     this.x = x;
@@ -75,6 +72,8 @@ public class NearestNeighbours<In, Out> extends AbstractClassifier<In, Out>
 
   @Override
   public DoubleArray estimate(In record) {
+    Check.argument(x.getSchema().isValid(record), "illegal instance");
+
     // Only 1nn
     // TODO: 3/14/16 fix k
     Object cls = null;
@@ -93,11 +92,6 @@ public class NearestNeighbours<In, Out> extends AbstractClassifier<In, Out>
       estimate.set(i, Is.equal(classes.get(i), cls) ? 1 : 0);
     }
     return estimate;
-  }
-
-  @Override
-  public Set<Characteristic> getCharacteristics() {
-    return Collections.singleton(ClassifierCharacteristic.ESTIMATOR);
   }
 
   public DoubleArray pairwiseDistance(Input<? extends In> x) {
@@ -129,24 +123,25 @@ public class NearestNeighbours<In, Out> extends AbstractClassifier<In, Out>
     return distances;
   }
 
-  public Output<?> getTarget() {
+  public List<?> getTarget() {
     return y;
   }
 
   public static class Learner<In, Out>
-      extends AbstractLearner<In, Out, NearestNeighbours<In, Out>> {
-    private final Distance<In> distance;
+      extends Predictor.Learner<In, Out, NearestNeighbours<In, Out>> {
+    private final Distance<? super In> distance;
 
-    public Learner(int k, Distance<In> distance) {
+    public Learner(int k, Distance<? super In> distance) {
       set(NEIGHBORS, k);
       this.distance = distance;
     }
 
     @Override
-    public NearestNeighbours<In, Out> fit(Input<? extends In> x, Output<? extends Out> y) {
+    public NearestNeighbours<In, Out> fit(Input<In> x, List<Out> y) {
       Check.argument(x.size() == y.size(), "The size of x and y don't match: %s != %s.", x.size(),
           y.size());
-      return new NearestNeighbours<>(Outputs.unique(y), x, y, distance, get(NEIGHBORS));
+      return new NearestNeighbours<>(Array.copyOf(new HashSet<>(y)), x, y, distance,
+          get(NEIGHBORS));
     }
 
     @Override

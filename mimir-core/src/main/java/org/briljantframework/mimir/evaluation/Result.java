@@ -22,7 +22,8 @@ package org.briljantframework.mimir.evaluation;
 
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.series.Series;
-import org.briljantframework.mimir.data.Output;
+
+import java.util.List;
 
 /**
  * @author Isak Karlsson
@@ -35,11 +36,11 @@ public class Result<T> {
   private final double predictTime;
 
   private final DataFrame measures;
-  private final Output<T> predictions;
-  private final Output<T> actual;
+  private final List<T> predictions;
+  private final List<T> actual;
 
-  public Result(MeasureCollection measures, Output<T> t, Output<T> p, double trainingSize,
-      double validationSize, double fitTime, double predictTime) {
+  public Result(MeasureCollection measures, List<T> t, List<T> p, double trainingSize,
+                double validationSize, double fitTime, double predictTime) {
     this.trainingSize = trainingSize;
     this.validationSize = validationSize;
     this.fitTime = fitTime;
@@ -109,7 +110,7 @@ public class Result<T> {
    * 
    * @return the vector of predictions
    */
-  public Output<T> getPredictions() {
+  public List<T> getPredictions() {
     return predictions;
   }
 
@@ -118,7 +119,7 @@ public class Result<T> {
    * 
    * @return a vector of actual values
    */
-  public Output<T> getActual() {
+  public List<T> getActual() {
     return actual;
   }
 

@@ -33,7 +33,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.briljantframework.array.Array;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.data.Output;
 
 /**
  * @author Isak Karlsson
@@ -44,7 +43,7 @@ public final class ClassSet implements Iterable<Example> {
   private final List<Object> targets;
   private final Array<?> domain;
 
-  public ClassSet(Output<?> column, Array<?> domain) {
+  public ClassSet(List<?> column, Array<?> domain) {
     this(domain);
     for (int i = 0; i < column.size(); i++) {
       add(column.get(i), i, 1);

@@ -20,12 +20,7 @@
  */
 package org.briljantframework.mimir.data.transform;
 
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import org.briljantframework.mimir.data.ArrayInput;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Inputs;
 
 /**
  * Some transformations are (semi) invertible, e.g. PCA. Given the transformation {@code f(x)} and
@@ -47,11 +42,7 @@ public interface InvertibleInputTransformer<T, E> extends InputTransformer<T, E>
    * @param x an input
    * @return the inverse
    */
-  default Input<T> inverseTransform(Input<E> x) {
-    Input<T> inverse = x.stream().map(this::inverseTransform)
-        .collect(Collectors.toCollection(ArrayInput::new));
-    return Inputs.unmodifiableInput(inverse);
-  }
+  Input<T> inverseTransform(Input<E> x);
 
   T inverseTransform(E x);
 }

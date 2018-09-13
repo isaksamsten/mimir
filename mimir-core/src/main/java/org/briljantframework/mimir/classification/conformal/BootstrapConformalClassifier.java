@@ -23,15 +23,16 @@ package org.briljantframework.mimir.classification.conformal;
 import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
 import org.briljantframework.mimir.classification.Ensemble;
+import org.briljantframework.mimir.classification.ProbabilityEstimator;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
-import org.briljantframework.mimir.supervised.AbstractLearner;
 import org.briljantframework.mimir.supervised.Predictor;
+
+import java.util.List;
 
 /**
  * @author Isak Karlsson
  */
-public class BootstrapConformalClassifier<In, Out> extends AbstractConformalClassifier<In, Out> {
+public class BootstrapConformalClassifier<In, Out> extends ConformalClassifier<In, Out> {
 
   private final CalibratorScores<In, Out> calibratorScores;
   private final Nonconformity<In, Out> nonconformity;
@@ -54,26 +55,26 @@ public class BootstrapConformalClassifier<In, Out> extends AbstractConformalClas
   }
 
   public static class Learner<In, Out>
-      extends AbstractLearner<In, Out, BootstrapConformalClassifier<In, Out>> {
+      extends ConformalClassifier.Learner<In, Out, BootstrapConformalClassifier<In, Out>> {
 
     private final ProbabilityEstimateNonconformity.Learner<In, Out> learner;
 
-    public Learner(Predictor.Learner<In, Out, ? extends Ensemble<In, Out>> learner) {
+    public Learner(Predictor.Learner<In, Out, ? extends ProbabilityEstimator<In, Out>> learner) {
       this.learner =
           new ProbabilityEstimateNonconformity.Learner<>(learner, ProbabilityCostFunction.margin());
     }
 
     @Override
-    public BootstrapConformalClassifier<In, Out> fit(Input<? extends In> x,
-        Output<? extends Out> y) {
+    public BootstrapConformalClassifier<In, Out> fit(Input<In> x, List<Out> y) {
       ProbabilityEstimateNonconformity<In, Out> pen = learner.fit(x, y);
       @SuppressWarnings("unchecked")
       Ensemble<In, Out> ensemble = (Ensemble<In, Out>) pen.getProbabilityEstimator();
       DoubleArray estimate = Ensemble.estimateOutOfBagProbabilities(ensemble, x);
       DoubleArray calibrationScores = ProbabilityCostFunction
           .estimate(pen.getProbabilityCostFunction(), estimate, y, ensemble.getClasses());
-      return new BootstrapConformalClassifier<>(getOrDefault(STOCHASTIC_SMOOTHING),
-          ensemble.getClasses(), (example, label) -> calibrationScores, pen);
+      return new BootstrapConformalClassifier<>(
+          getOrDefault(ConformalClassifier.STOCHASTIC_SMOOTHING), ensemble.getClasses(),
+          (example, label) -> calibrationScores, pen);
     }
   }
 

@@ -23,7 +23,8 @@ package org.briljantframework.mimir.classification.conformal;
 import org.briljantframework.Check;
 import org.briljantframework.array.Array;
 import org.briljantframework.array.DoubleArray;
-import org.briljantframework.mimir.data.Output;
+
+import java.util.List;
 
 /**
  * A classification error function
@@ -68,7 +69,7 @@ public interface ProbabilityCostFunction {
    *        find the true class column in the score matrix for the i:th example)
    * @return an array of costs
    */
-  static DoubleArray estimate(ProbabilityCostFunction pcf, DoubleArray scores, Output<?> y,
+  static DoubleArray estimate(ProbabilityCostFunction pcf, DoubleArray scores, List<?> y,
       Array<?> classes) {
     Check.argument(classes.size() == scores.columns(), "Illegal prediction matrix");
     DoubleArray probabilities = DoubleArray.zeros(y.size());

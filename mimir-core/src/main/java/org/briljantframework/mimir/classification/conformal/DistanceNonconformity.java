@@ -27,8 +27,9 @@ import org.briljantframework.array.IntArray;
 import org.briljantframework.data.Is;
 import org.briljantframework.mimir.classification.NearestNeighbours;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.distance.Distance;
+
+import java.util.List;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
@@ -45,7 +46,7 @@ public class DistanceNonconformity<In, Out> implements Nonconformity<In, Out> {
 
   @Override
   public double estimate(In example, Out label) {
-    Output<?> labels = nnSearch.getTarget();
+    List<?> labels = nnSearch.getTarget();
     DoubleArray distances = nnSearch.distance(example);
     IntArray order = Arrays.order(distances);
     double posDist = 0;
@@ -96,7 +97,7 @@ public class DistanceNonconformity<In, Out> implements Nonconformity<In, Out> {
    */
   public static class Learner<In, Out> implements Nonconformity.Learner<In, Out> {
 
-    private final NearestNeighbours.Learner<? super In, Out> nearestNeighbors;
+    private final NearestNeighbours.Learner<In, Out> nearestNeighbors;
     private final int k;
 
     public Learner(int k, Distance<? super In> distance) {
@@ -105,7 +106,7 @@ public class DistanceNonconformity<In, Out> implements Nonconformity<In, Out> {
     }
 
     @Override
-    public DistanceNonconformity<In, Out> fit(Input<? extends In> x, Output<? extends Out> y) {
+    public DistanceNonconformity<In, Out> fit(Input<In> x, List<Out> y) {
       return new DistanceNonconformity<>(nearestNeighbors.fit(x, y), k);
     }
   }

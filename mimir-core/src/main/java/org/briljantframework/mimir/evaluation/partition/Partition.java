@@ -22,7 +22,8 @@ package org.briljantframework.mimir.evaluation.partition;
 
 import org.briljantframework.Check;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
+
+import java.util.List;
 
 /**
  * @author Isak Karlsson
@@ -30,10 +31,10 @@ import org.briljantframework.mimir.data.Output;
 public final class Partition<In, Out> {
 
   private final Input<In> trainingX, validationX;
-  private final Output<Out> trainingY, validationY;
+  private final List<Out> trainingY, validationY;
 
   public Partition(Input<In> trainingX, Input<In> validationX,
-      Output<Out> trainingY, Output<Out> validationY) {
+                   List<Out> trainingY, List<Out> validationY) {
     this.trainingX = trainingX;
     this.validationX = validationX;
     this.trainingY = trainingY;
@@ -55,7 +56,7 @@ public final class Partition<In, Out> {
    *
    * @return the training target
    */
-  public Output<Out> getTrainingTarget() {
+  public List<Out> getTrainingTarget() {
     Check.state(trainingY != null, "No training target available");
     return trainingY;
   }
@@ -75,7 +76,7 @@ public final class Partition<In, Out> {
    *
    * @return the validation target
    */
-  public Output<Out> getValidationTarget() {
+  public List<Out> getValidationTarget() {
     Check.state(trainingY != null, "No validation target available");
     return validationY;
   }

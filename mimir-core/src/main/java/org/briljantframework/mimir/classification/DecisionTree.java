@@ -20,50 +20,49 @@
  */
 package org.briljantframework.mimir.classification;
 
-import java.util.Collections;
-import java.util.Set;
+import java.util.HashSet;
+import java.util.List;
 
 import org.briljantframework.Check;
 import org.briljantframework.array.Array;
-import org.briljantframework.array.DoubleArray;
-import org.briljantframework.data.Is;
-import org.briljantframework.data.series.Convert;
+import org.briljantframework.mimir.Properties;
+import org.briljantframework.mimir.Property;
 import org.briljantframework.mimir.classification.tree.*;
-import org.briljantframework.mimir.data.*;
-import org.briljantframework.mimir.supervised.AbstractLearner;
-import org.briljantframework.mimir.supervised.Characteristic;
+import org.briljantframework.mimir.data.Input;
+import org.briljantframework.mimir.data.Schema;
+import org.briljantframework.mimir.supervised.Predictor;
+import org.briljantframework.mimir.supervised.data.Instance;
+import org.briljantframework.mimir.supervised.data.MultidimensionalSchema;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
 public class DecisionTree<Out> extends TreeClassifier<Instance, Out> {
 
+  private static Class<? extends Splitter> SPLITTER_CLASS = Splitter.class;
   public static Property<Double> MIN_LEAF_SIZE = Property.of("min_leaf_size", Double.class, 1.0);
-  public static Property<Splitter> SPLITTER = Property.of("splitter", Splitter.class);
+
+  @SuppressWarnings("unchecked")
+  public static Property<Splitter<Instance>> SPLITTER =
+      Property.of("splitter", (Class<Splitter<Instance>>) SPLITTER_CLASS);
+
   public static Property<Integer> MAX_DEPTH =
       Property.of("max_depth", Integer.class, Integer.MAX_VALUE, i -> i > 0);
 
-  private final int depth;
 
-  private DecisionTree(Array<Out> classes, int depth,
-      TreeVisitor<Instance, ValueThreshold> predictionVisitor) {
-    super(classes, predictionVisitor);
-    this.depth = depth;
+  private DecisionTree(Array<Out> classes, Schema<Instance> schema, TreeNode<Instance> root,
+      TreeVisitor<Instance> predictionVisitor) {
+    super(schema, classes, root, predictionVisitor);
   }
 
   public int getDepth() {
-    return depth;
-  }
-
-  @Override
-  public Set<Characteristic> getCharacteristics() {
-    return Collections.singleton(ClassifierCharacteristic.ESTIMATOR);
+    throw new UnsupportedOperationException();
   }
 
   /**
    * @author Isak Karlsson
    */
-  public static class Learner<Out> extends AbstractLearner<Instance, Out, DecisionTree<Out>> {
+  public static class Learner<Out> extends Predictor.Learner<Instance, Out, DecisionTree<Out>> {
 
     protected ClassSet classSet;
     protected Array<Out> classes = null;
@@ -79,106 +78,88 @@ public class DecisionTree<Out> extends TreeClassifier<Instance, Out> {
     }
 
     public Learner() {
-      set(SPLITTER, RandomSplitter.all());
+      set(SPLITTER, RandomSplitter.sqrt());
       set(MIN_LEAF_SIZE, 1.0);
     }
 
     @Override
-    public DecisionTree<Out> fit(Input<? extends Instance> in, Output<? extends Out> out) {
-      Check.argument(Dataset.isDataset(in), "requires a dataset");
+    @SuppressWarnings("unchecked")
+    public DecisionTree<Out> fit(Input<Instance> in, List<Out> out) {
+      Check.argument(in.getSchema() instanceof MultidimensionalSchema, "illegal schema");
       ClassSet classSet = this.classSet;
-      Array<Out> classes = this.classes != null ? this.classes : Outputs.unique(out);
+      Array<Out> classes =
+          this.classes != null ? this.classes : Array.copyOf(new HashSet<Out>(out));
       if (classSet == null) {
         classSet = new ClassSet(out, classes);
       }
 
-      Params p = new Params();
-      TreeNode<Instance, ValueThreshold> node = build(in, out, p, classSet);
-      return new DecisionTree<>(classes, p.depth, new SimplePredictionVisitor(node));
+      TreeNode<Instance> node = build(in, out, classSet);
+      return new DecisionTree<>(classes, in.getSchema(), node, new TreeVisitor<>());
     }
 
-    protected TreeNode<Instance, ValueThreshold> build(Input<? extends Instance> frame,
-        Output<?> target, Params p, ClassSet classSet) {
-      return build(frame, target, p, classSet, 1);
+    protected TreeNode<Instance> build(Input<? extends Instance> frame, List<?> target,
+        ClassSet classSet) {
+      return build(frame, target, classSet, 1);
     }
 
-    protected TreeNode<Instance, ValueThreshold> build(Input<? extends Instance> frame,
-        Output<?> target, Params p, ClassSet classSet, int depth) {
+    protected TreeNode<Instance> build(Input<? extends Instance> frame, List<?> target,
+        ClassSet classSet, int depth) {
       if (classSet.getTotalWeight() <= getOrDefault(MIN_LEAF_SIZE)
           || depth >= getOrDefault(MAX_DEPTH) || classSet.getTargetCount() == 1) {
-        p.depth = Math.max(p.depth, depth);
         return TreeLeaf.fromExamples(classSet);
       }
-      TreeSplit<ValueThreshold> maxSplit = get(SPLITTER).find(classSet, frame, target);
+      Splitter<Instance> instanceSplitter = get(SPLITTER);
+      TreeSplit<Instance> maxSplit = instanceSplitter.find(classSet, frame, target);
       if (maxSplit == null) {
-        p.depth = Math.max(p.depth, depth);
         return TreeLeaf.fromExamples(classSet);
       } else {
         ClassSet left = maxSplit.getLeft();
         ClassSet right = maxSplit.getRight();
         if (left.isEmpty()) {
-          p.depth = Math.max(p.depth, depth);
           return TreeLeaf.fromExamples(right);
         } else if (right.isEmpty()) {
-          p.depth = Math.max(p.depth, depth);
           return TreeLeaf.fromExamples(left);
         } else {
-          TreeNode<Instance, ValueThreshold> leftNode = build(frame, target, p, left, depth + 1);
-          TreeNode<Instance, ValueThreshold> rightNode = build(frame, target, p, right, depth + 1);
-          return new TreeBranch<>(leftNode, rightNode, classes, maxSplit.getThreshold(), 1);
+          TreeNode<Instance> leftNode = build(frame, target, left, depth + 1);
+          TreeNode<Instance> rightNode = build(frame, target, right, depth + 1);
+          return new TreeBranch<>(leftNode, rightNode, classes, maxSplit.getThreshold(), 1,
+              maxSplit.getImpurity());
         }
       }
     }
 
-    private final class Params {
-      int depth = 0;
-    }
   }
 
-  private static final class SimplePredictionVisitor
-      implements TreeVisitor<Instance, ValueThreshold> {
-
-    private static final int MISSING = 0, LEFT = -1, RIGHT = 1;
-    private final TreeNode<Instance, ValueThreshold> root;
-
-    SimplePredictionVisitor(TreeNode<Instance, ValueThreshold> node) {
-      this.root = node;
-    }
-
-    @Override
-    public TreeNode<Instance, ValueThreshold> getRoot() {
-      return root;
-    }
-
-    @Override
-    public DoubleArray visitLeaf(TreeLeaf<Instance, ValueThreshold> leaf, Instance example) {
-      return leaf.getProbabilities();
-    }
-
-    @Override
-    public DoubleArray visitBranch(TreeBranch<Instance, ValueThreshold> node, Instance example) {
-      Object threshold = node.getThreshold().getValue();
-      int axis = node.getThreshold().getAxis();
-      int direction = MISSING;
-      if (!Is.NA(example.get(axis))) {
-        if (Is.nominal(threshold)) {
-          direction = Is.equal(example.get(axis), threshold) ? LEFT : RIGHT;
-        } else {
-          double left = example.getDouble(axis);
-          double right = Convert.to(Double.class, threshold);
-          direction = Double.compare(left, right) <= 0 ? LEFT : RIGHT;
-        }
-      }
-
-      switch (direction) {
-        case LEFT:
-          return visit(node.getLeft(), example);
-        case RIGHT:
-          return visit(node.getRight(), example);
-        case MISSING:
-        default:
-          return visit(node.getLeft(), example);
-      }
-    }
-  }
+  // private static final class SimplePredictionVisitor extends TreeVisitor<Instance> {
+  //
+  // private final TreeNode<Instance> root;
+  //
+  // SimplePredictionVisitor(TreeNode<Instance> node) {
+  // super(tester, root);
+  // this.root = node;
+  // }
+  //
+  // @Override
+  // public TreeNode<Instance> getRoot() {
+  // return root;
+  // }
+  //
+  // @Override
+  // public DoubleArray visitLeaf(TreeLeaf<Instance> leaf, Instance example) {
+  // return leaf.getProbabilities();
+  // }
+  //
+  // @Override
+  // public DoubleArray visitBranch(TreeBranch<Instance> node, Instance example) {
+  // switch (node.getTreeNodeTest().test(example)) {
+  // case LEFT:
+  // return visit(node.getLeft(), example);
+  // case RIGHT:
+  // return visit(node.getRight(), example);
+  // case MISSING:
+  // default:
+  // return visit(node.getLeft(), example);
+  // }
+  // }
+  // }
 }

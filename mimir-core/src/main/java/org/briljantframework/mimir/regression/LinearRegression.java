@@ -20,28 +20,32 @@
  */
 package org.briljantframework.mimir.regression;
 
-import java.util.Collections;
-import java.util.Set;
-
 import org.briljantframework.Check;
-import org.briljantframework.DoubleSequence;
 import org.briljantframework.array.Arrays;
 import org.briljantframework.array.DoubleArray;
+import org.briljantframework.mimir.Property;
 import org.briljantframework.mimir.data.*;
-import org.briljantframework.mimir.supervised.AbstractLearner;
-import org.briljantframework.mimir.supervised.Characteristic;
+import org.briljantframework.mimir.supervised.*;
+import org.briljantframework.mimir.supervised.data.Instance;
+import org.briljantframework.mimir.supervised.data.MultidimensionalSchema;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Isak Karlsson <isak-kar@dsv.su.se>
  */
-public final class LinearRegression implements Regression<DoubleSequence> {
+public final class LinearRegression implements Regression<Instance> {
 
   public static final Property<Double> REGULARIZATION =
-      Property.of("regularization", Double.class, 0.1);
+      Property.of("regularization", Double.class, 1.0);
 
   private final DoubleArray theta;
+  private final MultidimensionalSchema schema;
 
-  private LinearRegression(DoubleArray theta) {
+  private LinearRegression(MultidimensionalSchema schema, DoubleArray theta) {
+    this.schema = schema;
     this.theta = theta;
   }
 
@@ -50,44 +54,46 @@ public final class LinearRegression implements Regression<DoubleSequence> {
   }
 
   @Override
-  public Double predict(DoubleSequence y) {
-    return 0.0;
+  public Double predict(Instance instance) {
+    Check.argument(schema.isValid(instance), "illegal instance");
+    DoubleArray x = Arrays
+        .concatenate(java.util.Arrays.asList(DoubleArray.of(1), instance.getNumericalAttributes()));
+    return Arrays.inner(theta, x);
   }
 
   @Override
-  public Output<Double> predict(Input<? extends DoubleSequence> x) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Set<Characteristic> getCharacteristics() {
-    return Collections.emptySet();
+  public List<Double> predict(Input<Instance> x) {
+    List<Double> output = new ArrayList<>();
+    for (Instance instance : x) {
+      output.add(predict(instance));
+    }
+    return Collections.unmodifiableList(output);
   }
 
   /**
    * @author Isak Karlsson
    */
-  public static class Learner extends AbstractLearner<DoubleSequence, Double, LinearRegression> {
+  public static class Learner extends Predictor.Learner<Instance, Double, LinearRegression> {
 
     public Learner() {}
 
     @Override
-    public LinearRegression fit(Input<? extends DoubleSequence> in, Output<? extends Double> out) {
-      Check.argument(Dataset.isDataset(in) && Dataset.isAllNumeric(in),
-          "all features must be numeric");
+    public LinearRegression fit(Input<Instance> in, List<Double> out) {
+      Check.argument(in.getSchema() instanceof MultidimensionalSchema);
 
-      DoubleArray x = Arrays.vstack(Arrays.ones(in.size()), Inputs.toDoubleArray(in));
-      DoubleArray y = DoubleArray.copyOf(out);
+      MultidimensionalSchema schema = (MultidimensionalSchema) in.getSchema();
+      Check.argument(!schema.hasCategoricalAttributes(), "only numerical attributes supported");
 
-      double scalar = getOrDefault(REGULARIZATION);
-      // X'(XX'\lambda*I_n)^-1y
-      // todo: use LGBF
-      DoubleArray inner =
-          Arrays.dot(Arrays.dot(x.transpose(), x), Arrays.times(Arrays.eye(x.columns()), scalar));
-      DoubleArray v = Arrays.dot(Arrays.linalg.pinv(inner), x.transpose());
-      DoubleArray theta = Arrays.dot(v, y);
+      DoubleArray x = Arrays.hstack(Arrays.ones(in.size(), 1), schema.getNumericalAttributes(in));
+      DoubleArray y = DoubleArray.copyOf(out).reshape(out.size(), 1);
 
-      return new LinearRegression(theta);
+      double lambda = getOrDefault(REGULARIZATION);
+      DoubleArray regularization = Arrays.times(Arrays.eye(x.columns()), lambda);
+
+      DoubleArray inner = Arrays.dot(Arrays.dot(x.transpose(), x), regularization);
+      DoubleArray inverse = Arrays.dot(Arrays.linalg.pinv(inner), x.transpose());
+      DoubleArray theta = Arrays.dot(inverse, y);
+      return new LinearRegression(schema, theta);
     }
 
   }

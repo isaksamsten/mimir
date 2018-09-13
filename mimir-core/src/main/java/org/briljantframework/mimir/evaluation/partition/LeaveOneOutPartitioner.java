@@ -23,12 +23,12 @@ package org.briljantframework.mimir.evaluation.partition;
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 import org.briljantframework.Check;
 import org.briljantframework.data.dataframe.DataFrame;
 import org.briljantframework.data.series.Series;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 
 /**
  * The leave-one-out partitioner can be used to implement Leave-one-out cross-validation, a commonly
@@ -46,7 +46,7 @@ import org.briljantframework.mimir.data.Output;
 public class LeaveOneOutPartitioner<In, Out> implements Partitioner<In, Out> {
 
   @Override
-  public Collection<Partition<In, Out>> partition(Input<? extends In> x, Output<? extends Out> y) {
+  public Collection<Partition<In, Out>> partition(Input<In> x, List<Out> y) {
     Check.dimension(x.size(), y.size());
     return new AbstractCollection<Partition<In, Out>>() {
       @Override

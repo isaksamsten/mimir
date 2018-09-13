@@ -20,15 +20,10 @@
  */
 package org.briljantframework.mimir.evaluation;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import org.briljantframework.mimir.classification.Classifier;
-import org.briljantframework.mimir.data.ArrayOutput;
 import org.briljantframework.mimir.data.Input;
-import org.briljantframework.mimir.data.Output;
 import org.briljantframework.mimir.evaluation.partition.FoldPartitioner;
 import org.briljantframework.mimir.evaluation.partition.Partition;
 import org.briljantframework.mimir.evaluation.partition.Partitioner;
@@ -95,32 +90,32 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
    * @param y the target to used during evaluation
    * @return a result
    */
-  public Result<Out> test(Predictor.Learner<? super In, ? super Out, ? extends P> learner,
-      Input<? extends In> x, Output<? extends Out> y) {
+  public Result<Out> test(Predictor.Learner<In, Out, ? extends P> learner, Input<In> x,
+      List<Out> y) {
     Collection<Partition<In, Out>> partitions = getPartitioner().partition(x, y);
     MutableEvaluationContext<In, Out> ctx = new MutableEvaluationContext<>();
-    Output<Out> actual = new ArrayOutput<>();
-    Output<Out> predictions = new ArrayOutput<>();
+    List<Out> actual = new ArrayList<>();
+    List<Out> predictions = new ArrayList<>();
     double avgFitTime = 0, avgPredictTime = 0, avgTrainingSize = 0, avgValidationSize = 0;
     double noPartition = partitions.size();
     int iteration = 0;
     for (Partition<In, Out> partition : partitions) {
       Input<In> trainingData = partition.getTrainingData();
-      Output<Out> trainingTarget = partition.getTrainingTarget();
+      List<Out> trainingTarget = partition.getTrainingTarget();
       Input<In> validationData = partition.getValidationData();
-      Output<Out> validationTarget = partition.getValidationTarget();
+      List<Out> validationTarget = partition.getValidationTarget();
       ctx.setPartition(partition);
 
       // Step 1: Fit the classifier using the training data
-      long start = System.nanoTime();
+      long start = preFit();
       P predictor = fit(learner, trainingData, trainingTarget);
       ctx.setPredictor(predictor);
-      double fitTime = (System.nanoTime() - start) / 1e6;
+      double fitTime = postFit(start);
 
       // Step 3: Make predictions on the validation data
-      start = System.nanoTime();
+      start = prePredict();
       predict(ctx);
-      double predictTime = (System.nanoTime() - start) / 1e6;
+      double predictTime = postPredict(start);
 
       // Step 4: Compute the given measures
       EvaluationContext<In, Out> evaluationContext = ctx.getEvaluationContext();
@@ -137,6 +132,22 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
 
     return new Result<>(ctx.getEvaluationContext().getMeasureCollection(), actual, predictions,
         avgTrainingSize, avgValidationSize, avgFitTime, avgPredictTime);
+  }
+
+  protected double postPredict(long start) {
+    return (System.nanoTime() - start) / 1e6;
+  }
+
+  protected long prePredict() {
+    return System.nanoTime();
+  }
+
+  protected double postFit(long start) {
+    return (System.nanoTime() - start) / 1e6;
+  }
+
+  protected long preFit() {
+    return System.nanoTime();
   }
 
   /**
@@ -157,8 +168,8 @@ public abstract class Validator<In, Out, P extends Predictor<In, Out>> {
    * @param x the input features
    * @param y the input label
    */
-  protected abstract P fit(Predictor.Learner<? super In, ? super Out, ? extends P> learner,
-      Input<In> x, Output<Out> y);
+  protected abstract P fit(Predictor.Learner<In, Out, ? extends P> learner, Input<In> x,
+      List<Out> y);
 
   protected abstract void predict(MutableEvaluationContext<In, Out> ctx);
 

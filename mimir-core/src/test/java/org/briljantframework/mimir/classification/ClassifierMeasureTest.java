@@ -24,7 +24,6 @@ import static org.junit.Assert.assertEquals;
 
 import org.briljantframework.array.Array;
 import org.briljantframework.data.series.Series;
-import org.briljantframework.mimir.data.ArrayOutput;
 import org.junit.Test;
 
 /**
@@ -36,8 +35,7 @@ public class ClassifierMeasureTest {
   public void testGetPrecision() throws Exception {
     Series t = Series.of(1, 1, 1, 2);
     Series p = Series.of(1, 1, 2, 1);
-    ClassifierMeasure cm = new ClassifierMeasure(Array.of(1, 2), new ArrayOutput<>(p.values()),
-        new ArrayOutput<>(t.values()));
+    ClassifierMeasure cm = new ClassifierMeasure(Array.of(1, 2), p.values(), t.values());
     assertEquals(0.333, cm.getPrecision(), 0.01);
     assertEquals(0.333, cm.getRecall(), 0.01);
     assertEquals(0.5, cm.getAccuracy(), 0.01);
